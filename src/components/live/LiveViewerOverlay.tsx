@@ -29,21 +29,58 @@ type LiveViewerOverlayProps = {
 };
 
 export function LiveViewerOverlay({
-  live, viewerCount, currentIndex, totalLives, comments = [], commentValue = "", saved = false,
-  onCommentChange, onSendComment, onLikeComment, onProfilePress, onSavePress, onSharePress, onMorePress,
-  onPreviousLive, onNextLive,
+  live,
+  viewerCount,
+  currentIndex,
+  totalLives,
+  comments = [],
+  commentValue = "",
+  saved = false,
+  onCommentChange,
+  onSendComment,
+  onLikeComment,
+  onProfilePress,
+  onSavePress,
+  onSharePress,
+  onMorePress,
+  onPreviousLive,
+  onNextLive,
 }: LiveViewerOverlayProps) {
-  const creatorName = live.creator?.username ?? live.creator?.displayName ?? null;
+  const creatorName =
+    live.creator?.username ?? live.creator?.displayName ?? null;
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
       <LiveHeader viewerCount={viewerCount} />
-      <LiveNavigation currentIndex={currentIndex} total={totalLives} onPrevious={onPreviousLive} onNext={onNextLive} />
-      <LiveActions saved={saved} onProfilePress={onProfilePress} onSavePress={onSavePress} onSharePress={onSharePress} onMorePress={onMorePress} />
+
+      <LiveNavigation
+        currentIndex={currentIndex}
+        total={totalLives}
+        onPrevious={onPreviousLive}
+        onNext={onNextLive}
+      />
+
+      <LiveActions
+        saved={saved}
+        onProfilePress={onProfilePress}
+        onSavePress={onSavePress}
+        onSharePress={onSharePress}
+        onMorePress={onMorePress}
+      />
 
       <View style={styles.bottomLeft} pointerEvents="box-none">
-        <LiveMetadata title={live.title} eventName={live.eventName} placeName={live.placeName} creatorName={creatorName} />
-        <LiveComments comments={comments} onLikeComment={onLikeComment} />
+        <LiveMetadata
+          title={live.title}
+          eventName={live.eventName}
+          placeName={live.placeName}
+          creatorName={creatorName}
+        />
+
+        <LiveComments
+          comments={comments}
+          onLikeComment={onLikeComment}
+        />
+
         <LiveCommentInput
           value={commentValue}
           onChangeText={onCommentChange ?? (() => undefined)}
@@ -56,6 +93,15 @@ export function LiveViewerOverlay({
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFill, zIndex: 10 },
-  bottomLeft: { position: "absolute", left: 14, right: 82, bottom: 110, gap: 11 },
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 10,
+  },
+  bottomLeft: {
+    position: "absolute",
+    left: 14,
+    right: 82,
+    bottom: 110,
+    gap: 11,
+  },
 });

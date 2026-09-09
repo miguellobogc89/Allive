@@ -10,20 +10,13 @@ import {
   RoomEvent,
   Track,
 } from "livekit-client";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import {
+  LiveViewerOverlay,
+  type LiveComment,
+} from "../components/live";
 import { colors } from "../theme/colors";
 
 const API_URL = "http://localhost:3001";
@@ -34,8 +27,11 @@ type ActiveLive = {
   roomName: string;
   status: "LIVE" | "ENDED";
   title: string | null;
+  eventName: string | null;
   description: string | null;
   placeName: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   startedAt: string;
 
   creator: {
@@ -52,11 +48,23 @@ type LiveKitTokenResponse = {
   role: "broadcaster" | "viewer";
 };
 
-function getParticipantRole(
-  participant: Participant
-) {
-  const attributeRole =
-    participant.attributes?.role;
+const MOCK_COMMENTS: LiveComment[] = [
+  {
+    id: "mock-1",
+    username: "lucia",
+    text: "¿Qué está pasando ahora?",
+    likes: 3,
+  },
+  {
+    id: "mock-2",
+    username: "dani",
+    text: "Se ve perfecto 👀",
+    likes: 1,
+  },
+];
+
+function getParticipantRole(participant: Participant) {
+  const attributeRole = participant.attributes?.role;
 
   if (
     attributeRole === "viewer" ||
@@ -67,9 +75,7 @@ function getParticipantRole(
 
   if (participant.metadata) {
     try {
-      const parsed = JSON.parse(
-        participant.metadata
-      );
+      const parsed = JSON.parse(participant.metadata);
 
       if (
         parsed?.role === "viewer" ||
@@ -82,19 +88,11 @@ function getParticipantRole(
     }
   }
 
-  if (
-    participant.identity.startsWith(
-      "viewer-"
-    )
-  ) {
+  if (participant.identity.startsWith("viewer-")) {
     return "viewer";
   }
 
-  if (
-    participant.identity.startsWith(
-      "broadcaster-"
-    )
-  ) {
+  if (participant.identity.startsWith("broadcaster-")) {
     return "broadcaster";
   }
 
@@ -102,150 +100,49 @@ function getParticipantRole(
 }
 
 export function LiveViewerScreen() {
-  const roomRef =
-    useRef<Room | null>(null);
-
-  const connectionVersionRef =
-    useRef(0);
+  const roomRef = useRef<Room | null>(null);
+  const connectionVersionRef = useRef(0);
 
   const videoContainerRef =
-    useRef<HTMLDivElement | null>(
-      null
-    );
+    useRef<HTMLDivElement | null>(null);
 
   const audioContainerRef =
-    useRef<HTMLDivElement | null>(
-      null
-    );
+    useRef<HTMLDivElement | null>(null);
 
-  const previousViewerCountRef =
-    useRef(0);
-
-  const hasViewerCountRef =
-    useRef(false);
-
-  const viewerDeltaAnimation =
-    useRef(new Animated.Value(0))
-      .current;
-
-  const [lives, setLives] =
-    useState<ActiveLive[]>([]);
-
-  const [
-    currentIndex,
-    setCurrentIndex,
-  ] = useState(0);
+  const [lives, setLives] = useState<ActiveLive[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const [status, setStatus] =
     useState("Buscando LIVE...");
 
-  const [connected, setConnected] =
-    useState(false);
-
-  const [viewers, setViewers] =
-    useState(0);
-
-  const [viewerDelta, setViewerDelta] =
-    useState<number | null>(null);
-
-  const [hasVideo, setHasVideo] =
-    useState(false);
+  const [connected, setConnected] = useState(false);
+  const [viewers, setViewers] = useState(0);
+  const [hasVideo, setHasVideo] = useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
 
-  const activeLive =
-    lives[currentIndex] ?? null;
+  const [commentValue, setCommentValue] = useState("");
+  const [comments, setComments] =
+    useState<LiveComment[]>(MOCK_COMMENTS);
 
-  function resetViewerCounter() {
-    previousViewerCountRef.current = 0;
-    hasViewerCountRef.current = false;
+  const [savedLiveIds, setSavedLiveIds] =
+    useState<string[]>([]);
 
-    setViewers(0);
-    setViewerDelta(null);
+  const activeLive = lives[currentIndex] ?? null;
 
-    viewerDeltaAnimation.setValue(0);
-  }
-
-  function applyViewerCount(
-    nextCount: number
-  ) {
-    const previousCount =
-      previousViewerCountRef.current;
-
-    setViewers(nextCount);
-
-    if (!hasViewerCountRef.current) {
-      hasViewerCountRef.current = true;
-
-      previousViewerCountRef.current =
-        nextCount;
-
-      return;
-    }
-
-    const delta =
-      nextCount - previousCount;
-
-    previousViewerCountRef.current =
-      nextCount;
-
-    if (delta === 0) {
-      return;
-    }
-
-    setViewerDelta(delta);
-
-    viewerDeltaAnimation.stopAnimation();
-    viewerDeltaAnimation.setValue(0);
-
-    Animated.sequence([
-      Animated.timing(
-        viewerDeltaAnimation,
-        {
-          toValue: 1,
-          duration: 160,
-          useNativeDriver: false,
-        }
-      ),
-
-      Animated.delay(650),
-
-      Animated.timing(
-        viewerDeltaAnimation,
-        {
-          toValue: 0,
-          duration: 220,
-          useNativeDriver: false,
-        }
-      ),
-    ]).start(() => {
-      setViewerDelta(null);
-    });
-  }
-
-  function updateViewerCount(
-    room: Room
-  ) {
-    /*
-     * Esta pantalla SIEMPRE entra con un token viewer.
-     * Por tanto contamos al participante local como 1.
-     */
+  function updateViewerCount(room: Room) {
+    // Esta pantalla siempre entra con un token viewer,
+    // por eso contamos al participante local como 1.
     let viewerCount = 1;
 
-    room.remoteParticipants.forEach(
-      (participant) => {
-        if (
-          getParticipantRole(
-            participant
-          ) === "viewer"
-        ) {
-          viewerCount += 1;
-        }
+    room.remoteParticipants.forEach((participant) => {
+      if (getParticipantRole(participant) === "viewer") {
+        viewerCount += 1;
       }
-    );
+    });
 
-    applyViewerCount(viewerCount);
+    setViewers(viewerCount);
   }
 
   async function getViewerToken(
@@ -256,8 +153,7 @@ export function LiveViewerScreen() {
       {
         method: "POST",
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           roomName,
@@ -267,10 +163,9 @@ export function LiveViewerScreen() {
     );
 
     if (!response.ok) {
-      const responseBody =
-        await response
-          .json()
-          .catch(() => null);
+      const responseBody = await response
+        .json()
+        .catch(() => null);
 
       throw new Error(
         responseBody?.error ??
@@ -293,182 +188,137 @@ export function LiveViewerScreen() {
     return tokenData;
   }
 
-  const clearMedia =
-    useCallback(() => {
-      if (
-        videoContainerRef.current
-      ) {
-        videoContainerRef.current.innerHTML =
-          "";
-      }
+  const clearMedia = useCallback(() => {
+    if (videoContainerRef.current) {
+      videoContainerRef.current.innerHTML = "";
+    }
 
-      if (
-        audioContainerRef.current
-      ) {
-        audioContainerRef.current.innerHTML =
-          "";
-      }
+    if (audioContainerRef.current) {
+      audioContainerRef.current.innerHTML = "";
+    }
 
-      setHasVideo(false);
-    }, []);
+    setHasVideo(false);
+  }, []);
 
-  const disconnectCurrentRoom =
-    useCallback(() => {
-      connectionVersionRef.current += 1;
+  const disconnectCurrentRoom = useCallback(() => {
+    connectionVersionRef.current += 1;
 
-      const room =
-        roomRef.current;
+    const room = roomRef.current;
 
-      if (room) {
-        room.disconnect();
-      }
+    if (room) {
+      room.disconnect();
+    }
 
-      roomRef.current = null;
+    roomRef.current = null;
 
-      clearMedia();
+    clearMedia();
+    setConnected(false);
+    setViewers(0);
+  }, [clearMedia]);
 
-      setConnected(false);
-      resetViewerCounter();
-    }, [clearMedia]);
+  const loadActiveLives = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/lives/active`
+      );
 
-  const loadActiveLives =
-    useCallback(async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/lives/active`
+      if (!response.ok) {
+        throw new Error(
+          `No se pudieron consultar los LIVE activos (${response.status})`
         );
+      }
 
-        if (!response.ok) {
-          throw new Error(
-            `No se pudieron consultar los LIVE activos (${response.status})`
-          );
+      const nextLives =
+        (await response.json()) as ActiveLive[];
+
+      if (!Array.isArray(nextLives)) {
+        throw new Error(
+          "Respuesta inválida del servidor."
+        );
+      }
+
+      setLives((previousLives) => {
+        if (nextLives.length === 0) {
+          return [];
         }
 
-        const nextLives =
-          (await response.json()) as ActiveLive[];
+        const currentLive =
+          previousLives[currentIndex];
 
-        if (
-          !Array.isArray(nextLives)
-        ) {
-          throw new Error(
-            "Respuesta inválida del servidor."
-          );
+        if (!currentLive) {
+          return nextLives;
         }
 
-        setLives(
-          (previousLives) => {
-            if (
-              nextLives.length === 0
-            ) {
-              return [];
-            }
-
-            const currentLive =
-              previousLives[
-                currentIndex
-              ];
-
-            if (!currentLive) {
-              return nextLives;
-            }
-
-            const stillActiveIndex =
-              nextLives.findIndex(
-                (live) =>
-                  live.id ===
-                  currentLive.id
-              );
-
-            if (
-              stillActiveIndex === -1
-            ) {
-              return nextLives;
-            }
-
-            if (
-              stillActiveIndex !==
-              currentIndex
-            ) {
-              const reordered = [
-                ...nextLives,
-              ];
-
-              const [stillActiveLive] =
-                reordered.splice(
-                  stillActiveIndex,
-                  1
-                );
-
-              reordered.splice(
-                Math.min(
-                  currentIndex,
-                  reordered.length
-                ),
-                0,
-                stillActiveLive
-              );
-
-              return reordered;
-            }
-
-            return nextLives;
-          }
-        );
-
-        setCurrentIndex((index) => {
-          if (
-            nextLives.length === 0
-          ) {
-            return 0;
-          }
-
-          return Math.min(
-            index,
-            nextLives.length - 1
+        const stillActiveIndex =
+          nextLives.findIndex(
+            (live) => live.id === currentLive.id
           );
-        });
 
-        setError(null);
-      } catch (caughtError) {
-        console.error(
-          "Allive NOW refresh error:",
-          caughtError
-        );
+        if (stillActiveIndex === -1) {
+          return nextLives;
+        }
 
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "No se pudieron obtener los LIVE activos."
+        if (stillActiveIndex !== currentIndex) {
+          const reordered = [...nextLives];
+
+          const [stillActiveLive] =
+            reordered.splice(stillActiveIndex, 1);
+
+          reordered.splice(
+            Math.min(currentIndex, reordered.length),
+            0,
+            stillActiveLive
+          );
+
+          return reordered;
+        }
+
+        return nextLives;
+      });
+
+      setCurrentIndex((index) => {
+        if (nextLives.length === 0) {
+          return 0;
+        }
+
+        return Math.min(
+          index,
+          nextLives.length - 1
         );
-      }
-    }, [currentIndex]);
+      });
+
+      setError(null);
+    } catch (caughtError) {
+      console.error(
+        "Allive NOW refresh error:",
+        caughtError
+      );
+
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "No se pudieron obtener los LIVE activos."
+      );
+    }
+  }, [currentIndex]);
 
   useEffect(() => {
     loadActiveLives();
 
-    const interval =
-      window.setInterval(
-        () => {
-          loadActiveLives();
-        },
-        REFRESH_INTERVAL_MS
-      );
+    const interval = window.setInterval(
+      loadActiveLives,
+      REFRESH_INTERVAL_MS
+    );
 
     return () => {
-      window.clearInterval(
-        interval
-      );
+      window.clearInterval(interval);
     };
   }, [loadActiveLives]);
 
   useEffect(() => {
     if (!activeLive) {
       disconnectCurrentRoom();
-
-      setStatus(
-        "No hay LIVE activos"
-      );
-
+      setStatus("No hay LIVE activos");
       return;
     }
 
@@ -480,12 +330,9 @@ export function LiveViewerScreen() {
 
     let disposed = false;
 
-    async function connectToLive(
-      live: ActiveLive
-    ) {
+    async function connectToLive(live: ActiveLive) {
       try {
-        const previousRoom =
-          roomRef.current;
+        const previousRoom = roomRef.current;
 
         if (previousRoom) {
           previousRoom.disconnect();
@@ -494,10 +341,8 @@ export function LiveViewerScreen() {
         roomRef.current = null;
 
         clearMedia();
-
         setConnected(false);
-        resetViewerCounter();
-
+        setViewers(0);
         setError(null);
         setStatus("Conectando...");
 
@@ -510,9 +355,7 @@ export function LiveViewerScreen() {
         const {
           serverUrl,
           participantToken,
-        } = await getViewerToken(
-          live.roomName
-        );
+        } = await getViewerToken(live.roomName);
 
         console.log(
           "Allive token viewer recibido:",
@@ -544,9 +387,7 @@ export function LiveViewerScreen() {
         }
 
         function refreshViewerCount() {
-          if (
-            !isCurrentConnection()
-          ) {
+          if (!isCurrentConnection()) {
             return;
           }
 
@@ -558,9 +399,7 @@ export function LiveViewerScreen() {
           _publication: RemoteTrackPublication,
           participant: RemoteParticipant
         ) {
-          if (
-            !isCurrentConnection()
-          ) {
+          if (!isCurrentConnection()) {
             return;
           }
 
@@ -568,15 +407,10 @@ export function LiveViewerScreen() {
             "Allive viewer received track:",
             track.kind,
             participant.identity,
-            getParticipantRole(
-              participant
-            )
+            getParticipantRole(participant)
           );
 
-          if (
-            track.kind ===
-            Track.Kind.Video
-          ) {
+          if (track.kind === Track.Kind.Video) {
             const element =
               track.attach() as HTMLVideoElement;
 
@@ -584,62 +418,36 @@ export function LiveViewerScreen() {
             element.playsInline = true;
             element.muted = true;
 
-            element.style.position =
-              "absolute";
+            element.style.position = "absolute";
+            element.style.inset = "0";
+            element.style.width = "100%";
+            element.style.height = "100%";
+            element.style.objectFit = "cover";
 
-            element.style.inset =
-              "0";
-
-            element.style.width =
-              "100%";
-
-            element.style.height =
-              "100%";
-
-            element.style.objectFit =
-              "cover";
-
-            if (
-              videoContainerRef.current
-            ) {
-              videoContainerRef.current.innerHTML =
-                "";
-
+            if (videoContainerRef.current) {
+              videoContainerRef.current.innerHTML = "";
               videoContainerRef.current.appendChild(
                 element
               );
             }
 
-            element
-              .play()
-              .catch(
-                (playError) => {
-                  console.error(
-                    "Allive video play error:",
-                    playError
-                  );
-                }
+            element.play().catch((playError) => {
+              console.error(
+                "Allive video play error:",
+                playError
               );
+            });
 
             setHasVideo(true);
             setStatus("LIVE");
           }
 
-          if (
-            track.kind ===
-            Track.Kind.Audio
-          ) {
-            const element =
-              track.attach();
-
+          if (track.kind === Track.Kind.Audio) {
+            const element = track.attach();
             element.autoplay = true;
 
-            if (
-              audioContainerRef.current
-            ) {
-              audioContainerRef.current.innerHTML =
-                "";
-
+            if (audioContainerRef.current) {
+              audioContainerRef.current.innerHTML = "";
               audioContainerRef.current.appendChild(
                 element
               );
@@ -647,6 +455,10 @@ export function LiveViewerScreen() {
           }
         }
 
+        // IMPORTANTE:
+        // No hacemos recorrido manual de remoteParticipants.
+        // TrackSubscribed es el único punto de attach para evitar
+        // el doble attach/play que ya provocó AbortError.
         room.on(
           RoomEvent.TrackSubscribed,
           attachTrack
@@ -657,11 +469,9 @@ export function LiveViewerScreen() {
           (track) => {
             track
               .detach()
-              .forEach(
-                (element) => {
-                  element.remove();
-                }
-              );
+              .forEach((element) => {
+                element.remove();
+              });
           }
         );
 
@@ -688,20 +498,14 @@ export function LiveViewerScreen() {
         room.on(
           RoomEvent.Disconnected,
           () => {
-            if (
-              !isCurrentConnection()
-            ) {
+            if (!isCurrentConnection()) {
               return;
             }
 
             setConnected(false);
             setHasVideo(false);
-
-            setStatus(
-              "LIVE finalizado"
-            );
-
-            resetViewerCounter();
+            setStatus("LIVE finalizado");
+            setViewers(0);
           }
         );
 
@@ -723,14 +527,11 @@ export function LiveViewerScreen() {
         }
 
         setConnected(true);
-
         setStatus(
           "Conectado · esperando vídeo"
         );
 
         updateViewerCount(room);
-
-
       } catch (caughtError) {
         if (
           disposed ||
@@ -767,15 +568,13 @@ export function LiveViewerScreen() {
         connectionVersionRef.current += 1;
       }
 
-      const room =
-        roomRef.current;
+      const room = roomRef.current;
 
       if (room) {
         room.disconnect();
       }
 
       roomRef.current = null;
-
       clearMedia();
     };
   }, [
@@ -783,6 +582,11 @@ export function LiveViewerScreen() {
     clearMedia,
     disconnectCurrentRoom,
   ]);
+
+  useEffect(() => {
+    setComments(MOCK_COMMENTS);
+    setCommentValue("");
+  }, [activeLive?.id]);
 
   function goToPreviousLive() {
     if (lives.length <= 1) {
@@ -804,10 +608,7 @@ export function LiveViewerScreen() {
     }
 
     setCurrentIndex((index) => {
-      if (
-        index >=
-        lives.length - 1
-      ) {
+      if (index >= lives.length - 1) {
         return 0;
       }
 
@@ -819,23 +620,66 @@ export function LiveViewerScreen() {
     roomRef.current?.startAudio();
   }
 
-  const deltaOpacity =
-    viewerDeltaAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-    });
+  function sendMockComment() {
+    const text = commentValue.trim();
 
-  const deltaTranslateY =
-    viewerDeltaAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [6, 0],
-    });
+    if (!text) {
+      return;
+    }
 
-  const badgeScale =
-    viewerDeltaAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [1, 1.08],
+    setComments((currentComments) => [
+      ...currentComments,
+      {
+        id: `local-${Date.now()}`,
+        username: "tú",
+        text,
+        likes: 0,
+      },
+    ]);
+
+    setCommentValue("");
+  }
+
+  function toggleMockCommentLike(commentId: string) {
+    setComments((currentComments) =>
+      currentComments.map((comment) => {
+        if (comment.id !== commentId) {
+          return comment;
+        }
+
+        const liked = !comment.liked;
+
+        return {
+          ...comment,
+          liked,
+          likes: Math.max(
+            0,
+            comment.likes + (liked ? 1 : -1)
+          ),
+        };
+      })
+    );
+  }
+
+  function toggleSavedLive() {
+    if (!activeLive) {
+      return;
+    }
+
+    setSavedLiveIds((currentIds) => {
+      if (currentIds.includes(activeLive.id)) {
+        return currentIds.filter(
+          (id) => id !== activeLive.id
+        );
+      }
+
+      return [...currentIds, activeLive.id];
     });
+  }
+
+  const isSaved = activeLive
+    ? savedLiveIds.includes(activeLive.id)
+    : false;
 
   return (
     <View style={styles.container}>
@@ -851,9 +695,7 @@ export function LiveViewerScreen() {
         }}
       />
 
-      <div
-        ref={audioContainerRef}
-      />
+      <div ref={audioContainerRef} />
 
       {!hasVideo && (
         <View style={styles.waiting}>
@@ -867,19 +709,11 @@ export function LiveViewerScreen() {
             }
           />
 
-          <Text
-            style={
-              styles.waitingTitle
-            }
-          >
+          <Text style={styles.waitingTitle}>
             {status}
           </Text>
 
-          <Text
-            style={
-              styles.waitingSubtitle
-            }
-          >
+          <Text style={styles.waitingSubtitle}>
             {lives.length > 0
               ? "Preparando emisión"
               : "Buscando emisiones activas"}
@@ -887,217 +721,43 @@ export function LiveViewerScreen() {
         </View>
       )}
 
-      {activeLive && (
-        <View style={styles.top}>
-          <View
-            style={
-              styles.liveBadge
-            }
-          >
-            <View
-              style={
-                styles.liveDot
-              }
-            />
-
-            <Text
-              style={
-                styles.liveText
-              }
-            >
-              {hasVideo
-                ? "LIVE"
-                : "CONECTANDO"}
-            </Text>
-          </View>
-
-          <View
-            style={
-              styles.viewerBadgeWrapper
-            }
-          >
-            <Animated.View
-              style={[
-                styles.viewerBadge,
-                {
-                  transform: [
-                    {
-                      scale:
-                        badgeScale,
-                    },
-                  ],
-                },
-              ]}
-            >
-              <Ionicons
-                name="eye-outline"
-                size={15}
-                color={colors.text}
-              />
-
-              <Text
-                style={
-                  styles.viewerText
-                }
-              >
-                {viewers}
-              </Text>
-            </Animated.View>
-
-            {viewerDelta !==
-              null && (
-              <Animated.Text
-                style={[
-                  styles.viewerDelta,
-                  {
-                    opacity:
-                      deltaOpacity,
-                    transform: [
-                      {
-                        translateY:
-                          deltaTranslateY,
-                      },
-                    ],
-                  },
-                ]}
-              >
-                {viewerDelta > 0
-                  ? `+${viewerDelta}`
-                  : viewerDelta}
-              </Animated.Text>
-            )}
-          </View>
-
-          {lives.length > 1 && (
-            <View
-              style={
-                styles.positionBadge
-              }
-            >
-              <Text
-                style={
-                  styles.positionText
-                }
-              >
-                {currentIndex + 1} /{" "}
-                {lives.length}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {activeLive &&
-        hasVideo && (
-          <View
-            style={styles.bottom}
-          >
-            <View
-              style={
-                styles.locationRow
-              }
-            >
-              <Ionicons
-                name="location"
-                size={16}
-                color={colors.text}
-              />
-
-              <Text
-                style={
-                  styles.location
-                }
-              >
-                {activeLive.placeName ??
-                  "Allive"}
-              </Text>
-            </View>
-
-            <Text
-              style={styles.creator}
-            >
-              @
-              {
-                activeLive.creator
-                  .username
-              }
-            </Text>
-
-            <Text
-              style={
-                styles.description
-              }
-            >
-              {activeLive.description ??
-                "Emisión en directo en Allive."}
-            </Text>
-
-            <Pressable
-              style={
-                styles.audioButton
-              }
-              onPress={
-                enableAudio
-              }
-            >
-              <Ionicons
-                name="volume-high-outline"
-                size={17}
-                color={colors.text}
-              />
-
-              <Text
-                style={
-                  styles.audioText
-                }
-              >
-                Activar audio
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-      {lives.length > 1 && (
-        <View
-          style={
-            styles.liveNavigation
-          }
-        >
-          <Pressable
-            style={
-              styles.navButton
-            }
-            onPress={
-              goToPreviousLive
-            }
-          >
-            <Ionicons
-              name="chevron-up"
-              size={24}
-              color={colors.text}
-            />
-          </Pressable>
+      {activeLive && hasVideo && (
+        <>
+          <LiveViewerOverlay
+            live={activeLive}
+            viewerCount={viewers}
+            currentIndex={currentIndex}
+            totalLives={lives.length}
+            comments={comments}
+            commentValue={commentValue}
+            saved={isSaved}
+            onCommentChange={setCommentValue}
+            onSendComment={sendMockComment}
+            onLikeComment={toggleMockCommentLike}
+            onSavePress={toggleSavedLive}
+            onPreviousLive={goToPreviousLive}
+            onNextLive={goToNextLive}
+          />
 
           <Pressable
-            style={
-              styles.navButton
-            }
-            onPress={goToNextLive}
+            style={styles.audioButton}
+            onPress={enableAudio}
           >
             <Ionicons
-              name="chevron-down"
-              size={24}
+              name="volume-high-outline"
+              size={17}
               color={colors.text}
             />
+            <Text style={styles.audioText}>
+              Activar audio
+            </Text>
           </Pressable>
-        </View>
+        </>
       )}
 
       {error && (
         <View style={styles.errorBox}>
-          <Text
-            style={styles.errorText}
-          >
+          <Text style={styles.errorText}>
             {error}
           </Text>
         </View>
@@ -1110,8 +770,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: "relative",
-    backgroundColor:
-      colors.background,
+    backgroundColor: colors.background,
   },
 
   waiting: {
@@ -1132,132 +791,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  top: {
-    position: "absolute",
-    top: 22,
-    left: 22,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  liveBadge: {
-    height: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    borderRadius: 9,
-    backgroundColor:
-      "rgba(0,0,0,0.68)",
-  },
-
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.live,
-  },
-
-  liveText: {
-    color: colors.text,
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  viewerBadgeWrapper: {
-    position: "relative",
-    alignItems: "center",
-  },
-
-  viewerBadge: {
-    height: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    borderRadius: 9,
-    backgroundColor:
-      "rgba(0,0,0,0.68)",
-  },
-
-  viewerText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  viewerDelta: {
-    position: "absolute",
-    top: 32,
-    color: colors.text,
-    fontSize: 10,
-    fontWeight: "900",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 7,
-    backgroundColor:
-      "rgba(0,0,0,0.72)",
-  },
-
-  positionBadge: {
-    height: 30,
-    justifyContent: "center",
-    paddingHorizontal: 10,
-    borderRadius: 9,
-    backgroundColor:
-      "rgba(0,0,0,0.68)",
-  },
-
-  positionText: {
-    color: colors.text,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-
-  bottom: {
-    position: "absolute",
-    left: 22,
-    right: 22,
-    bottom: 115,
-  },
-
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-
-  location: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-  },
-
-  creator: {
-    marginTop: 6,
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  description: {
-    marginTop: 6,
-    color: colors.text,
-    fontSize: 13,
-  },
-
   audioButton: {
-    alignSelf: "flex-start",
-    marginTop: 14,
+    position: "absolute",
+    left: 14,
+    bottom: 58,
+    zIndex: 30,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 11,
-    backgroundColor:
-      "rgba(0,0,0,0.65)",
+    backgroundColor: "rgba(0,0,0,0.65)",
   },
 
   audioText: {
@@ -1266,32 +811,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  liveNavigation: {
-    position: "absolute",
-    right: 22,
-    top: "42%",
-    gap: 10,
-  },
-
-  navButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 22,
-    backgroundColor:
-      "rgba(0,0,0,0.68)",
-  },
-
   errorBox: {
     position: "absolute",
     left: 22,
     right: 22,
     bottom: 130,
+    zIndex: 50,
     padding: 12,
     borderRadius: 12,
-    backgroundColor:
-      "rgba(255,59,48,0.18)",
+    backgroundColor: "rgba(255,59,48,0.18)",
   },
 
   errorText: {
