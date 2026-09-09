@@ -9,7 +9,7 @@ import { MapScreen } from "./src/screens/MapScreen";
 import { NowScreen } from "./src/screens/NowScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SearchScreen } from "./src/screens/SearchScreen";
-import { colors } from "./src/theme/colors";
+import { colors } from "./src/styles";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("now");

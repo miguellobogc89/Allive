@@ -23,6 +23,7 @@ import {
 } from "livekit-client";
 
 import { colors } from "../theme/colors";
+import { LiveBroadcastSurface } from "../components/live/LiveBroadcastSurface.web";
 
 const API_URL = "http://localhost:3001";
 
