@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import * as authApi from "./authApi";
+
 import type {
   AuthSession,
   AuthUser,
@@ -18,7 +19,13 @@ import type {
 } from "./types";
 
 const TOKEN_KEY = "allive.auth.token";
+const USER_KEY = "allive.auth.user";
+const MODE_KEY = "allive.auth.mode";
 const GUEST_ID_KEY = "allive.guest.id";
+
+type StoredMode =
+  | "user"
+  | "guest";
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -32,12 +39,14 @@ type AuthContextValue = {
   login: (
     email: string,
     password: string,
+    remember: boolean,
   ) => Promise<void>;
 
   register: (
     username: string,
     email: string,
     password: string,
+    remember: boolean,
   ) => Promise<void>;
 
   updateUsername: (
@@ -50,12 +59,15 @@ type AuthContextValue = {
 };
 
 const AuthContext =
-  createContext<AuthContextValue | null>(null);
+  createContext<AuthContextValue | null>(
+    null,
+  );
 
 function createUuid() {
   if (
     typeof globalThis.crypto !== "undefined" &&
-    typeof globalThis.crypto.randomUUID === "function"
+    typeof globalThis.crypto.randomUUID ===
+      "function"
   ) {
     return globalThis.crypto.randomUUID();
   }
@@ -63,11 +75,15 @@ function createUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
     /[xy]/g,
     (character) => {
-      const random = Math.floor(Math.random() * 16);
-      const value =
-        character === "x"
-          ? random
-          : (random & 0x3) | 0x8;
+      const random =
+        Math.floor(Math.random() * 16);
+
+      let value = random;
+
+      if (character === "y") {
+        value =
+          (random & 0x3) | 0x8;
+      }
 
       return value.toString(16);
     },
@@ -76,6 +92,14 @@ function createUuid() {
 
 function createGuestId() {
   return `guest_${createUuid()}`;
+}
+
+async function clearStoredUserSession() {
+  await AsyncStorage.multiRemove([
+    TOKEN_KEY,
+    USER_KEY,
+    MODE_KEY,
+  ]);
 }
 
 export function AuthProvider({
@@ -90,7 +114,9 @@ export function AuthProvider({
     useState<string | null>(null);
 
   const [identity, setIdentity] =
-    useState<ViewerIdentity | null>(null);
+    useState<ViewerIdentity | null>(
+      null,
+    );
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -132,19 +158,63 @@ export function AuthProvider({
     };
   }
 
-  async function restoreSession() {
-    try {
-      const storedToken =
-        await AsyncStorage.getItem(
-          TOKEN_KEY,
-        );
+  async function restoreGuest() {
+    const guestIdentity =
+      await getOrCreateGuestIdentity();
 
-      if (!storedToken) {
-        return;
+    setToken(null);
+    setUser(null);
+    setIdentity(guestIdentity);
+  }
+
+  async function restoreUser() {
+    const storedToken =
+      await AsyncStorage.getItem(
+        TOKEN_KEY,
+      );
+
+    const storedUser =
+      await AsyncStorage.getItem(
+        USER_KEY,
+      );
+
+    if (!storedToken) {
+      await clearStoredUserSession();
+
+      setToken(null);
+      setUser(null);
+      setIdentity(null);
+
+      return;
+    }
+
+    let cachedUser: AuthUser | null =
+      null;
+
+    if (storedUser) {
+      try {
+        cachedUser =
+          JSON.parse(storedUser) as AuthUser;
+      } catch {
+        cachedUser = null;
       }
+    }
 
+    if (cachedUser) {
+      setToken(storedToken);
+      setUser(cachedUser);
+
+      setIdentity({
+        type: "user",
+        id: cachedUser.id,
+      });
+    }
+
+    try {
       const restoredUser =
-        await authApi.getMe(storedToken);
+        await authApi.getMe(
+          storedToken,
+        );
 
       setToken(storedToken);
       setUser(restoredUser);
@@ -153,22 +223,99 @@ export function AuthProvider({
         type: "user",
         id: restoredUser.id,
       });
-    } catch {
-      await AsyncStorage.removeItem(
-        TOKEN_KEY,
+
+      await AsyncStorage.setItem(
+        USER_KEY,
+        JSON.stringify(restoredUser),
       );
+    } catch (error) {
+      if (
+        error instanceof
+          authApi.AuthApiError &&
+        error.status === 401
+      ) {
+        await clearStoredUserSession();
+
+        setToken(null);
+        setUser(null);
+        setIdentity(null);
+
+        return;
+      }
+
+      if (!cachedUser) {
+        setToken(null);
+        setUser(null);
+        setIdentity(null);
+      }
+    }
+  }
+
+  async function restoreSession() {
+    try {
+      const storedMode =
+        await AsyncStorage.getItem(
+          MODE_KEY,
+        );
+
+      if (storedMode === "guest") {
+        await restoreGuest();
+        return;
+      }
+
+      if (storedMode === "user") {
+        await restoreUser();
+        return;
+      }
+
+      setToken(null);
+      setUser(null);
+      setIdentity(null);
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function saveSession(
+  async function persistUserSession(
     session: AuthSession,
   ) {
-    await AsyncStorage.setItem(
+    await AsyncStorage.multiSet([
+      [
+        TOKEN_KEY,
+        session.token,
+      ],
+      [
+        USER_KEY,
+        JSON.stringify(
+          session.user,
+        ),
+      ],
+      [
+        MODE_KEY,
+        "user",
+      ],
+    ]);
+  }
+
+  async function clearPersistentSession() {
+    await AsyncStorage.multiRemove([
       TOKEN_KEY,
-      session.token,
-    );
+      USER_KEY,
+      MODE_KEY,
+    ]);
+  }
+
+  async function saveSession(
+    session: AuthSession,
+    remember: boolean,
+  ) {
+    if (remember) {
+      await persistUserSession(
+        session,
+      );
+    } else {
+      await clearPersistentSession();
+    }
 
     setToken(session.token);
     setUser(session.user);
@@ -182,29 +329,37 @@ export function AuthProvider({
   async function login(
     email: string,
     password: string,
+    remember: boolean,
   ) {
     const session =
       await authApi.login({
-        email,
+        email: email.trim(),
         password,
       });
 
-    await saveSession(session);
+    await saveSession(
+      session,
+      remember,
+    );
   }
 
   async function register(
     username: string,
     email: string,
     password: string,
+    remember: boolean,
   ) {
     const session =
       await authApi.register({
-        username,
-        email,
+        username: username.trim(),
+        email: email.trim(),
         password,
       });
 
-    await saveSession(session);
+    await saveSession(
+      session,
+      remember,
+    );
   }
 
   async function updateUsername(
@@ -225,15 +380,30 @@ export function AuthProvider({
       );
 
     setUser(updatedUser);
+
+    const storedMode =
+      await AsyncStorage.getItem(
+        MODE_KEY,
+      );
+
+    if (storedMode === "user") {
+      await AsyncStorage.setItem(
+        USER_KEY,
+        JSON.stringify(updatedUser),
+      );
+    }
   }
 
   async function continueAsGuest() {
-    await AsyncStorage.removeItem(
-      TOKEN_KEY,
-    );
+    await clearPersistentSession();
 
     const guestIdentity =
       await getOrCreateGuestIdentity();
+
+    await AsyncStorage.setItem(
+      MODE_KEY,
+      "guest",
+    );
 
     setToken(null);
     setUser(null);
@@ -241,16 +411,11 @@ export function AuthProvider({
   }
 
   async function logout() {
-    await AsyncStorage.removeItem(
-      TOKEN_KEY,
-    );
+    await clearPersistentSession();
 
     setToken(null);
     setUser(null);
     setIdentity(null);
-
-    // La identidad guest de esta instalación
-    // se conserva deliberadamente.
   }
 
   return (

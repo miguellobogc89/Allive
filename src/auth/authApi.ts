@@ -6,18 +6,50 @@ import type {
   AuthUser,
 } from "./types";
 
+export class AuthApiError extends Error {
+  status: number;
+
+  constructor(
+    message: string,
+    status: number,
+  ) {
+    super(message);
+
+    this.name = "AuthApiError";
+    this.status = status;
+  }
+}
+
 async function parseResponse<T>(
   response: Response,
 ): Promise<T> {
-  const data = await response.json();
+  let data: unknown = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
 
   if (!response.ok) {
-    throw new Error(
-      data.error ?? "Ha ocurrido un error",
+    let message = "Ha ocurrido un error";
+
+    if (
+      data &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof data.error === "string"
+    ) {
+      message = data.error;
+    }
+
+    throw new AuthApiError(
+      message,
+      response.status,
     );
   }
 
-  return data;
+  return data as T;
 }
 
 export async function register(input: {
@@ -38,7 +70,9 @@ export async function register(input: {
     },
   );
 
-  return parseResponse<AuthSession>(response);
+  return parseResponse<AuthSession>(
+    response,
+  );
 }
 
 export async function login(input: {
@@ -58,7 +92,9 @@ export async function login(input: {
     },
   );
 
-  return parseResponse<AuthSession>(response);
+  return parseResponse<AuthSession>(
+    response,
+  );
 }
 
 export async function getMe(
