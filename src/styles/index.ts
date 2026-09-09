@@ -1,5 +1,6 @@
 // src/styles/index.ts
 
+export { authStyles } from "./auth";
 export { colors } from "./colors";
 export { controls } from "./controls";
 export { iconSizes } from "./icons";

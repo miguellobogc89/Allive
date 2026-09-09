@@ -8,15 +8,11 @@ import {
 } from "react";
 
 import {
-  ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -25,16 +21,21 @@ import {
 } from "../auth/AuthContext";
 
 import {
-  colors,
-  controls,
-  radius,
-  spacing,
-  typography,
-} from "../styles";
+  AuthBrand,
+} from "../auth/components/AuthBrand";
 
-type Mode =
-  | "login"
-  | "register";
+import {
+  AuthForm,
+} from "../auth/components/AuthForm";
+
+import type {
+  AuthMode,
+} from "../auth/components/AuthModeSelector";
+
+import {
+  authStyles,
+  colors,
+} from "../styles";
 
 export function AuthScreen() {
   const {
@@ -43,8 +44,13 @@ export function AuthScreen() {
     continueAsGuest,
   } = useAuth();
 
+  const {
+    width,
+    height,
+  } = useWindowDimensions();
+
   const [mode, setMode] =
-    useState<Mode>("login");
+    useState<AuthMode>("login");
 
   const [username, setUsername] =
     useState("");
@@ -58,8 +64,10 @@ export function AuthScreen() {
   const [remember, setRemember] =
     useState(true);
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -79,12 +87,32 @@ export function AuthScreen() {
       new Animated.Value(0),
     ).current;
 
+  const isTablet =
+    width >= 768;
+
+  const isLandscape =
+    width > height;
+
+  const tabletLandscape =
+    isTablet &&
+    isLandscape;
+
+  let compact =
+    height < 760;
+
+  if (
+    isLandscape &&
+    height < 600
+  ) {
+    compact = true;
+  }
+
   useEffect(() => {
     Animated.timing(
       entrance,
       {
         toValue: 1,
-        duration: 550,
+        duration: 450,
         useNativeDriver: true,
       },
     ).start();
@@ -96,15 +124,16 @@ export function AuthScreen() {
             glow,
             {
               toValue: 1,
-              duration: 2600,
+              duration: 2800,
               useNativeDriver: true,
             },
           ),
+
           Animated.timing(
             glow,
             {
               toValue: 0,
-              duration: 2600,
+              duration: 2800,
               useNativeDriver: true,
             },
           ),
@@ -121,22 +150,25 @@ export function AuthScreen() {
     glow,
   ]);
 
-  const cardTranslate =
+  const translateY =
     entrance.interpolate({
       inputRange: [0, 1],
-      outputRange: [24, 0],
+      outputRange: [18, 0],
     });
 
   const glowScale =
     glow.interpolate({
       inputRange: [0, 1],
-      outputRange: [1, 1.18],
+      outputRange: [1, 1.16],
     });
 
   const glowOpacity =
     glow.interpolate({
       inputRange: [0, 1],
-      outputRange: [0.22, 0.42],
+      outputRange: [
+        0.18,
+        0.38,
+      ],
     });
 
   function validate() {
@@ -201,21 +233,16 @@ export function AuthScreen() {
         setError(
           submitError.message,
         );
-      } else {
-        setError(
-          "No se ha podido completar el acceso",
-        );
+
+        return;
       }
+
+      setError(
+        "No se ha podido completar el acceso",
+      );
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  function changeMode(
-    nextMode: Mode,
-  ) {
-    setMode(nextMode);
-    setError(null);
   }
 
   async function enterAsGuest() {
@@ -233,34 +260,25 @@ export function AuthScreen() {
     }
   }
 
-  let title =
-    "Bienvenido de nuevo";
+  function changeMode(
+    nextMode: AuthMode,
+  ) {
+    setMode(nextMode);
+    setError(null);
+  }
 
-  let subtitle =
-    "Entra y descubre qué está pasando ahora mismo.";
+  let keyboardBehavior:
+    "padding" | undefined;
 
-  let submitLabel =
-    "Entrar";
-
-  if (mode === "register") {
-    title =
-      "Crea tu cuenta";
-
-    subtitle =
-      "Únete a Allive y empieza a vivir lo que está pasando.";
-
-    submitLabel =
-      "Crear cuenta";
+  if (Platform.OS === "ios") {
+    keyboardBehavior =
+      "padding";
   }
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
+      style={authStyles.root}
+      behavior={keyboardBehavior}
     >
       <LinearGradient
         colors={[
@@ -268,15 +286,18 @@ export function AuthScreen() {
           "#111011",
           colors.background,
         ]}
-        style={styles.background}
+        style={
+          authStyles.background
+        }
       >
         <Animated.View
           pointerEvents="none"
           style={[
-            styles.glow,
+            authStyles.glow,
             {
               opacity:
                 glowOpacity,
+
               transform: [
                 {
                   scale:
@@ -288,437 +309,128 @@ export function AuthScreen() {
         />
 
         <ScrollView
+          style={authStyles.scroll}
           contentContainerStyle={
-            styles.scrollContent
+            authStyles.scrollContent
           }
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={
             false
           }
+          bounces={false}
         >
           <Animated.View
             style={[
-              styles.content,
+              authStyles.layout,
+
+              compact &&
+                authStyles.layoutCompact,
+
+              tabletLandscape &&
+                authStyles.layoutTabletLandscape,
+
               {
                 opacity:
                   entrance,
+
                 transform: [
                   {
-                    translateY:
-                      cardTranslate,
+                    translateY,
                   },
                 ],
               },
             ]}
           >
             <View
-              style={
-                styles.brandArea
-              }
+              style={[
+                authStyles.brandColumn,
+
+                tabletLandscape &&
+                  authStyles.brandColumnTablet,
+              ]}
             >
-              <View
-                style={
-                  styles.logoMark
+              <AuthBrand
+                compact={
+                  compact &&
+                  !tabletLandscape
                 }
-              >
-                <View
-                  style={
-                    styles.logoCore
-                  }
-                />
-              </View>
-
-              <Text
-                style={
-                  styles.logo
+                horizontal={
+                  tabletLandscape
                 }
-              >
-                ALLIVE
-              </Text>
-
-              <Text
-                style={
-                  styles.brandClaim
-                }
-              >
-                LIVE. NOW. EVERYWHERE.
-              </Text>
+              />
             </View>
 
             <View
-              style={
-                styles.card
-              }
+              style={[
+                authStyles.formColumn,
+
+                tabletLandscape &&
+                  authStyles.formColumnTablet,
+              ]}
             >
-              <View
-                style={
-                  styles.heading
+              <AuthForm
+                mode={mode}
+                compact={compact}
+
+                username={
+                  username
                 }
-              >
-                <Text
-                  style={
-                    styles.title
-                  }
-                >
-                  {title}
-                </Text>
 
-                <Text
-                  style={
-                    styles.subtitle
-                  }
-                >
-                  {subtitle}
-                </Text>
-              </View>
-
-              <View
-                style={
-                  styles.modeSelector
+                email={email}
+                password={
+                  password
                 }
-              >
-                <Pressable
-                  onPress={() =>
-                    changeMode(
-                      "login",
-                    )
-                  }
-                  style={[
-                    styles.modeButton,
-                    mode === "login" &&
-                      styles.modeButtonActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.modeText,
-                      mode === "login" &&
-                        styles.modeTextActive,
-                    ]}
-                  >
-                    Entrar
-                  </Text>
-                </Pressable>
 
-                <Pressable
-                  onPress={() =>
-                    changeMode(
-                      "register",
-                    )
-                  }
-                  style={[
-                    styles.modeButton,
-                    mode ===
-                      "register" &&
-                      styles.modeButtonActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.modeText,
-                      mode ===
-                        "register" &&
-                        styles.modeTextActive,
-                    ]}
-                  >
-                    Registrarme
-                  </Text>
-                </Pressable>
-              </View>
-
-              <View
-                style={
-                  styles.fields
+                remember={
+                  remember
                 }
-              >
-                {mode ===
-                  "register" && (
-                  <View>
-                    <Text
-                      style={
-                        styles.label
-                      }
-                    >
-                      Usuario
-                    </Text>
 
-                    <TextInput
-                      value={
-                        username
-                      }
-                      onChangeText={
-                        setUsername
-                      }
-                      placeholder="Tu nombre en Allive"
-                      placeholderTextColor={
-                        colors.textMuted
-                      }
-                      autoCapitalize="none"
-                      autoCorrect={
-                        false
-                      }
-                      style={
-                        styles.input
-                      }
-                    />
-                  </View>
-                )}
+                showPassword={
+                  showPassword
+                }
 
-                <View>
-                  <Text
-                    style={
-                      styles.label
-                    }
-                  >
-                    Email
-                  </Text>
+                error={error}
 
-                  <TextInput
-                    value={
-                      email
-                    }
-                    onChangeText={
-                      setEmail
-                    }
-                    placeholder="nombre@email.com"
-                    placeholderTextColor={
-                      colors.textMuted
-                    }
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={
-                      false
-                    }
-                    style={
-                      styles.input
-                    }
-                  />
-                </View>
+                isSubmitting={
+                  isSubmitting
+                }
 
-                <View>
-                  <Text
-                    style={
-                      styles.label
-                    }
-                  >
-                    Contraseña
-                  </Text>
+                onModeChange={
+                  changeMode
+                }
 
-                  <View
-                    style={
-                      styles.passwordField
-                    }
-                  >
-                    <TextInput
-                      value={
-                        password
-                      }
-                      onChangeText={
-                        setPassword
-                      }
-                      placeholder="Tu contraseña"
-                      placeholderTextColor={
-                        colors.textMuted
-                      }
-                      secureTextEntry={
-                        !showPassword
-                      }
-                      autoCapitalize="none"
-                      style={
-                        styles.passwordInput
-                      }
-                    />
+                onUsernameChange={
+                  setUsername
+                }
 
-                    <Pressable
-                      onPress={() =>
-                        setShowPassword(
-                          !showPassword,
-                        )
-                      }
-                      hitSlop={12}
-                    >
-                      <Text
-                        style={
-                          styles.passwordAction
-                        }
-                      >
-                        {showPassword
-                          ? "Ocultar"
-                          : "Ver"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
+                onEmailChange={
+                  setEmail
+                }
 
-              <Pressable
-                onPress={() =>
+                onPasswordChange={
+                  setPassword
+                }
+
+                onRememberChange={() =>
                   setRemember(
                     !remember,
                   )
                 }
-                style={
-                  styles.rememberRow
+
+                onTogglePassword={() =>
+                  setShowPassword(
+                    !showPassword,
+                  )
                 }
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    remember &&
-                      styles.checkboxActive,
-                  ]}
-                >
-                  {remember && (
-                    <View
-                      style={
-                        styles.checkboxDot
-                      }
-                    />
-                  )}
-                </View>
 
-                <Text
-                  style={
-                    styles.rememberText
-                  }
-                >
-                  Recordarme
-                </Text>
-              </Pressable>
-
-              {error && (
-                <View
-                  style={
-                    styles.errorBox
-                  }
-                >
-                  <Text
-                    style={
-                      styles.error
-                    }
-                  >
-                    {error}
-                  </Text>
-                </View>
-              )}
-
-              <Pressable
-                onPress={() =>
+                onSubmit={() =>
                   void submit()
                 }
-                disabled={
-                  isSubmitting
-                }
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed &&
-                    styles.primaryButtonPressed,
-                  isSubmitting &&
-                    styles.disabled,
-                ]}
-              >
-                <LinearGradient
-                  colors={[
-                    colors.accent,
-                    colors.accentStrong,
-                  ]}
-                  start={{
-                    x: 0,
-                    y: 0,
-                  }}
-                  end={{
-                    x: 1,
-                    y: 1,
-                  }}
-                  style={
-                    styles.primaryGradient
-                  }
-                >
-                  {isSubmitting && (
-                    <ActivityIndicator
-                      color={
-                        colors.text
-                      }
-                    />
-                  )}
 
-                  {!isSubmitting && (
-                    <Text
-                      style={
-                        styles.primaryButtonText
-                      }
-                    >
-                      {submitLabel}
-                    </Text>
-                  )}
-                </LinearGradient>
-              </Pressable>
-
-              <View
-                style={
-                  styles.divider
-                }
-              >
-                <View
-                  style={
-                    styles.dividerLine
-                  }
-                />
-
-                <Text
-                  style={
-                    styles.dividerText
-                  }
-                >
-                  O
-                </Text>
-
-                <View
-                  style={
-                    styles.dividerLine
-                  }
-                />
-              </View>
-
-              <Pressable
-                onPress={() =>
+                onGuest={() =>
                   void enterAsGuest()
                 }
-                disabled={
-                  isSubmitting
-                }
-                style={({ pressed }) => [
-                  styles.guestButton,
-                  pressed &&
-                    styles.guestButtonPressed,
-                ]}
-              >
-                <Text
-                  style={
-                    styles.guestButtonText
-                  }
-                >
-                  Continuar como invitado
-                </Text>
-
-                <Text
-                  style={
-                    styles.guestArrow
-                  }
-                >
-                  →
-                </Text>
-              </Pressable>
-
-              <Text
-                style={
-                  styles.footer
-                }
-              >
-                Al continuar aceptas las
-                condiciones de uso y la
-                política de privacidad.
-              </Text>
+              />
             </View>
           </Animated.View>
         </ScrollView>
@@ -726,401 +438,3 @@ export function AuthScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles =
-  StyleSheet.create({
-    root: {
-      flex: 1,
-      backgroundColor:
-        colors.background,
-    },
-
-    background: {
-      flex: 1,
-      overflow: "hidden",
-    },
-
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: "center",
-      paddingHorizontal:
-        spacing.xl,
-      paddingVertical: 48,
-    },
-
-    content: {
-      width: "100%",
-      maxWidth: 460,
-      alignSelf: "center",
-    },
-
-    glow: {
-      position: "absolute",
-      width: 380,
-      height: 380,
-      borderRadius: 190,
-      backgroundColor:
-        colors.accentGlow,
-      top: -160,
-      alignSelf: "center",
-    },
-
-    brandArea: {
-      alignItems: "center",
-      marginBottom:
-        spacing.xxl,
-    },
-
-    logoMark: {
-      width: 54,
-      height: 54,
-      borderRadius: 27,
-      backgroundColor:
-        colors.accentSoft,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      marginBottom:
-        spacing.md,
-      borderWidth: 1,
-      borderColor:
-        colors.accent,
-    },
-
-    logoCore: {
-      width: 18,
-      height: 18,
-      borderRadius: 9,
-      backgroundColor:
-        colors.accent,
-    },
-
-    logo: {
-      fontSize: 28,
-      lineHeight: 32,
-      fontWeight: "800",
-      letterSpacing: 5,
-      color: colors.text,
-    },
-
-    brandClaim: {
-      marginTop:
-        spacing.xs,
-      fontSize: 10,
-      letterSpacing: 2.2,
-      fontWeight: "600",
-      color:
-        colors.textMuted,
-    },
-
-    card: {
-      backgroundColor:
-        "rgba(18,20,22,0.94)",
-      borderWidth: 1,
-      borderColor:
-        colors.border,
-      borderRadius:
-        radius.xl,
-      padding:
-        spacing.xl,
-      shadowColor:
-        colors.pureBlack,
-      shadowOffset: {
-        width: 0,
-        height: 20,
-      },
-      shadowOpacity: 0.32,
-      shadowRadius: 36,
-      elevation: 16,
-    },
-
-    heading: {
-      marginBottom:
-        spacing.xl,
-    },
-
-    title: {
-      ...typography.title,
-      color: colors.text,
-      fontSize: 26,
-      lineHeight: 32,
-    },
-
-    subtitle: {
-      ...typography.body,
-      color:
-        colors.textSecondary,
-      marginTop:
-        spacing.xs,
-      lineHeight: 21,
-    },
-
-    modeSelector: {
-      flexDirection: "row",
-      padding: 4,
-      borderRadius:
-        radius.md,
-      backgroundColor:
-        colors.background,
-      marginBottom:
-        spacing.xl,
-    },
-
-    modeButton: {
-      flex: 1,
-      minHeight: 40,
-      borderRadius:
-        radius.sm,
-      alignItems: "center",
-      justifyContent:
-        "center",
-    },
-
-    modeButtonActive: {
-      backgroundColor:
-        colors.surfaceElevated,
-    },
-
-    modeText: {
-      ...typography.bodyStrong,
-      color:
-        colors.textMuted,
-    },
-
-    modeTextActive: {
-      color: colors.text,
-    },
-
-    fields: {
-      gap: spacing.md,
-    },
-
-    label: {
-      ...typography.bodyStrong,
-      color:
-        colors.textSecondary,
-      marginBottom:
-        spacing.xs,
-      fontSize: 13,
-    },
-
-    input: {
-      ...typography.body,
-      minHeight:
-        controls.primaryButtonHeight,
-      color: colors.text,
-      backgroundColor:
-        colors.background,
-      borderWidth: 1,
-      borderColor:
-        colors.border,
-      borderRadius:
-        radius.md,
-      paddingHorizontal:
-        spacing.md,
-    },
-
-    passwordField: {
-      minHeight:
-        controls.primaryButtonHeight,
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor:
-        colors.background,
-      borderWidth: 1,
-      borderColor:
-        colors.border,
-      borderRadius:
-        radius.md,
-      paddingRight:
-        spacing.md,
-    },
-
-    passwordInput: {
-      ...typography.body,
-      flex: 1,
-      minHeight:
-        controls.primaryButtonHeight,
-      color: colors.text,
-      paddingHorizontal:
-        spacing.md,
-    },
-
-    passwordAction: {
-      ...typography.bodyStrong,
-      color:
-        colors.accent,
-      fontSize: 13,
-    },
-
-    rememberRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      alignSelf:
-        "flex-start",
-      marginTop:
-        spacing.md,
-    },
-
-    checkbox: {
-      width: 20,
-      height: 20,
-      borderRadius: 6,
-      borderWidth: 1,
-      borderColor:
-        colors.border,
-      backgroundColor:
-        colors.background,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      marginRight:
-        spacing.xs,
-    },
-
-    checkboxActive: {
-      borderColor:
-        colors.accent,
-      backgroundColor:
-        colors.accentSoft,
-    },
-
-    checkboxDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor:
-        colors.accent,
-    },
-
-    rememberText: {
-      ...typography.body,
-      color:
-        colors.textSecondary,
-      fontSize: 13,
-    },
-
-    errorBox: {
-      marginTop:
-        spacing.md,
-      padding:
-        spacing.sm,
-      borderRadius:
-        radius.sm,
-      backgroundColor:
-        colors.dangerSurface,
-    },
-
-    error: {
-      ...typography.body,
-      color:
-        colors.dangerText,
-      fontSize: 13,
-    },
-
-    primaryButton: {
-      marginTop:
-        spacing.lg,
-      borderRadius:
-        radius.md,
-      overflow: "hidden",
-    },
-
-    primaryButtonPressed: {
-      opacity: 0.88,
-      transform: [
-        {
-          scale: 0.99,
-        },
-      ],
-    },
-
-    disabled: {
-      opacity: 0.65,
-    },
-
-    primaryGradient: {
-      height:
-        controls.primaryButtonHeight,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      borderRadius:
-        radius.md,
-    },
-
-    primaryButtonText: {
-      ...typography.bodyStrong,
-      color: colors.text,
-      fontSize: 15,
-    },
-
-    divider: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      marginVertical:
-        spacing.lg,
-    },
-
-    dividerLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor:
-        colors.border,
-    },
-
-    dividerText: {
-      color:
-        colors.textMuted,
-      fontSize: 11,
-      fontWeight: "700",
-    },
-
-    guestButton: {
-      minHeight:
-        controls.primaryButtonHeight,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "center",
-      backgroundColor:
-        colors.background,
-      borderWidth: 1,
-      borderColor:
-        colors.border,
-      borderRadius:
-        radius.md,
-      paddingHorizontal:
-        spacing.md,
-    },
-
-    guestButtonPressed: {
-      backgroundColor:
-        colors.surfaceElevated,
-    },
-
-    guestButtonText: {
-      ...typography.bodyStrong,
-      color: colors.text,
-    },
-
-    guestArrow: {
-      position: "absolute",
-      right: spacing.md,
-      color:
-        colors.accent,
-      fontSize: 20,
-    },
-
-    footer: {
-      ...typography.body,
-      color:
-        colors.textMuted,
-      textAlign: "center",
-      fontSize: 11,
-      lineHeight: 16,
-      marginTop:
-        spacing.lg,
-    },
-  });
