@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -16,32 +17,51 @@ model User {
   updatedAt     DateTime      @updatedAt
   email         String        @unique
   password_hash String
+  live_likes    live_likes[]
   liveSessions  LiveSession[]
 
   @@map("users")
 }
 
 model LiveSession {
-  id          String     @id @default(cuid())
-  roomName    String     @unique
+  id          String       @id @default(cuid())
+  roomName    String       @unique
   creatorId   String
-  status      LiveStatus @default(LIVE)
+  status      LiveStatus   @default(LIVE)
   title       String?
   description String?
   latitude    Float?
   longitude   Float?
   placeName   String?
-  startedAt   DateTime   @default(now())
+  startedAt   DateTime     @default(now())
   endedAt     DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   eventName   String?
-  creator     User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  live_likes  live_likes[]
+  creator     User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@index([status, startedAt])
   @@index([creatorId])
   @@index([eventName])
   @@map("live_sessions")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model live_likes {
+  id              String      @id
+  live_session_id String
+  user_id         String?
+  guest_id        String?
+  created_at      DateTime    @default(now())
+  live_sessions   LiveSession @relation(fields: [live_session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           User?       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([live_session_id, guest_id], map: "live_likes_live_session_guest_key", where: raw("(guest_id IS NOT NULL)"))
+  @@unique([live_session_id, user_id], map: "live_likes_live_session_user_key", where: raw("(user_id IS NOT NULL)"))
+  @@index([guest_id])
+  @@index([live_session_id])
+  @@index([user_id])
 }
 
 enum LiveStatus {

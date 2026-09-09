@@ -1,125 +1,287 @@
 // src/screens/LiveBroadcastScreen.tsx
 
-import { Ionicons } from "@expo/vector-icons";
-import { CameraType, CameraView } from "expo-camera";
-import { useEffect, useState } from "react";
 import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import type {
+  CameraType,
+} from "expo-camera";
+
+import {
+  AudioSession,
+  isTrackReference,
+  LiveKitRoom,
+  VideoTrack,
+  useRemoteParticipants,
+  useTracks,
+} from "@livekit/react-native";
+
+import {
+  Track,
+} from "livekit-client";
+
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import { colors, controls, layout, typography } from "../styles";
+import {
+  getBroadcasterToken,
+  markLiveAsEnded,
+  registerLiveInBackend,
+} from "../components/live/liveBroadcastApi";
+
+import {
+  getParticipantRole,
+} from "../components/live/liveParticipantRole";
+
+import type {
+  LiveKitTokenResponse,
+} from "../components/live/types";
+
+import {
+  colors,
+  controls,
+  layout,
+  typography,
+} from "../styles";
 
 type LiveBroadcastScreenProps = {
   facing: CameraType;
+  authToken: string;
   onFinish: () => void;
 };
 
-export function LiveBroadcastScreen({
-  facing,
+type NativeLiveConnection = {
+  roomName: string;
+  liveSessionId: string;
+  serverUrl: string;
+  participantToken: string;
+};
+
+function createLiveRoomName() {
+  return `live-${Date.now()}`;
+}
+
+function formatDuration(
+  totalSeconds: number,
+) {
+  const minutes = Math.floor(
+    totalSeconds / 60,
+  );
+
+  const remainingSeconds =
+    totalSeconds % 60;
+
+  return `${minutes
+    .toString()
+    .padStart(
+      2,
+      "0",
+    )}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+function NativeBroadcastRoom({
+  seconds,
   onFinish,
-}: LiveBroadcastScreenProps) {
-  const [seconds, setSeconds] = useState(0);
-  const [viewers, setViewers] = useState(0);
+}: {
+  seconds: number;
+  onFinish: () => void;
+}) {
+  const tracks = useTracks([
+    Track.Source.Camera,
+  ]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((current) => current + 1);
-    }, 1000);
+  const remoteParticipants =
+    useRemoteParticipants();
 
-    return () => clearInterval(timer);
-  }, []);
+  const viewers =
+    remoteParticipants.filter(
+      (participant) =>
+        getParticipantRole(
+          participant,
+        ) === "viewer",
+    ).length;
 
-  useEffect(() => {
-    const viewerTimer = setInterval(() => {
-      setViewers((current) => {
-        if (current < 3) {
-          return current + 1;
-        }
-
-        return current;
-      });
-    }, 2500);
-
-    return () => clearInterval(viewerTimer);
-  }, []);
-
-  function formatDuration(totalSeconds: number) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const remainingSeconds = totalSeconds % 60;
-
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  }
+  const localCameraTrack =
+    tracks.find(
+      (track) =>
+        isTrackReference(
+          track,
+        ) &&
+        track.participant.isLocal,
+    );
 
   return (
     <View style={styles.container}>
-      <CameraView
-        style={StyleSheet.absoluteFill}
-        facing={facing}
-      />
+      {localCameraTrack &&
+      isTrackReference(
+        localCameraTrack,
+      ) ? (
+        <VideoTrack
+          trackRef={
+            localCameraTrack
+          }
+          style={
+            styles.video
+          }
+        />
+      ) : (
+        <View
+          style={
+            styles.cameraWaiting
+          }
+        >
+          <ActivityIndicator
+            color={
+              colors.text
+            }
+          />
+
+          <Text
+            style={
+              styles.cameraWaitingText
+            }
+          >
+            Activando cámara...
+          </Text>
+        </View>
+      )}
 
       <View style={styles.shade} />
 
       <View style={styles.top}>
-        <View style={styles.liveBadge}>
-          <View style={styles.liveDot} />
+        <View
+          style={
+            styles.liveBadge
+          }
+        >
+          <View
+            style={
+              styles.liveDot
+            }
+          />
 
-          <Text style={styles.liveText}>
+          <Text
+            style={
+              styles.liveText
+            }
+          >
             LIVE
           </Text>
         </View>
 
-        <View style={styles.durationBadge}>
-          <Text style={styles.duration}>
-            {formatDuration(seconds)}
+        <View
+          style={
+            styles.durationBadge
+          }
+        >
+          <Text
+            style={
+              styles.duration
+            }
+          >
+            {formatDuration(
+              seconds,
+            )}
           </Text>
         </View>
 
-        <View style={styles.viewerBadge}>
+        <View
+          style={
+            styles.viewerBadge
+          }
+        >
           <Ionicons
             name="eye-outline"
             size={15}
-            color={colors.text}
+            color={
+              colors.text
+            }
           />
 
-          <Text style={styles.viewerText}>
+          <Text
+            style={
+              styles.viewerText
+            }
+          >
             {viewers}
           </Text>
         </View>
       </View>
 
-      <View style={styles.bottom}>
-        <View style={styles.location}>
+      <View
+        style={styles.bottom}
+      >
+        <View
+          style={
+            styles.location
+          }
+        >
           <Ionicons
             name="location"
             size={16}
-            color={colors.text}
+            color={
+              colors.text
+            }
           />
 
-          <Text style={styles.locationText}>
+          <Text
+            style={
+              styles.locationText
+            }
+          >
             Ubicación actual
           </Text>
         </View>
 
-        <View style={styles.status}>
-          <View style={styles.statusDot} />
+        <View
+          style={styles.status}
+        >
+          <View
+            style={
+              styles.statusDot
+            }
+          />
 
-          <Text style={styles.statusText}>
+          <Text
+            style={
+              styles.statusText
+            }
+          >
             Estás emitiendo ahora
           </Text>
         </View>
 
         <Pressable
-          style={styles.finishButton}
+          style={
+            styles.finishButton
+          }
           onPress={onFinish}
         >
-          <View style={styles.stopIcon} />
+          <View
+            style={
+              styles.stopIcon
+            }
+          />
 
-          <Text style={styles.finishText}>
+          <Text
+            style={
+              styles.finishText
+            }
+          >
             FINALIZAR LIVE
           </Text>
         </Pressable>
@@ -128,193 +290,764 @@ export function LiveBroadcastScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.pureBlack,
-  },
+export function LiveBroadcastScreen({
+  facing,
+  authToken,
+  onFinish,
+}: LiveBroadcastScreenProps) {
+  const [
+    connection,
+    setConnection,
+  ] =
+    useState<NativeLiveConnection | null>(
+      null,
+    );
 
-  shade: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.cameraShade,
-  },
+  const [
+    seconds,
+    setSeconds,
+  ] = useState(0);
 
-  top: {
-    position: "absolute",
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
-    top: layout.overlayTop,
-    left: layout.overlayHorizontal,
-    right: layout.overlayHorizontal,
+  const [
+    finishing,
+    setFinishing,
+  ] = useState(false);
 
-    flexDirection: "row",
-    alignItems: "center",
+  const liveSessionIdRef =
+    useRef<string | null>(
+      null,
+    );
 
-    gap: 8,
-  },
+  const finalizedRef =
+    useRef(false);
 
-  liveBadge: {
-    height: controls.liveBadgeHeight,
+  useEffect(() => {
+    let cancelled = false;
 
-    flexDirection: "row",
-    alignItems: "center",
+    async function prepareLive() {
+      let createdLiveSessionId:
+        | string
+        | null = null;
 
-    gap: 6,
+      try {
+        setError(null);
 
-    paddingHorizontal: 11,
+        await AudioSession.startAudioSession();
 
-    borderRadius: 10,
+        const roomName =
+          createLiveRoomName();
 
-    backgroundColor: colors.live,
-  },
+        createdLiveSessionId =
+          await registerLiveInBackend(
+            roomName,
+            {
+              title: "",
+              eventName: "",
+              location: null,
+            },
+            authToken,
+          );
 
-  liveDot: {
-    width: controls.badgeDotSize,
-    height: controls.badgeDotSize,
+        liveSessionIdRef.current =
+          createdLiveSessionId;
 
-    borderRadius: 4,
+        const tokenData:
+          LiveKitTokenResponse =
+          await getBroadcasterToken(
+            roomName,
+            authToken,
+          );
 
-    backgroundColor: colors.text,
-  },
+        if (cancelled) {
+          await markLiveAsEnded(
+            createdLiveSessionId,
+            authToken,
+          ).catch(() => null);
 
-  liveText: {
-    color: colors.text,
+          return;
+        }
 
-    fontSize: 11,
-    fontWeight: "900",
-  },
+        setConnection({
+          roomName,
 
-  durationBadge: {
-    height: controls.liveBadgeHeight,
+          liveSessionId:
+            createdLiveSessionId,
 
-    alignItems: "center",
-    justifyContent: "center",
+          serverUrl:
+            tokenData.serverUrl,
 
-    paddingHorizontal: 11,
+          participantToken:
+            tokenData.participantToken,
+        });
+      } catch (
+        caughtError
+      ) {
+        if (
+          createdLiveSessionId
+        ) {
+          await markLiveAsEnded(
+            createdLiveSessionId,
+            authToken,
+          ).catch(
+            () => null,
+          );
+        }
 
-    borderRadius: 10,
+        liveSessionIdRef.current =
+          null;
 
-    backgroundColor: colors.overlayStrong,
-  },
+        console.error(
+          "Allive native broadcast setup error:",
+          caughtError,
+        );
 
-  duration: {
-    color: colors.text,
+        if (!cancelled) {
+          setError(
+            caughtError instanceof
+              Error
+              ? caughtError.message
+              : "No se ha podido iniciar el LIVE.",
+          );
+        }
+      }
+    }
 
-    fontSize: 12,
-    fontWeight: "800",
-  },
+    void prepareLive();
 
-  viewerBadge: {
-    height: controls.liveBadgeHeight,
+    return () => {
+      cancelled = true;
 
-    flexDirection: "row",
-    alignItems: "center",
+      void AudioSession.stopAudioSession();
 
-    gap: 5,
+      const liveSessionId =
+        liveSessionIdRef.current;
 
-    paddingHorizontal: 11,
+      if (
+        liveSessionId &&
+        !finalizedRef.current
+      ) {
+        finalizedRef.current =
+          true;
 
-    borderRadius: 10,
+        void markLiveAsEnded(
+          liveSessionId,
+          authToken,
+        ).catch(
+          (cleanupError) => {
+            console.warn(
+              "No se pudo cerrar el LIVE native durante cleanup:",
+              cleanupError,
+            );
+          },
+        );
+      }
+    };
+  }, [authToken]);
 
-    backgroundColor: colors.overlayStrong,
-  },
+  useEffect(() => {
+    if (!connection) {
+      return;
+    }
 
-  viewerText: {
-    color: colors.text,
+    const timer = setInterval(
+      () => {
+        setSeconds(
+          (current) =>
+            current + 1,
+        );
+      },
+      1000,
+    );
 
-    fontSize: 12,
-    fontWeight: "700",
-  },
+    return () =>
+      clearInterval(timer);
+  }, [connection]);
 
-  bottom: {
-    position: "absolute",
+  async function finishLive() {
+    if (finishing) {
+      return;
+    }
 
-    left: 22,
-    right: 22,
-    bottom: layout.nativeBroadcastBottom,
+    setFinishing(true);
 
-    alignItems: "center",
-  },
+    try {
+      const liveSessionId =
+        liveSessionIdRef.current;
 
-  location: {
-    flexDirection: "row",
-    alignItems: "center",
+      if (
+        liveSessionId &&
+        !finalizedRef.current
+      ) {
+        finalizedRef.current =
+          true;
 
-    gap: 5,
+        await markLiveAsEnded(
+          liveSessionId,
+          authToken,
+        );
 
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+        liveSessionIdRef.current =
+          null;
+      }
 
-    borderRadius: 10,
+      await AudioSession.stopAudioSession();
 
-    backgroundColor: colors.overlayChrome,
-  },
+      onFinish();
+    } catch (
+      caughtError
+    ) {
+      finalizedRef.current =
+        false;
 
-  locationText: {
-    color: colors.text,
+      console.error(
+        "Allive native finish error:",
+        caughtError,
+      );
 
-    fontSize: 12,
-    fontWeight: "700",
-  },
+      setError(
+        caughtError instanceof
+          Error
+          ? caughtError.message
+          : "No se ha podido finalizar el LIVE.",
+      );
 
-  status: {
-    marginTop: 10,
+      setFinishing(false);
+    }
+  }
 
-    flexDirection: "row",
-    alignItems: "center",
+  if (error) {
+    return (
+      <View
+        style={
+          styles.centered
+        }
+      >
+        <Ionicons
+          name="warning-outline"
+          size={34}
+          color={
+            colors.dangerText
+          }
+        />
 
-    gap: 6,
-  },
+        <Text
+          style={
+            styles.errorTitle
+          }
+        >
+          No se pudo iniciar el LIVE
+        </Text>
 
-  statusDot: {
-    width: controls.badgeDotSize,
-    height: controls.badgeDotSize,
+        <Text
+          style={
+            styles.errorText
+          }
+        >
+          {error}
+        </Text>
 
-    borderRadius: 4,
+        <Pressable
+          style={
+            styles.backButton
+          }
+          onPress={onFinish}
+        >
+          <Text
+            style={
+              styles.backButtonText
+            }
+          >
+            VOLVER
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
 
-    backgroundColor: colors.live,
-  },
+  if (!connection) {
+    return (
+      <View
+        style={
+          styles.centered
+        }
+      >
+        <ActivityIndicator
+          color={
+            colors.live
+          }
+        />
 
-  statusText: {
-    color: colors.textOnOverlaySecondary,
+        <Text
+          style={
+            styles.connectingText
+          }
+        >
+          Preparando LIVE...
+        </Text>
+      </View>
+    );
+  }
 
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  return (
+    <LiveKitRoom
+      serverUrl={
+        connection.serverUrl
+      }
+      token={
+        connection.participantToken
+      }
+      connect
+      audio
+      video={{
+        facingMode:
+          facing === "front"
+            ? "user"
+            : "environment",
+      }}
+      options={{
+        adaptiveStream: {
+          pixelDensity:
+            "screen",
+        },
 
-  finishButton: {
-    height: 54,
+        dynacast: true,
+      }}
+      onConnected={() => {
+        console.log(
+          "Allive native broadcaster connected:",
+          connection.roomName,
+        );
+      }}
+      onError={(
+        roomError,
+      ) => {
+        console.error(
+          "Allive native LiveKit error:",
+          roomError,
+        );
 
-    marginTop: 22,
+        setError(
+          roomError.message ||
+            "Error conectando con LiveKit.",
+        );
+      }}
+      onMediaDeviceFailure={(
+        failure,
+      ) => {
+        console.error(
+          "Allive native media device failure:",
+          failure,
+        );
 
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+        setError(
+          "No se ha podido acceder correctamente a la cámara o al micrófono.",
+        );
+      }}
+    >
+      <NativeBroadcastRoom
+        seconds={seconds}
+        onFinish={() =>
+          void finishLive()
+        }
+      />
 
-    gap: 9,
+      {finishing ? (
+        <View
+          style={
+            styles.finishingOverlay
+          }
+        >
+          <ActivityIndicator
+            color={
+              colors.text
+            }
+          />
 
-    paddingHorizontal: 24,
+          <Text
+            style={
+              styles.finishingText
+            }
+          >
+            Finalizando LIVE...
+          </Text>
+        </View>
+      ) : null}
+    </LiveKitRoom>
+  );
+}
 
-    borderRadius: 18,
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
 
-    backgroundColor: colors.overlayRaisedStrong,
+      backgroundColor:
+        colors.pureBlack,
+    },
 
-    borderWidth: 1,
-    borderColor: colors.borderOnOverlaySubtle,
-  },
+    video: {
+      ...StyleSheet.absoluteFill,
+    },
 
-  stopIcon: {
-    width: controls.stopIconSize,
-    height: controls.stopIconSize,
+    cameraWaiting: {
+      ...StyleSheet.absoluteFill,
 
-    borderRadius: 3,
+      alignItems: "center",
+      justifyContent: "center",
 
-    backgroundColor: colors.live,
-  },
+      gap: 10,
 
-  finishText: {
-    color: colors.text,
+      backgroundColor:
+        colors.cameraBackground,
+    },
 
-    fontSize: typography.caption.fontSize + 2,
-    fontWeight: "900",
-  },
-});
+    cameraWaitingText: {
+      color:
+        colors.textSecondary,
+
+      fontSize: 12,
+    },
+
+    shade: {
+      ...StyleSheet.absoluteFill,
+
+      backgroundColor:
+        colors.cameraShade,
+
+      pointerEvents: "none",
+    },
+
+    top: {
+      position: "absolute",
+
+      top:
+        layout.overlayTop,
+
+      left:
+        layout.overlayHorizontal,
+
+      right:
+        layout.overlayHorizontal,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 8,
+    },
+
+    liveBadge: {
+      height:
+        controls.liveBadgeHeight,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 6,
+
+      paddingHorizontal: 11,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        colors.live,
+    },
+
+    liveDot: {
+      width:
+        controls.badgeDotSize,
+
+      height:
+        controls.badgeDotSize,
+
+      borderRadius: 4,
+
+      backgroundColor:
+        colors.text,
+    },
+
+    liveText: {
+      color: colors.text,
+
+      fontSize: 11,
+
+      fontWeight: "900",
+    },
+
+    durationBadge: {
+      height:
+        controls.liveBadgeHeight,
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 11,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        colors.overlayStrong,
+    },
+
+    duration: {
+      color: colors.text,
+
+      fontSize: 12,
+
+      fontWeight: "800",
+    },
+
+    viewerBadge: {
+      height:
+        controls.liveBadgeHeight,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 5,
+
+      paddingHorizontal: 11,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        colors.overlayStrong,
+    },
+
+    viewerText: {
+      color: colors.text,
+
+      fontSize: 12,
+
+      fontWeight: "700",
+    },
+
+    bottom: {
+      position: "absolute",
+
+      left: 22,
+      right: 22,
+
+      bottom:
+        layout.nativeBroadcastBottom,
+
+      alignItems: "center",
+    },
+
+    location: {
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 5,
+
+      paddingHorizontal: 12,
+
+      paddingVertical: 8,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        colors.overlayChrome,
+    },
+
+    locationText: {
+      color: colors.text,
+
+      fontSize: 12,
+
+      fontWeight: "700",
+    },
+
+    status: {
+      marginTop: 10,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 6,
+    },
+
+    statusDot: {
+      width:
+        controls.badgeDotSize,
+
+      height:
+        controls.badgeDotSize,
+
+      borderRadius: 4,
+
+      backgroundColor:
+        colors.live,
+    },
+
+    statusText: {
+      color:
+        colors.textOnOverlaySecondary,
+
+      fontSize: 11,
+
+      fontWeight: "600",
+    },
+
+    finishButton: {
+      height: 54,
+
+      marginTop: 22,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+
+      gap: 9,
+
+      paddingHorizontal: 24,
+
+      borderRadius: 18,
+
+      backgroundColor:
+        colors.overlayRaisedStrong,
+
+      borderWidth: 1,
+
+      borderColor:
+        colors.borderOnOverlaySubtle,
+    },
+
+    stopIcon: {
+      width:
+        controls.stopIconSize,
+
+      height:
+        controls.stopIconSize,
+
+      borderRadius: 3,
+
+      backgroundColor:
+        colors.live,
+    },
+
+    finishText: {
+      color: colors.text,
+
+      fontSize:
+        typography.caption
+          .fontSize + 2,
+
+      fontWeight: "900",
+    },
+
+    centered: {
+      flex: 1,
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 32,
+
+      backgroundColor:
+        colors.background,
+    },
+
+    connectingText: {
+      marginTop: 12,
+
+      color:
+        colors.textSecondary,
+
+      fontSize: 13,
+    },
+
+    errorTitle: {
+      marginTop: 14,
+
+      color: colors.text,
+
+      fontSize: 18,
+
+      fontWeight: "900",
+
+      textAlign: "center",
+    },
+
+    errorText: {
+      marginTop: 8,
+
+      color:
+        colors.textSecondary,
+
+      fontSize: 12,
+
+      lineHeight: 18,
+
+      textAlign: "center",
+    },
+
+    backButton: {
+      height: 46,
+
+      marginTop: 22,
+
+      paddingHorizontal: 22,
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+
+      borderRadius: 14,
+
+      backgroundColor:
+        colors.surfaceElevated,
+    },
+
+    backButtonText: {
+      color: colors.text,
+
+      fontSize: 12,
+
+      fontWeight: "900",
+    },
+
+    finishingOverlay: {
+      ...StyleSheet.absoluteFill,
+
+      zIndex: 100,
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+
+      gap: 10,
+
+      backgroundColor:
+        colors.overlayStrong,
+    },
+
+    finishingText: {
+      color: colors.text,
+
+      fontSize: 12,
+
+      fontWeight: "700",
+    },
+  });

@@ -1,37 +1,125 @@
 // src/screens/EmitScreen.native.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
 import {
   CameraType,
   CameraView,
   useCameraPermissions,
 } from "expo-camera";
-import { useState } from "react";
+
+import {
+  useState,
+} from "react";
+
 import {
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { LiveBroadcastScreen } from "./LiveBroadcastScreen";
 
-import { colors, controls, layout, spacing } from "../styles";
+import {
+  useAuth,
+} from "../auth/AuthContext";
+
+import {
+  colors,
+  controls,
+  layout,
+  spacing,
+} from "../styles";
+
+import {
+  LiveBroadcastScreen,
+} from "./LiveBroadcastScreen";
 
 export function EmitScreen() {
-  const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>("back");
-  const [isLive, setIsLive] = useState(false);
+  const {
+    token,
+    isAuthenticated,
+  } = useAuth();
+
+  const [
+    permission,
+    requestPermission,
+  ] = useCameraPermissions();
+
+  const [
+    facing,
+    setFacing,
+  ] = useState<CameraType>(
+    "back",
+  );
+
+  const [
+    isLive,
+    setIsLive,
+  ] = useState(false);
 
   function toggleCamera() {
     setFacing((current) =>
-      current === "back" ? "front" : "back"
+      current === "back"
+        ? "front"
+        : "back",
+    );
+  }
+
+  if (!isAuthenticated || !token) {
+    return (
+      <View
+        style={
+          styles.permissionScreen
+        }
+      >
+        <View
+          style={
+            styles.permissionIcon
+          }
+        >
+          <Ionicons
+            name="person-outline"
+            size={34}
+            color={colors.text}
+          />
+        </View>
+
+        <Text
+          style={
+            styles.permissionTitle
+          }
+        >
+          Inicia sesión para emitir
+        </Text>
+
+        <Text
+          style={
+            styles.permissionText
+          }
+        >
+          Los invitados pueden ver
+          emisiones, pero necesitas una
+          cuenta de Allive para iniciar un
+          LIVE.
+        </Text>
+      </View>
     );
   }
 
   if (!permission) {
     return (
-      <View style={styles.permissionScreen}>
-        <Text style={styles.permissionText}>
+      <View
+        style={
+          styles.permissionScreen
+        }
+      >
+        <Text
+          style={
+            styles.permissionText
+          }
+        >
           Preparando cámara...
         </Text>
       </View>
@@ -40,8 +128,16 @@ export function EmitScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionScreen}>
-        <View style={styles.permissionIcon}>
+      <View
+        style={
+          styles.permissionScreen
+        }
+      >
+        <View
+          style={
+            styles.permissionIcon
+          }
+        >
           <Ionicons
             name="videocam-outline"
             size={34}
@@ -49,19 +145,36 @@ export function EmitScreen() {
           />
         </View>
 
-        <Text style={styles.permissionTitle}>
+        <Text
+          style={
+            styles.permissionTitle
+          }
+        >
           Allive necesita tu cámara
         </Text>
 
-        <Text style={styles.permissionText}>
-          La cámara es necesaria para poder emitir en directo.
+        <Text
+          style={
+            styles.permissionText
+          }
+        >
+          La cámara es necesaria para
+          poder emitir en directo.
         </Text>
 
         <Pressable
-          style={styles.permissionButton}
-          onPress={requestPermission}
+          style={
+            styles.permissionButton
+          }
+          onPress={
+            requestPermission
+          }
         >
-          <Text style={styles.permissionButtonText}>
+          <Text
+            style={
+              styles.permissionButtonText
+            }
+          >
             PERMITIR CÁMARA
           </Text>
         </Pressable>
@@ -70,25 +183,38 @@ export function EmitScreen() {
   }
 
   if (isLive) {
-  return (
-    <LiveBroadcastScreen
-      facing={facing}
-      onFinish={() => setIsLive(false)}
-    />
-  );
-}
+    return (
+      <LiveBroadcastScreen
+        facing={facing}
+        authToken={token}
+        onFinish={() =>
+          setIsLive(false)
+        }
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
       <CameraView
-        style={StyleSheet.absoluteFill}
+        style={
+          StyleSheet.absoluteFill
+        }
         facing={facing}
       />
 
-      <View style={styles.cameraShade} />
+      <View
+        style={
+          styles.cameraShade
+        }
+      />
 
       <View style={styles.top}>
-        <Pressable style={styles.circleButton}>
+        <Pressable
+          style={
+            styles.circleButton
+          }
+        >
           <Ionicons
             name="close"
             size={25}
@@ -96,13 +222,30 @@ export function EmitScreen() {
           />
         </Pressable>
 
-        <View style={styles.readyBadge}>
-          <View style={styles.readyDot} />
-          <Text style={styles.readyText}>LISTO</Text>
+        <View
+          style={
+            styles.readyBadge
+          }
+        >
+          <View
+            style={
+              styles.readyDot
+            }
+          />
+
+          <Text
+            style={
+              styles.readyText
+            }
+          >
+            LISTO
+          </Text>
         </View>
 
         <Pressable
-          style={styles.circleButton}
+          style={
+            styles.circleButton
+          }
           onPress={toggleCamera}
         >
           <Ionicons
@@ -113,260 +256,329 @@ export function EmitScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.bottom}>
-        <View style={styles.context}>
-          <View style={styles.locationRow}>
+      <View
+        style={
+          styles.bottom
+        }
+      >
+        <View
+          style={
+            styles.context
+          }
+        >
+          <View
+            style={
+              styles.locationRow
+            }
+          >
             <Ionicons
               name="location"
               size={17}
-              color={colors.text}
+              color={
+                colors.text
+              }
             />
 
-            <Text style={styles.location}>
+            <Text
+              style={
+                styles.location
+              }
+            >
               Ubicación actual
             </Text>
           </View>
 
-          <Text style={styles.contextText}>
-            Allive detectará dónde estás y qué está pasando cerca.
+          <Text
+            style={
+              styles.contextText
+            }
+          >
+            Allive detectará dónde estás y
+            qué está pasando cerca.
           </Text>
         </View>
 
         <Pressable
-            style={styles.goLiveButton}
-            onPress={() => setIsLive(true)}
-            >
-          <View style={styles.goLiveDot} />
+          style={
+            styles.goLiveButton
+          }
+          onPress={() =>
+            setIsLive(true)
+          }
+        >
+          <View
+            style={
+              styles.goLiveDot
+            }
+          />
 
-          <Text style={styles.goLiveText}>
+          <Text
+            style={
+              styles.goLiveText
+            }
+          >
             EMPEZAR LIVE
           </Text>
         </Pressable>
 
         <Text style={styles.hint}>
-          Estarás en directo inmediatamente
+          Estarás en directo
+          inmediatamente
         </Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.cameraBackground,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
 
-  cameraShade: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.cameraShade,
-  },
+      backgroundColor:
+        colors.cameraBackground,
+    },
 
-  permissionScreen: {
-    flex: 1,
+    cameraShade: {
+      ...StyleSheet.absoluteFill,
 
-    alignItems: "center",
-    justifyContent: "center",
+      backgroundColor:
+        colors.cameraShade,
+    },
 
-    paddingHorizontal: spacing.xxl,
+    permissionScreen: {
+      flex: 1,
 
-    backgroundColor: colors.background,
-  },
+      alignItems: "center",
+      justifyContent: "center",
 
-  permissionIcon: {
-    width: 68,
-    height: 68,
+      paddingHorizontal:
+        spacing.xxl,
 
-    borderRadius: 34,
+      backgroundColor:
+        colors.background,
+    },
 
-    alignItems: "center",
-    justifyContent: "center",
+    permissionIcon: {
+      width: 68,
+      height: 68,
 
-    marginBottom: 18,
+      borderRadius: 34,
 
-    backgroundColor: colors.surfaceElevated,
-  },
+      alignItems: "center",
+      justifyContent: "center",
 
-  permissionTitle: {
-    color: colors.text,
+      marginBottom: 18,
 
-    fontSize: 20,
-    fontWeight: "900",
+      backgroundColor:
+        colors.surfaceElevated,
+    },
 
-    textAlign: "center",
-  },
+    permissionTitle: {
+      color: colors.text,
 
-  permissionText: {
-    marginTop: spacing.xs,
+      fontSize: 20,
+      fontWeight: "900",
 
-    color: colors.textSecondary,
+      textAlign: "center",
+    },
 
-    fontSize: 13,
-    lineHeight: 19,
+    permissionText: {
+      marginTop: spacing.xs,
 
-    textAlign: "center",
-  },
+      color:
+        colors.textSecondary,
 
-  permissionButton: {
-    height: 50,
+      fontSize: 13,
+      lineHeight: 19,
 
-    marginTop: spacing.xl,
+      textAlign: "center",
+    },
 
-    paddingHorizontal: 24,
+    permissionButton: {
+      height: 50,
 
-    borderRadius: 16,
+      marginTop: spacing.xl,
 
-    alignItems: "center",
-    justifyContent: "center",
+      paddingHorizontal: 24,
 
-    backgroundColor: colors.live,
-  },
+      borderRadius: 16,
 
-  permissionButtonText: {
-    color: colors.text,
+      alignItems: "center",
+      justifyContent: "center",
 
-    fontSize: 12,
-    fontWeight: "900",
-  },
+      backgroundColor:
+        colors.live,
+    },
 
-  top: {
-    position: "absolute",
+    permissionButtonText: {
+      color: colors.text,
 
-    top: layout.overlayTop,
-    left: layout.overlayHorizontal,
-    right: layout.overlayHorizontal,
+      fontSize: 12,
+      fontWeight: "900",
+    },
 
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+    top: {
+      position: "absolute",
 
-  circleButton: {
-    width: controls.circleButtonSize,
-    height: controls.circleButtonSize,
+      top: layout.overlayTop,
+      left:
+        layout.overlayHorizontal,
+      right:
+        layout.overlayHorizontal,
 
-    borderRadius: controls.circleButtonSize / 2,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
 
-    alignItems: "center",
-    justifyContent: "center",
+    circleButton: {
+      width:
+        controls.circleButtonSize,
 
-    backgroundColor: colors.overlayChrome,
-  },
+      height:
+        controls.circleButtonSize,
 
-  readyBadge: {
-    height: controls.liveBadgeHeight,
+      borderRadius:
+        controls.circleButtonSize /
+        2,
 
-    flexDirection: "row",
-    alignItems: "center",
+      alignItems: "center",
+      justifyContent: "center",
 
-    gap: 6,
+      backgroundColor:
+        colors.overlayChrome,
+    },
 
-    paddingHorizontal: 11,
+    readyBadge: {
+      height:
+        controls.liveBadgeHeight,
 
-    borderRadius: 10,
+      flexDirection: "row",
+      alignItems: "center",
 
-    backgroundColor: colors.overlayChrome,
-  },
+      gap: 6,
 
-  readyDot: {
-    width: controls.badgeDotSize,
-    height: controls.badgeDotSize,
+      paddingHorizontal: 11,
 
-    borderRadius: 4,
+      borderRadius: 10,
 
-    backgroundColor: colors.live,
-  },
+      backgroundColor:
+        colors.overlayChrome,
+    },
 
-  readyText: {
-    color: colors.text,
+    readyDot: {
+      width:
+        controls.badgeDotSize,
 
-    fontSize: 11,
-    fontWeight: "800",
-  },
+      height:
+        controls.badgeDotSize,
 
-  bottom: {
-    position: "absolute",
+      borderRadius: 4,
 
-    left: 22,
-    right: 22,
-    bottom: layout.nativeBroadcastBottom,
+      backgroundColor:
+        colors.live,
+    },
 
-    alignItems: "center",
-  },
+    readyText: {
+      color: colors.text,
 
-  context: {
-    width: "100%",
+      fontSize: 11,
+      fontWeight: "800",
+    },
 
-    marginBottom: 22,
+    bottom: {
+      position: "absolute",
 
-    padding: 14,
+      left: 22,
+      right: 22,
 
-    borderRadius: 14,
+      bottom:
+        layout.nativeBroadcastBottom,
 
-    backgroundColor: colors.overlayChrome,
-  },
+      alignItems: "center",
+    },
 
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    context: {
+      width: "100%",
 
-    gap: 5,
-  },
+      marginBottom: 22,
 
-  location: {
-    color: colors.text,
+      padding: 14,
 
-    fontSize: 15,
-    fontWeight: "800",
-  },
+      borderRadius: 14,
 
-  contextText: {
-    marginTop: 5,
+      backgroundColor:
+        colors.overlayChrome,
+    },
 
-    color: colors.textOnOverlayMuted,
+    locationRow: {
+      flexDirection: "row",
+      alignItems: "center",
 
-    fontSize: 12,
-    lineHeight: 17,
-  },
+      gap: 5,
+    },
 
-  goLiveButton: {
-    height: controls.primaryButtonHeight,
+    location: {
+      color: colors.text,
 
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+      fontSize: 15,
+      fontWeight: "800",
+    },
 
-    gap: 9,
+    contextText: {
+      marginTop: 5,
 
-    paddingHorizontal: 28,
+      color:
+        colors.textOnOverlayMuted,
 
-    borderRadius: 18,
+      fontSize: 12,
+      lineHeight: 17,
+    },
 
-    backgroundColor: colors.live,
-  },
+    goLiveButton: {
+      height:
+        controls.primaryButtonHeight,
 
-  goLiveDot: {
-    width: 10,
-    height: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
 
-    borderRadius: 5,
+      gap: 9,
 
-    backgroundColor: colors.text,
-  },
+      paddingHorizontal: 28,
 
-  goLiveText: {
-    color: colors.text,
+      borderRadius: 18,
 
-    fontSize: 15,
-    fontWeight: "900",
-  },
+      backgroundColor:
+        colors.live,
+    },
 
-  hint: {
-    marginTop: 9,
+    goLiveDot: {
+      width: 10,
+      height: 10,
 
-    color: colors.textOnOverlayPlaceholder,
+      borderRadius: 5,
 
-    fontSize: 10,
-    fontWeight: "500",
-  },
-});
+      backgroundColor:
+        colors.text,
+    },
+
+    goLiveText: {
+      color: colors.text,
+
+      fontSize: 15,
+      fontWeight: "900",
+    },
+
+    hint: {
+      marginTop: 9,
+
+      color:
+        colors.textOnOverlayPlaceholder,
+
+      fontSize: 10,
+      fontWeight: "500",
+    },
+  });
