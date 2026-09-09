@@ -32,94 +32,72 @@ export async function reconcileActiveLives() {
     return [];
   }
 
-
-
   let liveKitRooms;
 
   try {
     liveKitRooms = await roomService.listRooms();
   } catch (error) {
-    console.error("No se pudieron consultar las salas de LiveKit:", error);
+    console.error(
+      "No se pudieron consultar las salas de LiveKit:",
+      error,
+    );
 
     return dbLives;
   }
 
-  console.log(
-    "LiveKit tiene estas salas:",
-    liveKitRooms.map((room) => room.name)
+  const existingRoomNames = new Set(
+    liveKitRooms.map((room) => room.name),
   );
 
-  const existingRoomNames = new Set(liveKitRooms.map((room) => room.name));
-
-  const staleIds = new Set<string>();
+  const activeLives = [];
 
   for (const live of dbLives) {
+    /*
+     * Una lectura de Now nunca debe cambiar el estado
+     * persistente de una emisión.
+     *
+     * LiveKit puede tardar brevemente en mostrar una sala
+     * o un participante durante conexiones/reconexiones.
+     */
     if (!existingRoomNames.has(live.roomName)) {
-      console.log(`FANTASMA: ${live.roomName} - la sala no existe`);
+      console.log(
+        `LIVE temporalmente no visible en LiveKit: ${live.roomName}`,
+      );
 
-      staleIds.add(live.id);
       continue;
     }
 
     try {
-      const participants = await roomService.listParticipants(live.roomName);
-
-      console.log(
-        `Participantes ${live.roomName}:`,
-        participants.map((participant) => ({
-          identity: participant.identity,
-
-          metadata: participant.metadata,
-
-          role: getParticipantRole(participant.metadata, participant.identity),
-        }))
+      const participants = await roomService.listParticipants(
+        live.roomName,
       );
 
       const hasBroadcaster = participants.some(
         (participant) =>
-          getParticipantRole(participant.metadata, participant.identity) ===
-          "broadcaster"
+          getParticipantRole(
+            participant.metadata,
+            participant.identity,
+          ) === "broadcaster",
       );
 
       if (!hasBroadcaster) {
-        console.log(`FANTASMA: ${live.roomName} - no tiene broadcaster`);
+        console.log(
+          `LIVE sin broadcaster visible temporalmente: ${live.roomName}`,
+        );
 
-        staleIds.add(live.id);
-      } else {
-        console.log(`LIVE REAL: ${live.roomName}`);
+        continue;
       }
-    } catch (error) {
-      console.log(`FANTASMA: ${live.roomName} - la sala desapareci\u00f3`);
 
-      staleIds.add(live.id);
+      activeLives.push(live);
+    } catch (error) {
+      console.warn(
+        `No se pudo comprobar temporalmente el LIVE ${live.roomName}:`,
+        error,
+      );
     }
   }
 
-  if (staleIds.size > 0) {
-    const ids = Array.from(staleIds);
-
-    const result = await prisma.liveSession.updateMany({
-      where: {
-        id: {
-          in: ids,
-        },
-
-        status: "LIVE",
-      },
-
-      data: {
-        status: "ENDED",
-        endedAt: new Date(),
-      },
-    });
-
-    console.log(`Allive cerr\u00f3 ${result.count} LIVE fantasma`);
-  }
-
-  console.log("===============================");
-  console.log("");
-
-  return dbLives.filter((live) => !staleIds.has(live.id));
+  return activeLives;
 }
 
 export async function cleanupDevLives() {
@@ -149,7 +127,10 @@ export async function cleanupDevLives() {
       }
     }
   } catch (error) {
-    console.warn("No se pudieron limpiar las salas LiveKit:", error);
+    console.warn(
+      "No se pudieron limpiar las salas LiveKit:",
+      error,
+    );
   }
 
   return {
@@ -201,9 +182,15 @@ export async function createLiveSession(
 
 export async function updateLiveSession(
   id: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
 ) {
-  const { title, eventName, latitude, longitude, placeName } = body;
+  const {
+    title,
+    eventName,
+    latitude,
+    longitude,
+    placeName,
+  } = body;
 
   return prisma.liveSession.update({
     where: {
@@ -220,11 +207,13 @@ export async function updateLiveSession(
       }),
 
       ...(latitude !== undefined && {
-        latitude: typeof latitude === "number" ? latitude : null,
+        latitude:
+          typeof latitude === "number" ? latitude : null,
       }),
 
       ...(longitude !== undefined && {
-        longitude: typeof longitude === "number" ? longitude : null,
+        longitude:
+          typeof longitude === "number" ? longitude : null,
       }),
 
       ...(placeName !== undefined && {
@@ -263,7 +252,10 @@ export async function endLiveSession(id: string) {
   try {
     await roomService.deleteRoom(existingLive.roomName);
   } catch {
-    console.warn("Sala LiveKit ya cerrada:", existingLive.roomName);
+    console.warn(
+      "Sala LiveKit ya cerrada:",
+      existingLive.roomName,
+    );
   }
 
   return live;

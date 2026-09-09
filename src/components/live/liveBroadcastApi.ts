@@ -1,7 +1,7 @@
 // src/components/live/liveBroadcastApi.ts
 
-import type { BroadcastLocation } from "./broadcastTypes";
 import { API_URL } from "../../api/apiConfig";
+import type { BroadcastLocation } from "./broadcastTypes";
 import type { LiveKitTokenResponse } from "./types";
 
 type LiveMetadataPayload = {
@@ -45,14 +45,14 @@ export async function getBroadcasterToken(
 
     throw new Error(
       responseBody?.error ??
-        `No se pudo obtener el token de emisi\u00f3n (${response.status})`
+        `No se pudo obtener el token de emisión (${response.status})`,
     );
   }
 
   const tokenData = (await response.json()) as LiveKitTokenResponse;
 
   if (!tokenData.serverUrl || !tokenData.participantToken) {
-    throw new Error("La API devolvi\u00f3 un token LiveKit inv\u00e1lido.");
+    throw new Error("La API devolvió un token LiveKit inválido.");
   }
 
   return tokenData;
@@ -77,14 +77,14 @@ export async function registerLiveInBackend(
 
   if (!response.ok) {
     throw new Error(
-      `No se pudo registrar el LIVE en Allive (${response.status})`
+      `No se pudo registrar el LIVE en Allive (${response.status})`,
     );
   }
 
   const liveSession = await response.json();
 
   if (!liveSession?.id) {
-    throw new Error("La API no devolvi\u00f3 el ID del LIVE.");
+    throw new Error("La API no devolvió el ID del LIVE.");
   }
 
   console.log("Allive LIVE registrado:", liveSession);
@@ -94,31 +94,48 @@ export async function registerLiveInBackend(
 
 export async function updateLiveMetadata(
   liveSessionId: string,
-  metadata: LiveMetadataPayload
+  metadata: LiveMetadataPayload,
+  authToken: string,
 ) {
   const response = await fetch(`${API_URL}/api/lives/${liveSessionId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify(buildLiveMetadataBody(metadata)),
   });
 
   if (!response.ok) {
+    const responseBody = await response.json().catch(() => null);
+
     throw new Error(
-      `No se pudieron actualizar los datos del LIVE (${response.status})`
+      responseBody?.error ??
+        `No se pudieron actualizar los datos del LIVE (${response.status})`,
     );
   }
 }
 
-export async function markLiveAsEnded(liveSessionId: string) {
-  const response = await fetch(`${API_URL}/api/lives/${liveSessionId}/end`, {
-    method: "PATCH",
-  });
+export async function markLiveAsEnded(
+  liveSessionId: string,
+  authToken: string,
+) {
+  const response = await fetch(
+    `${API_URL}/api/lives/${liveSessionId}/end`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    },
+  );
 
   if (!response.ok) {
+    const responseBody = await response.json().catch(() => null);
+
     throw new Error(
-      `No se pudo finalizar el LIVE en Allive (${response.status})`
+      responseBody?.error ??
+        `No se pudo finalizar el LIVE en Allive (${response.status})`,
     );
   }
 }

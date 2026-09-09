@@ -38,7 +38,9 @@ export function EmitScreen() {
   const previewVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveSessionIdRef = useRef<string | null>(null);
+
   const { token } = useAuth();
+
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -51,6 +53,7 @@ export function EmitScreen() {
   const [editingEvent, setEditingEvent] = useState(false);
 
   const { location, locationStatus } = useBroadcastLocation();
+
   const {
     viewers,
     viewerDelta,
@@ -67,7 +70,7 @@ export function EmitScreen() {
         setCameraError(null);
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error("El navegador no permite acceder a la c\u00e1mara.");
+          throw new Error("El navegador no permite acceder a la cámara.");
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -85,7 +88,7 @@ export function EmitScreen() {
         if (localVideoRef.current) {
           previewVideoElementRef.current = attachPreviewStream(
             localVideoRef.current,
-            stream
+            stream,
           );
         }
 
@@ -94,7 +97,7 @@ export function EmitScreen() {
         console.error("Error preparando preview:", caughtError);
 
         setCameraError(
-          "No se ha podido acceder a la c\u00e1mara o al micr\u00f3fono."
+          "No se ha podido acceder a la cámara o al micrófono.",
         );
       }
     }
@@ -113,7 +116,7 @@ export function EmitScreen() {
   function clearPreview() {
     stopPreviewStream(
       previewStreamRef.current,
-      previewVideoElementRef.current
+      previewVideoElementRef.current,
     );
 
     previewStreamRef.current = null;
@@ -142,7 +145,7 @@ export function EmitScreen() {
       if (localVideoRef.current) {
         previewVideoElementRef.current = attachPreviewStream(
           localVideoRef.current,
-          stream
+          stream,
         );
       }
 
@@ -152,38 +155,61 @@ export function EmitScreen() {
       console.error("No se pudo restaurar preview:", caughtError);
 
       setCameraReady(false);
-      setCameraError("No se ha podido volver a activar la c\u00e1mara.");
+      setCameraError("No se ha podido volver a activar la cámara.");
     }
   }
 
   async function endRegisteredLive() {
     const liveSessionId = liveSessionIdRef.current;
+    const authToken = token;
 
     if (!liveSessionId) {
       return;
     }
 
-    await markLiveAsEnded(liveSessionId);
+    if (!authToken) {
+      throw new Error("La sesión de usuario ya no está disponible.");
+    }
+
+    await markLiveAsEnded(liveSessionId, authToken);
+
     liveSessionIdRef.current = null;
   }
 
-  async function saveLiveMetadata(nextTitle: string, nextEventName: string) {
+  async function saveLiveMetadata(
+    nextTitle: string,
+    nextEventName: string,
+  ) {
     const liveSessionId = liveSessionIdRef.current;
+    const authToken = token;
 
     if (!liveSessionId) {
+      return;
+    }
+
+    if (!authToken) {
+      setError("La sesión de usuario ya no está disponible.");
       return;
     }
 
     try {
-      await updateLiveMetadata(liveSessionId, {
-        title: nextTitle,
-        eventName: nextEventName,
-        location,
-      });
+      await updateLiveMetadata(
+        liveSessionId,
+        {
+          title: nextTitle,
+          eventName: nextEventName,
+          location,
+        },
+        authToken,
+      );
     } catch (caughtError) {
       console.error(caughtError);
 
-      setError("No se pudieron guardar los cambios del LIVE.");
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "No se pudieron guardar los cambios del LIVE.",
+      );
     }
   }
 
@@ -218,7 +244,7 @@ export function EmitScreen() {
 
       /*
        * Liberamos Camo/getUserMedia antes de
-       * pedir la camara desde LiveKit.
+       * pedir la cámara desde LiveKit.
        */
       clearPreview();
       setCameraReady(false);
@@ -243,66 +269,80 @@ export function EmitScreen() {
 
       await room.connect(serverUrl, participantToken);
 
-      console.log("Allive broadcaster conectado a LiveKit:", roomName);
+      console.log(
+        "Allive broadcaster conectado a LiveKit:",
+        roomName,
+      );
 
       /*
-       * Volvemos al mecanismo que ya habiamos
+       * Volvemos al mecanismo que ya habíamos
        * probado correctamente.
        */
       await room.localParticipant.setCameraEnabled(true);
       await room.localParticipant.setMicrophoneEnabled(true);
 
       console.log(
-        "Allive c\u00e1mara y micr\u00f3fono publicados:",
-        roomName
+        "Allive cámara y micrófono publicados:",
+        roomName,
       );
 
       if (!localVideoRef.current) {
-        throw new Error("No se ha podido preparar el preview del LIVE.");
+        throw new Error(
+          "No se ha podido preparar el preview del LIVE.",
+        );
       }
 
       liveVideoElementRef.current = attachLiveCamera(
         room,
-        localVideoRef.current
+        localVideoRef.current,
       );
 
       /*
        * Solo registramos en Neon cuando LiveKit
-       * ya esta conectado y publicando.
+       * ya está conectado y publicando.
        */
-liveSessionIdRef.current = await registerLiveInBackend(
-  roomName,
-  {
-    title,
-    eventName,
-    location,
-  },
-  authToken,
-);
+      liveSessionIdRef.current = await registerLiveInBackend(
+        roomName,
+        {
+          title,
+          eventName,
+          location,
+        },
+        authToken,
+      );
 
       updateViewerCount(room);
 
       setCameraReady(true);
       setIsLive(true);
 
-      console.log("Allive LIVE iniciado correctamente:", roomName);
+      console.log(
+        "Allive LIVE iniciado correctamente:",
+        roomName,
+      );
     } catch (caughtError) {
-      console.error("Error iniciando Allive LIVE:", caughtError);
+      console.error(
+        "Error iniciando Allive LIVE:",
+        caughtError,
+      );
 
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "No se ha podido iniciar el LIVE."
+          : "No se ha podido iniciar el LIVE.",
       );
 
       /*
        * Si llegamos a registrar en Neon antes
-       * de algun fallo posterior, lo limpiamos.
+       * de algún fallo posterior, lo limpiamos.
        */
       try {
         await endRegisteredLive();
       } catch (backendError) {
-        console.error("No se pudo limpiar el LIVE del backend:", backendError);
+        console.error(
+          "No se pudo limpiar el LIVE del backend:",
+          backendError,
+        );
       }
 
       if (room) {
@@ -344,7 +384,7 @@ liveSessionIdRef.current = await registerLiveInBackend(
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "No se pudo cerrar el LIVE en Allive."
+          : "No se pudo cerrar el LIVE en Allive.",
       );
     }
 
@@ -354,8 +394,8 @@ liveSessionIdRef.current = await registerLiveInBackend(
         await room.localParticipant.setMicrophoneEnabled(false);
       } catch (caughtError) {
         console.error(
-          "Error desactivando c\u00e1mara/micr\u00f3fono:",
-          caughtError
+          "Error desactivando cámara/micrófono:",
+          caughtError,
         );
       }
 
@@ -374,7 +414,7 @@ liveSessionIdRef.current = await registerLiveInBackend(
 
     /*
      * Al terminar volvemos al estado LISTO:
-     * camara visible, pero sin emitir.
+     * cámara visible, pero sin emitir.
      */
     await restorePreview();
   }
