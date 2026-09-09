@@ -24,7 +24,7 @@ export function AuthBrand({
   let markSize = 52;
   let coreSize = 18;
   let logoSize = 28;
-  let bottomMargin = spacing.xl;
+  let bottomMargin: number = spacing.xl;
 
   if (compact) {
     markSize = 38;
