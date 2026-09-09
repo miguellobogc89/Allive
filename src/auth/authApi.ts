@@ -1,8 +1,7 @@
 // src/auth/authApi.ts
 
+import { API_URL } from "../api/apiConfig";
 import type { AuthSession, AuthUser } from "./types";
-
-const API_URL = "http://localhost:3001";
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json();

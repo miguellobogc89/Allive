@@ -11,6 +11,13 @@ import {
 } from "react-native";
 
 import { useAuth } from "../auth/AuthContext";
+import {
+  colors,
+  controls,
+  radius,
+  spacing,
+  typography,
+} from "../styles";
 
 type Mode = "login" | "register";
 
@@ -34,10 +41,10 @@ export function AuthScreen() {
       } else {
         await register(username, email, password);
       }
-    } catch (err) {
+    } catch (error) {
       setError(
-        err instanceof Error
-          ? err.message
+        error instanceof Error
+          ? error.message
           : "Ha ocurrido un error",
       );
     } finally {
@@ -52,74 +59,75 @@ export function AuthScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>ALLIVE</Text>
+      <View style={styles.form}>
+        <Text style={styles.logo}>ALLIVE</Text>
 
-      <Text style={styles.title}>
-        {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
-      </Text>
+        <Text style={styles.title}>
+          {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
+        </Text>
 
-      {mode === "register" && (
+        {mode === "register" && (
+          <TextInput
+            value={username}
+            onChangeText={setUsername}
+            placeholder="Nombre de usuario"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            style={styles.input}
+          />
+        )}
+
         <TextInput
-          value={username}
-          onChangeText={setUsername}
-          placeholder="Nombre de usuario"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="email-address"
           autoCapitalize="none"
           style={styles.input}
         />
-      )}
 
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-      />
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Contraseña"
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry
+          style={styles.input}
+        />
 
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Contraseña"
-        secureTextEntry
-        style={styles.input}
-      />
+        {error && <Text style={styles.error}>{error}</Text>}
 
-      {error && <Text style={styles.error}>{error}</Text>}
+        <Pressable
+          style={styles.primaryButton}
+          onPress={() => void submit()}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color={colors.pureBlack} />
+          ) : (
+            <Text style={styles.primaryButtonText}>
+              {mode === "login" ? "Entrar" : "Crear cuenta"}
+            </Text>
+          )}
+        </Pressable>
 
-      <Pressable
-        style={styles.primaryButton}
-        onPress={submit}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <Text style={styles.primaryButtonText}>
+        <Pressable
+          onPress={() =>
+            changeMode(mode === "login" ? "register" : "login")
+          }
+        >
+          <Text style={styles.link}>
             {mode === "login"
-              ? "Entrar"
-              : "Crear cuenta"}
+              ? "¿No tienes cuenta? Regístrate"
+              : "¿Ya tienes cuenta? Inicia sesión"}
           </Text>
-        )}
-      </Pressable>
+        </Pressable>
 
-      <Pressable
-        onPress={() =>
-          changeMode(mode === "login" ? "register" : "login")
-        }
-      >
-        <Text style={styles.link}>
-          {mode === "login"
-            ? "¿No tienes cuenta? Regístrate"
-            : "¿Ya tienes cuenta? Inicia sesión"}
-        </Text>
-      </Pressable>
-
-      <Pressable onPress={continueAsGuest}>
-        <Text style={styles.guest}>
-          Continuar como invitado
-        </Text>
-      </Pressable>
+        <Pressable onPress={() => void continueAsGuest()}>
+          <Text style={styles.guest}>Continuar como invitado</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -128,62 +136,71 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 32,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.background,
+    padding: spacing.xxl,
+  },
+
+  form: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+    gap: spacing.sm,
   },
 
   logo: {
-    fontSize: 28,
-    fontWeight: "800",
+    ...typography.screenTitle,
+    color: colors.text,
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: spacing.xl,
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 24,
+    ...typography.title,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
 
   input: {
+    ...typography.body,
+    minHeight: controls.primaryButtonHeight,
+    color: colors.text,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#cccccc",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    fontSize: 16,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
   },
 
   error: {
-    color: "#c62828",
-    marginBottom: 12,
+    ...typography.body,
+    color: colors.dangerText,
   },
 
   primaryButton: {
-    minHeight: 48,
-    justifyContent: "center",
+    height: controls.primaryButtonHeight,
     alignItems: "center",
-    backgroundColor: "#111111",
-    borderRadius: 10,
-    marginTop: 4,
+    justifyContent: "center",
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    marginTop: spacing.xs,
   },
 
   primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
+    ...typography.bodyStrong,
+    color: colors.pureBlack,
   },
 
   link: {
+    ...typography.bodyStrong,
+    color: colors.text,
     textAlign: "center",
-    marginTop: 20,
-    fontWeight: "600",
+    marginTop: spacing.sm,
   },
 
   guest: {
+    ...typography.body,
+    color: colors.textSecondary,
     textAlign: "center",
-    marginTop: 28,
-    color: "#666666",
+    marginTop: spacing.sm,
   },
 });

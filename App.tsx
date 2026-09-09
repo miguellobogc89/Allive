@@ -28,7 +28,7 @@ function AppContent() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loading}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.accent} />
       </SafeAreaView>
     );
   }
@@ -38,34 +38,18 @@ function AppContent() {
   }
 
   function renderScreen() {
-    if (activeTab === "now") {
-      return <NowScreen />;
-    }
-
-    if (activeTab === "map") {
-      return <MapScreen />;
-    }
-
-    if (activeTab === "emit") {
-      return <EmitScreen />;
-    }
-
-    if (activeTab === "search") {
-      return <SearchScreen />;
-    }
-
-    if (activeTab === "profile") {
-      return <ProfileScreen />;
-    }
+    if (activeTab === "now") return <NowScreen />;
+    if (activeTab === "map") return <MapScreen />;
+    if (activeTab === "emit") return <EmitScreen />;
+    if (activeTab === "search") return <SearchScreen />;
+    if (activeTab === "profile") return <ProfileScreen />;
 
     return <NowScreen />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {renderScreen()}
-      </View>
+      <View style={styles.content}>{renderScreen()}</View>
 
       <BottomNav
         activeTab={activeTab}
@@ -95,8 +79,8 @@ const styles = StyleSheet.create({
 
   loading: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.background,
   },
 });

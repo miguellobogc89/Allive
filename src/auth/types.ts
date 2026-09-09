@@ -12,3 +12,17 @@ export type AuthSession = {
   token: string;
   user: AuthUser;
 };
+
+export type RegisteredIdentity = {
+  type: "user";
+  id: string;
+};
+
+export type GuestIdentity = {
+  type: "guest";
+  id: string;
+};
+
+export type ViewerIdentity =
+  | RegisteredIdentity
+  | GuestIdentity;

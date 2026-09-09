@@ -1,7 +1,7 @@
 // src/components/live/liveBroadcastApi.ts
 
 import type { BroadcastLocation } from "./broadcastTypes";
-import { LIVE_API_URL } from "./liveApiConfig";
+import { API_URL } from "../../api/apiConfig";
 import type { LiveKitTokenResponse } from "./types";
 
 type LiveMetadataPayload = {
@@ -27,7 +27,7 @@ function buildLiveMetadataBody({
 export async function getBroadcasterToken(
   roomName: string
 ): Promise<LiveKitTokenResponse> {
-  const response = await fetch(`${LIVE_API_URL}/api/livekit/token`, {
+  const response = await fetch(`${API_URL}/api/livekit/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -60,7 +60,7 @@ export async function registerLiveInBackend(
   roomName: string,
   metadata: LiveMetadataPayload
 ) {
-  const response = await fetch(`${LIVE_API_URL}/api/lives`, {
+  const response = await fetch(`${API_URL}/api/lives`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -92,7 +92,7 @@ export async function updateLiveMetadata(
   liveSessionId: string,
   metadata: LiveMetadataPayload
 ) {
-  const response = await fetch(`${LIVE_API_URL}/api/lives/${liveSessionId}`, {
+  const response = await fetch(`${API_URL}/api/lives/${liveSessionId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -108,7 +108,7 @@ export async function updateLiveMetadata(
 }
 
 export async function markLiveAsEnded(liveSessionId: string) {
-  const response = await fetch(`${LIVE_API_URL}/api/lives/${liveSessionId}/end`, {
+  const response = await fetch(`${API_URL}/api/lives/${liveSessionId}/end`, {
     method: "PATCH",
   });
 

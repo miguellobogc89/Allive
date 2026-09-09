@@ -5,7 +5,7 @@ import { StyleSheet, View } from "react-native";
 
 import { LiveVideoSurface } from "../components/live/LiveVideoSurface.web";
 import { LiveViewerOverlay } from "../components/live/LiveViewerOverlay";
-import { LIVE_API_URL } from "../components/live/liveApiConfig";
+import { API_URL } from "../api/apiConfig";
 import type { ActiveLive } from "../components/live/types";
 import { colors } from "../styles";
 
@@ -20,7 +20,7 @@ export function LiveViewerScreen() {
 
   const loadActiveLives = useCallback(async () => {
     try {
-      const response = await fetch(`${LIVE_API_URL}/api/lives/active`);
+      const response = await fetch(`${API_URL}/api/lives/active`);
       if (!response.ok) throw new Error(`No se pudieron consultar los LIVE activos (${response.status})`);
 
       const nextLives = (await response.json()) as ActiveLive[];

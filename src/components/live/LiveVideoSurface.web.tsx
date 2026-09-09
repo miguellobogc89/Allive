@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, layout, radius, spacing, typography } from "../../styles";
-import { LIVE_API_URL } from "./liveApiConfig";
+import { API_URL } from "../../api/apiConfig";
 import { getParticipantRole } from "./liveParticipantRole";
 import type { ActiveLive, LiveKitTokenResponse } from "./types";
 
@@ -22,7 +22,7 @@ type Props = {
 };
 
 async function getViewerToken(roomName: string): Promise<LiveKitTokenResponse> {
-  const response = await fetch(`${LIVE_API_URL}/api/livekit/token`, {
+  const response = await fetch(`${API_URL}/api/livekit/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ roomName, role: "viewer" }),
