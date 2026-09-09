@@ -3,6 +3,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors, controls, iconSizes, layout, typography } from "../../styles";
 
 type LiveActionsProps = {
   saved?: boolean;
@@ -23,7 +24,7 @@ function ActionButton({ icon, label, onPress, active = false }: ActionButtonProp
   return (
     <Pressable style={styles.action} onPress={onPress}>
       <View style={[styles.circle, active && styles.activeCircle]}>
-        <Ionicons name={icon} size={24} color={active ? "#08090A" : "#FFFFFF"} />
+        <Ionicons name={icon} size={iconSizes.action} color={active ? colors.background : colors.text} />
       </View>
       {label ? <Text style={styles.label}>{label}</Text> : null}
     </Pressable>
@@ -42,9 +43,9 @@ export function LiveActions({ saved = false, onProfilePress, onSavePress, onShar
 }
 
 const styles = StyleSheet.create({
-  container: { position: "absolute", right: 12, bottom: 154, alignItems: "center", gap: 15, zIndex: 20 },
-  action: { alignItems: "center", gap: 4 },
-  circle: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.48)" },
-  activeCircle: { backgroundColor: "#7CFF6B" },
-  label: { maxWidth: 62, color: "#FFFFFF", fontSize: 9, fontWeight: "700", textAlign: "center" },
+  container: { position: "absolute", right: layout.liveActionsRight, bottom: layout.liveActionsBottom, alignItems: "center", gap: controls.actionGap, zIndex: 20 },
+  action: { alignItems: "center", gap: controls.actionInnerGap },
+  circle: { width: controls.actionCircleSize, height: controls.actionCircleSize, borderRadius: controls.actionCircleSize / 2, alignItems: "center", justifyContent: "center", backgroundColor: colors.overlay },
+  activeCircle: { backgroundColor: colors.accent },
+  label: { maxWidth: controls.actionLabelMaxWidth, color: colors.text, ...typography.micro, textAlign: "center" },
 });

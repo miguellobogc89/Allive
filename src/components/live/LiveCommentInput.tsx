@@ -2,6 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { colors, iconSizes, radius, spacing } from "../../styles";
 
 type LiveCommentInputProps = {
   value: string;
@@ -20,7 +21,7 @@ export function LiveCommentInput({ value, onChangeText, onSend, placeholder = "E
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="rgba(255,255,255,0.55)"
+        placeholderTextColor={colors.textMuted}
         editable={!disabled}
         maxLength={280}
         returnKeyType="send"
@@ -28,15 +29,15 @@ export function LiveCommentInput({ value, onChangeText, onSend, placeholder = "E
         style={styles.input}
       />
       <Pressable style={[styles.sendButton, !canSend && styles.sendButtonDisabled]} disabled={!canSend} onPress={onSend}>
-        <Ionicons name="arrow-up" size={20} color="#08090A" />
+        <Ionicons name="arrow-up" size={iconSizes.md} color={colors.background} />
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { height: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 15, paddingRight: 6, borderRadius: 24, backgroundColor: "rgba(15,16,18,0.76)", borderWidth: 1, borderColor: "rgba(255,255,255,0.14)" },
-  input: { flex: 1, color: "#FFFFFF", fontSize: 13, outlineStyle: "none" } as any,
-  sendButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "#7CFF6B" },
+  container: { height: 48, flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingLeft: 15, paddingRight: 6, borderRadius: radius.round, backgroundColor: colors.overlayStrong, borderWidth: 1, borderColor: colors.border },
+  input: { flex: 1, color: colors.text, fontSize: 13, outlineStyle: "none" } as any,
+  sendButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent },
   sendButtonDisabled: { opacity: 0.38 },
 });

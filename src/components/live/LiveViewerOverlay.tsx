@@ -1,6 +1,9 @@
 // src/components/live/LiveViewerOverlay.tsx
 
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
+
+import { layout } from "../../styles";
 import { LiveActions } from "./LiveActions";
 import { LiveCommentInput } from "./LiveCommentInput";
 import { LiveComments } from "./LiveComments";
@@ -9,64 +12,62 @@ import { LiveMetadata } from "./LiveMetadata";
 import { LiveNavigation } from "./LiveNavigation";
 import type { ActiveLive, LiveComment } from "./types";
 
-type LiveViewerOverlayProps = {
+type Props = {
   live: ActiveLive;
   viewerCount: number;
   currentIndex: number;
   totalLives: number;
-  comments?: LiveComment[];
-  commentValue?: string;
-  saved?: boolean;
-  onCommentChange?: (value: string) => void;
-  onSendComment?: () => void;
-  onLikeComment?: (commentId: string) => void;
-  onProfilePress?: () => void;
-  onSavePress?: () => void;
-  onSharePress?: () => void;
-  onMorePress?: () => void;
   onPreviousLive: () => void;
   onNextLive: () => void;
 };
+
+const INITIAL_COMMENTS: LiveComment[] = [
+  { id: "mock-1", username: "lucia", text: "¿Qué está pasando ahora?", likes: 3 },
+  { id: "mock-2", username: "dani", text: "Se ve perfecto 👀", likes: 1 },
+];
 
 export function LiveViewerOverlay({
   live,
   viewerCount,
   currentIndex,
   totalLives,
-  comments = [],
-  commentValue = "",
-  saved = false,
-  onCommentChange,
-  onSendComment,
-  onLikeComment,
-  onProfilePress,
-  onSavePress,
-  onSharePress,
-  onMorePress,
   onPreviousLive,
   onNextLive,
-}: LiveViewerOverlayProps) {
-  const creatorName =
-    live.creator?.username ?? live.creator?.displayName ?? null;
+}: Props) {
+  const [saved, setSaved] = useState(false);
+  const [commentValue, setCommentValue] = useState("");
+  const [comments, setComments] = useState<LiveComment[]>(INITIAL_COMMENTS);
+
+  useEffect(() => {
+    setSaved(false);
+    setCommentValue("");
+    setComments(INITIAL_COMMENTS);
+  }, [live.id]);
+
+  function sendComment() {
+    const text = commentValue.trim();
+    if (!text) return;
+    setComments((current) => [...current, { id: `local-${Date.now()}`, username: "tú", text, likes: 0 }]);
+    setCommentValue("");
+  }
+
+  function toggleCommentLike(commentId: string) {
+    setComments((current) =>
+      current.map((comment) => {
+        if (comment.id !== commentId) return comment;
+        const liked = !comment.liked;
+        return { ...comment, liked, likes: Math.max(0, comment.likes + (liked ? 1 : -1)) };
+      })
+    );
+  }
+
+  const creatorName = live.creator?.username ?? live.creator?.displayName ?? null;
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
       <LiveHeader viewerCount={viewerCount} />
-
-      <LiveNavigation
-        currentIndex={currentIndex}
-        total={totalLives}
-        onPrevious={onPreviousLive}
-        onNext={onNextLive}
-      />
-
-      <LiveActions
-        saved={saved}
-        onProfilePress={onProfilePress}
-        onSavePress={onSavePress}
-        onSharePress={onSharePress}
-        onMorePress={onMorePress}
-      />
+      <LiveNavigation currentIndex={currentIndex} total={totalLives} onPrevious={onPreviousLive} onNext={onNextLive} />
+      <LiveActions saved={saved} onSavePress={() => setSaved((value) => !value)} />
 
       <View style={styles.bottomLeft} pointerEvents="box-none">
         <LiveMetadata
@@ -75,33 +76,20 @@ export function LiveViewerOverlay({
           placeName={live.placeName}
           creatorName={creatorName}
         />
-
-        <LiveComments
-          comments={comments}
-          onLikeComment={onLikeComment}
-        />
-
-        <LiveCommentInput
-          value={commentValue}
-          onChangeText={onCommentChange ?? (() => undefined)}
-          onSend={onSendComment ?? (() => undefined)}
-          disabled={!onCommentChange || !onSendComment}
-        />
+        <LiveComments comments={comments} onLikeComment={toggleCommentLike} />
+        <LiveCommentInput value={commentValue} onChangeText={setCommentValue} onSend={sendComment} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 10,
-  },
+  overlay: { ...StyleSheet.absoluteFill, zIndex: 10 },
   bottomLeft: {
     position: "absolute",
-    left: 14,
-    right: 82,
-    bottom: 110,
+    left: layout.screenHorizontalPadding,
+    right: layout.liveContentRight,
+    bottom: layout.liveContentBottom,
     gap: 11,
   },
 });

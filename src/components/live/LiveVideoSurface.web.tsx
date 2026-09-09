@@ -12,7 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { colors, layout, radius, spacing, typography } from "../../styles";
 import type { ActiveLive } from "./types";
 
 const API_URL = "http://localhost:3001";
@@ -30,17 +30,12 @@ type LiveKitTokenResponse = {
 
 function getParticipantRole(participant: Participant) {
   const attributeRole = participant.attributes?.role;
-
-  if (attributeRole === "viewer" || attributeRole === "broadcaster") {
-    return attributeRole;
-  }
+  if (attributeRole === "viewer" || attributeRole === "broadcaster") return attributeRole;
 
   if (participant.metadata) {
     try {
       const parsed = JSON.parse(participant.metadata);
-      if (parsed?.role === "viewer" || parsed?.role === "broadcaster") {
-        return parsed.role;
-      }
+      if (parsed?.role === "viewer" || parsed?.role === "broadcaster") return parsed.role;
     } catch {
       // Fallback a identity.
     }
@@ -60,25 +55,15 @@ async function getViewerToken(roomName: string): Promise<LiveKitTokenResponse> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(
-      body?.error ??
-        `No se pudo obtener el token de espectador (${response.status})`
-    );
+    throw new Error(body?.error ?? `No se pudo obtener el token de espectador (${response.status})`);
   }
 
   const data = (await response.json()) as LiveKitTokenResponse;
-
-  if (!data.serverUrl || !data.participantToken) {
-    throw new Error("La API devolvió un token LiveKit inválido.");
-  }
-
+  if (!data.serverUrl || !data.participantToken) throw new Error("La API devolvió un token LiveKit inválido.");
   return data;
 }
 
-export function LiveVideoSurface({
-  live,
-  onViewerCountChange,
-}: Props) {
+export function LiveVideoSurface({ live, onViewerCountChange }: Props) {
   const roomRef = useRef<Room | null>(null);
   const connectionVersionRef = useRef(0);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
@@ -122,22 +107,11 @@ export function LiveVideoSurface({
       try {
         setError(null);
         setStatus("Conectando...");
+        const { serverUrl, participantToken } = await getViewerToken(live!.roomName);
 
-        const { serverUrl, participantToken } =
-          await getViewerToken(live!.roomName);
+        if (disposed || connectionVersion !== connectionVersionRef.current) return;
 
-        if (
-          disposed ||
-          connectionVersion !== connectionVersionRef.current
-        ) {
-          return;
-        }
-
-        const room = new Room({
-          adaptiveStream: true,
-          dynacast: true,
-        });
-
+        const room = new Room({ adaptiveStream: true, dynacast: true });
         roomRef.current = room;
 
         const isCurrent = () =>
@@ -156,12 +130,7 @@ export function LiveVideoSurface({
         ) => {
           if (!isCurrent()) return;
 
-          console.log(
-            "Allive viewer received track:",
-            track.kind,
-            participant.identity,
-            getParticipantRole(participant)
-          );
+          console.log("Allive viewer received track:", track.kind, participant.identity, getParticipantRole(participant));
 
           if (track.kind === Track.Kind.Video) {
             const element = track.attach() as HTMLVideoElement;
@@ -179,10 +148,7 @@ export function LiveVideoSurface({
               videoContainerRef.current.appendChild(element);
             }
 
-            element.play().catch((playError) => {
-              console.error("Allive video play error:", playError);
-            });
-
+            element.play().catch((playError) => console.error("Allive video play error:", playError));
             setHasVideo(true);
             setStatus("LIVE");
           }
@@ -200,11 +166,9 @@ export function LiveVideoSurface({
 
         // ÚNICO punto de attach. No recorrer remoteParticipants para adjuntar tracks.
         room.on(RoomEvent.TrackSubscribed, attachTrack);
-
         room.on(RoomEvent.TrackUnsubscribed, (track) => {
           track.detach().forEach((element) => element.remove());
         });
-
         room.on(RoomEvent.ParticipantConnected, refreshViewerCount);
         room.on(RoomEvent.ParticipantDisconnected, refreshViewerCount);
         room.on(RoomEvent.ParticipantAttributesChanged, refreshViewerCount);
@@ -217,9 +181,7 @@ export function LiveVideoSurface({
           onViewerCountChange?.(0);
         });
 
-        await room.connect(serverUrl, participantToken, {
-          autoSubscribe: true,
-        });
+        await room.connect(serverUrl, participantToken, { autoSubscribe: true });
 
         if (!isCurrent()) {
           room.disconnect();
@@ -229,19 +191,10 @@ export function LiveVideoSurface({
         setStatus("Conectado · esperando vídeo");
         updateViewerCount(room);
       } catch (caughtError) {
-        if (
-          disposed ||
-          connectionVersion !== connectionVersionRef.current
-        ) {
-          return;
-        }
+        if (disposed || connectionVersion !== connectionVersionRef.current) return;
 
         console.error("Allive NOW connection error:", caughtError);
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "No se ha podido conectar al LIVE."
-        );
+        setError(caughtError instanceof Error ? caughtError.message : "No se ha podido conectar al LIVE.");
         setStatus("No disponible");
       }
     }
@@ -250,10 +203,7 @@ export function LiveVideoSurface({
 
     return () => {
       disposed = true;
-
-      if (connectionVersion === connectionVersionRef.current) {
-        connectionVersionRef.current += 1;
-      }
+      if (connectionVersion === connectionVersionRef.current) connectionVersionRef.current += 1;
 
       const room = roomRef.current;
       if (room) room.disconnect();
@@ -287,36 +237,22 @@ const videoStyle = {
   inset: 0,
   width: "100%",
   height: "100%",
-  backgroundColor: "#08090A",
+  backgroundColor: colors.background,
   overflow: "hidden",
 };
 
 const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.background,
-  },
-  waiting: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  status: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
-  },
+  container: { ...StyleSheet.absoluteFill, backgroundColor: colors.background },
+  waiting: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
+  status: { color: colors.textMuted, ...typography.label },
   errorBox: {
     position: "absolute",
-    left: 22,
-    right: 22,
-    bottom: 130,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "rgba(255,59,48,0.18)",
+    left: layout.liveErrorHorizontal,
+    right: layout.liveErrorHorizontal,
+    bottom: layout.liveErrorBottom,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.dangerSurface,
   },
-  errorText: {
-    color: "#FF8A83",
-    fontSize: 11,
-  },
+  errorText: { color: colors.dangerText, ...typography.caption, fontWeight: "400" },
 });
