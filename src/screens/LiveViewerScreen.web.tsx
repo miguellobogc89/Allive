@@ -1,5 +1,9 @@
 // src/screens/LiveViewerScreen.web.tsx
 
+import type {
+  Room,
+} from "livekit-client";
+
 import {
   useCallback,
   useEffect,
@@ -63,6 +67,13 @@ export function LiveViewerScreen() {
     setAudience,
   ] = useState<LiveAudience>(
     emptyLiveAudience(),
+  );
+
+  const [
+    viewerRoom,
+    setViewerRoom,
+  ] = useState<Room | null>(
+    null,
   );
 
   const activeLive =
@@ -207,6 +218,8 @@ export function LiveViewerScreen() {
     setAudience(
       emptyLiveAudience(),
     );
+
+    setViewerRoom(null);
   }, [activeLive?.id]);
 
   const goToPreviousLive =
@@ -252,11 +265,15 @@ export function LiveViewerScreen() {
         onAudienceChange={
           setAudience
         }
+        onRoomChange={
+          setViewerRoom
+        }
       />
 
       {activeLive ? (
         <LiveViewerOverlay
           live={activeLive}
+          room={viewerRoom}
           audience={audience}
           viewerIdentity={
             identity

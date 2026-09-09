@@ -1,0 +1,76 @@
+// src/components/live/comments/LiveCommentComposer.tsx
+
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { colors, iconSizes, radius, spacing } from "../../../styles";
+
+type Props = {
+  value: string;
+  disabled?: boolean;
+  onChangeText: (value: string) => void;
+  onSend: () => void;
+};
+
+export function LiveCommentComposer({
+  value,
+  disabled = false,
+  onChangeText,
+  onSend,
+}: Props) {
+  const canSend = !disabled && value.trim().length > 0;
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="Escribe un comentario…"
+        placeholderTextColor={colors.textMuted}
+        editable={!disabled}
+        maxLength={280}
+        returnKeyType="send"
+        onSubmitEditing={() => canSend && onSend()}
+        style={styles.input}
+      />
+
+      <Pressable
+        style={[styles.sendButton, !canSend && styles.disabled]}
+        disabled={!canSend}
+        onPress={onSend}
+      >
+        <Ionicons name="arrow-up" size={iconSizes.md} color={colors.background} />
+      </Pressable>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingLeft: 15,
+    paddingRight: 6,
+    borderRadius: radius.round,
+    backgroundColor: colors.overlayStrong,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  input: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 13,
+  },
+  sendButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.accent,
+  },
+  disabled: {
+    opacity: 0.38,
+  },
+});

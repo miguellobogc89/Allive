@@ -167,7 +167,7 @@ export async function createLiveKitToken(
       role === "broadcaster",
 
     canSubscribe: true,
-    canPublishData: false,
+    canPublishData: true,
   });
 
   return token.toJwt();

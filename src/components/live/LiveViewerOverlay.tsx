@@ -1,6 +1,11 @@
 // src/components/live/LiveViewerOverlay.tsx
 
 import {
+  RoomEvent,
+  type Room,
+} from "livekit-client";
+
+import {
   useCallback,
   useEffect,
   useState,
@@ -20,16 +25,16 @@ import {
 } from "../../styles";
 
 import {
+  LiveCommentComposer,
+  LiveCommentList,
+  createLiveComment,
+  getLiveComments,
+  type LiveCommentModel,
+} from "./comments";
+
+import {
   LiveViewerActions,
 } from "./LiveViewerActions";
-
-import {
-  LiveViewerCommentInput,
-} from "./LiveViewerCommentInput";
-
-import {
-  LiveViewerComments,
-} from "./LiveViewerComments";
 
 import {
   LiveViewerHeader,
@@ -52,13 +57,18 @@ import {
   toggleLiveLike,
 } from "./liveLikesApi";
 
+import {
+  parseLiveRealtimeMessage,
+  publishLiveRealtimeMessage,
+} from "./liveRealtime";
+
 import type {
   ActiveLive,
-  LiveComment,
 } from "./types";
 
 type Props = {
   live: ActiveLive;
+  room: Room | null;
   audience: LiveAudience;
   viewerIdentity: ViewerIdentity | null;
   authToken: string | null;
@@ -68,26 +78,9 @@ type Props = {
   onNextLive: () => void;
 };
 
-const INITIAL_COMMENTS:
-  LiveComment[] = [
-  {
-    id: "mock-1",
-    username: "lucia",
-    text:
-      "¿Qué está pasando ahora?",
-    likes: 3,
-  },
-  {
-    id: "mock-2",
-    username: "dani",
-    text:
-      "Se ve perfecto 👀",
-    likes: 1,
-  },
-];
-
 export function LiveViewerOverlay({
   live,
+  room,
   audience,
   viewerIdentity,
   authToken,
@@ -109,10 +102,18 @@ export function LiveViewerOverlay({
     setCommentValue,
   ] = useState("");
 
-  const [comments, setComments] =
-    useState<LiveComment[]>(
-      INITIAL_COMMENTS,
+  const [
+    comments,
+    setComments,
+  ] =
+    useState<LiveCommentModel[]>(
+      [],
     );
+
+  const [
+    commentSending,
+    setCommentSending,
+  ] = useState(false);
 
   const [liked, setLiked] =
     useState(false);
@@ -157,18 +158,86 @@ export function LiveViewerOverlay({
     setSaved(false);
     setAudienceOpen(false);
     setCommentValue("");
-    setComments(
-      INITIAL_COMMENTS,
-    );
-
+    setComments([]);
     setLiked(false);
     setLikeCount(0);
 
     void loadLikeState();
+
+    let cancelled = false;
+
+    void getLiveComments(
+      live.id,
+    )
+      .then((items) => {
+        if (!cancelled) {
+          setComments(items);
+        }
+      })
+      .catch((error) => {
+        console.error(
+          "Allive comments load error:",
+          error,
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     live.id,
     loadLikeState,
   ]);
+
+  useEffect(() => {
+    if (!room) {
+      return;
+    }
+
+    const onData = (
+      payload: Uint8Array,
+    ) => {
+      const message =
+        parseLiveRealtimeMessage(
+          payload,
+        );
+
+      if (
+        !message ||
+        message.comment
+          .liveSessionId !==
+          live.id
+      ) {
+        return;
+      }
+
+      setComments(
+        (current) =>
+          current.some(
+            (item) =>
+              item.id ===
+              message.comment.id,
+          )
+            ? current
+            : [
+                ...current,
+                message.comment,
+              ],
+      );
+    };
+
+    room.on(
+      RoomEvent.DataReceived,
+      onData,
+    );
+
+    return () => {
+      room.off(
+        RoomEvent.DataReceived,
+        onData,
+      );
+    };
+  }, [room, live.id]);
 
   async function handleLikePress() {
     if (
@@ -202,61 +271,63 @@ export function LiveViewerOverlay({
     }
   }
 
-  function sendComment() {
-    const text =
+  async function sendComment() {
+    const body =
       commentValue.trim();
 
-    if (!text) {
+    if (
+      !body ||
+      !viewerIdentity ||
+      commentSending
+    ) {
       return;
     }
 
-    setComments(
-      (current) => [
-        ...current,
-        {
-          id:
-            `local-${Date.now()}`,
-          username: "tú",
-          text,
-          likes: 0,
-        },
-      ],
-    );
+    setCommentSending(true);
 
-    setCommentValue("");
-  }
+    try {
+      const comment =
+        await createLiveComment(
+          live.id,
+          body,
+          viewerIdentity,
+          authToken,
+        );
 
-  function toggleCommentLike(
-    commentId: string,
-  ) {
-    setComments(
-      (current) =>
-        current.map(
-          (comment) => {
-            if (
-              comment.id !==
-              commentId
-            ) {
-              return comment;
-            }
+      setComments(
+        (current) =>
+          current.some(
+            (item) =>
+              item.id ===
+              comment.id,
+          )
+            ? current
+            : [
+                ...current,
+                comment,
+              ],
+      );
 
-            const nextLiked =
-              !comment.liked;
+      setCommentValue("");
 
-            return {
-              ...comment,
-              liked: nextLiked,
-              likes: Math.max(
-                0,
-                comment.likes +
-                  (nextLiked
-                    ? 1
-                    : -1),
-              ),
-            };
+      if (room) {
+        await publishLiveRealtimeMessage(
+          room,
+          {
+            type:
+              "live-comment",
+            comment,
           },
-        ),
-    );
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Allive comment send error:",
+        error,
+      );
+    } finally {
+      setCommentSending(false);
+    }
   }
 
   const creatorName =
@@ -327,20 +398,21 @@ export function LiveViewerOverlay({
           }
         />
 
-        <LiveViewerComments
+        <LiveCommentList
           comments={comments}
-          onLikeComment={
-            toggleCommentLike
-          }
         />
 
-        <LiveViewerCommentInput
+        <LiveCommentComposer
           value={commentValue}
+          disabled={
+            !viewerIdentity ||
+            commentSending
+          }
           onChangeText={
             setCommentValue
           }
-          onSend={
-            sendComment
+          onSend={() =>
+            void sendComment()
           }
         />
       </View>

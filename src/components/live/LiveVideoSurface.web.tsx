@@ -55,25 +55,22 @@ import type {
 
 type Props = {
   live: ActiveLive | null;
-
-  viewerIdentity:
-    ViewerIdentity | null;
-
-  viewerUser:
-    AuthUser | null;
-
-  authToken:
-    string | null;
+  viewerIdentity: ViewerIdentity | null;
+  viewerUser: AuthUser | null;
+  authToken: string | null;
 
   onAudienceChange?: (
     audience: LiveAudience,
+  ) => void;
+
+  onRoomChange?: (
+    room: Room | null,
   ) => void;
 };
 
 async function getViewerToken(
   roomName: string,
-  viewerIdentity:
-    ViewerIdentity,
+  viewerIdentity: ViewerIdentity,
   authToken: string | null,
 ): Promise<LiveKitTokenResponse> {
   const headers:
@@ -111,7 +108,6 @@ async function getViewerToken(
     {
       method: "POST",
       headers,
-
       body:
         JSON.stringify(body),
     },
@@ -151,6 +147,7 @@ export function LiveVideoSurface({
   viewerUser,
   authToken,
   onAudienceChange,
+  onRoomChange,
 }: Props) {
   const roomRef =
     useRef<Room | null>(null);
@@ -223,7 +220,6 @@ export function LiveVideoSurface({
           {
             identity:
               viewerIdentity,
-
             user: viewerUser,
           },
         );
@@ -241,6 +237,7 @@ export function LiveVideoSurface({
     }
 
     roomRef.current = null;
+    onRoomChange?.(null);
 
     clearMedia();
 
@@ -300,6 +297,7 @@ export function LiveVideoSurface({
         });
 
         roomRef.current = room;
+        onRoomChange?.(room);
 
         const isCurrent = () =>
           !disposed &&
@@ -379,7 +377,6 @@ export function LiveVideoSurface({
             }
 
             setHasVideo(true);
-
             setStatus("LIVE");
           }
 
@@ -459,6 +456,8 @@ export function LiveVideoSurface({
             onAudienceChange?.(
               emptyLiveAudience(),
             );
+
+            onRoomChange?.(null);
           },
         );
 
@@ -472,7 +471,7 @@ export function LiveVideoSurface({
 
         if (!isCurrent()) {
           room.disconnect();
-
+          onRoomChange?.(null);
           return;
         }
 
@@ -505,6 +504,8 @@ export function LiveVideoSurface({
         setStatus(
           "No disponible",
         );
+
+        onRoomChange?.(null);
       }
     }
 
@@ -529,6 +530,7 @@ export function LiveVideoSurface({
       }
 
       roomRef.current = null;
+      onRoomChange?.(null);
 
       clearMedia();
     };
@@ -539,6 +541,7 @@ export function LiveVideoSurface({
     viewerUser,
     authToken,
     onAudienceChange,
+    onRoomChange,
   ]);
 
   return (
@@ -596,10 +599,8 @@ const videoStyle = {
   inset: 0,
   width: "100%",
   height: "100%",
-
   backgroundColor:
     colors.background,
-
   overflow: "hidden",
 };
 
@@ -607,16 +608,13 @@ const styles =
   StyleSheet.create({
     container: {
       ...StyleSheet.absoluteFill,
-
       backgroundColor:
         colors.background,
     },
 
     waiting: {
       ...StyleSheet.absoluteFill,
-
       alignItems: "center",
-
       justifyContent:
         "center",
     },
@@ -624,27 +622,20 @@ const styles =
     status: {
       color:
         colors.textMuted,
-
       ...typography.label,
     },
 
     errorBox: {
       position: "absolute",
-
       left:
         layout.liveErrorHorizontal,
-
       right:
         layout.liveErrorHorizontal,
-
       bottom:
         layout.liveErrorBottom,
-
       padding: spacing.sm,
-
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.dangerSurface,
     },
@@ -652,9 +643,7 @@ const styles =
     errorText: {
       color:
         colors.dangerText,
-
       ...typography.caption,
-
       fontWeight: "400",
     },
   });
