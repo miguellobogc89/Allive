@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors, typography } from "../../styles";
+import { colors, layout, typography } from "../../styles";
 import type {
   BroadcastLocation,
   LocationStatus,
@@ -53,7 +53,7 @@ export function LiveBroadcastMetadataPanel({
             value={title}
             onChangeText={onChangeTitle}
             placeholder={"\u00bfQu\u00e9 est\u00e1 pasando?"}
-            placeholderTextColor="rgba(255,255,255,0.45)"
+            placeholderTextColor={colors.textOnOverlaySubtle}
             maxLength={120}
             style={styles.titleInput}
             returnKeyType="done"
@@ -87,7 +87,7 @@ export function LiveBroadcastMetadataPanel({
             value={eventName}
             onChangeText={onChangeEventName}
             placeholder="Nombre del evento"
-            placeholderTextColor="rgba(255,255,255,0.45)"
+            placeholderTextColor={colors.textOnOverlaySubtle}
             maxLength={120}
             style={styles.eventInput}
             returnKeyType="done"
@@ -100,7 +100,7 @@ export function LiveBroadcastMetadataPanel({
           <Ionicons
             name="calendar-outline"
             size={18}
-            color={eventName ? colors.text : "rgba(255,255,255,0.65)"}
+            color={eventName ? colors.text : colors.textOnOverlayMuted}
           />
           <Text
             numberOfLines={1}
@@ -111,7 +111,7 @@ export function LiveBroadcastMetadataPanel({
           <Ionicons
             name="chevron-forward"
             size={16}
-            color="rgba(255,255,255,0.4)"
+            color={colors.textOnOverlaySubtle}
           />
         </Pressable>
       )}
@@ -125,7 +125,7 @@ export function LiveBroadcastMetadataPanel({
           color={
             locationStatus === "ready"
               ? colors.text
-              : "rgba(255,255,255,0.55)"
+              : colors.textOnOverlayPlaceholder
           }
         />
 
@@ -156,13 +156,13 @@ const inputWebOutline = {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 205,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
+    bottom: layout.broadcastMetadataBottom,
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 18,
-    backgroundColor: "rgba(0,0,0,0.62)",
+    backgroundColor: colors.overlayStrong,
     zIndex: 20,
   },
   metadataRow: {
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
   },
   placeholderText: {
-    color: "rgba(255,255,255,0.55)",
+    color: colors.textOnOverlayPlaceholder,
   },
   titleInput: {
     flex: 1,
@@ -207,14 +207,14 @@ const styles = StyleSheet.create({
   } as any,
   separator: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.dividerOnOverlay,
   },
   locationTextContainer: {
     flex: 1,
   },
   coordinates: {
     marginTop: 2,
-    color: "rgba(255,255,255,0.42)",
+    color: colors.textOnOverlaySubtle,
     fontSize: 10,
   },
 });

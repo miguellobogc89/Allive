@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../theme/colors";
+import { colors, controls, spacing } from "../styles";
 
 export function NowScreen() {
   return (
@@ -131,12 +131,12 @@ const styles = StyleSheet.create({
 
     borderRadius: 9,
 
-    backgroundColor: "rgba(0,0,0,0.68)",
+    backgroundColor: colors.overlayViewerBadge,
   },
 
   liveDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
 
     borderRadius: 4,
 
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 9,
 
-    backgroundColor: "rgba(0,0,0,0.68)",
+    backgroundColor: colors.overlayViewerBadge,
   },
 
   viewerText: {
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
 
     alignItems: "center",
 
-    gap: 4,
+    gap: spacing.xxs,
   },
 
   actionText: {

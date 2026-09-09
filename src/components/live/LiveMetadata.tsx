@@ -37,7 +37,7 @@ export function LiveMetadata({ title, eventName, placeName, creatorName, onPress
 const styles = StyleSheet.create({
   container: { maxWidth: "78%", gap: 5 },
   creator: { color: colors.text, fontSize: 13, fontWeight: "800" },
-  title: { color: colors.text, ...typography.title, lineHeight: 22, textShadowColor: "rgba(0,0,0,0.55)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+  title: { color: colors.text, ...typography.title, lineHeight: 22, textShadowColor: colors.overlayChrome, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   contextRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", maxWidth: "100%" },
-  contextText: { flexShrink: 1, color: "rgba(255,255,255,0.9)", ...typography.label, fontWeight: "600" },
+  contextText: { flexShrink: 1, color: colors.textOnOverlay, ...typography.label, fontWeight: "600" },
 });

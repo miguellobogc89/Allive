@@ -24,6 +24,7 @@ import {
 } from "../components/live/liveBroadcastVideo.web";
 import { useBroadcastLocation } from "../components/live/useBroadcastLocation.web";
 import { useViewerCounter } from "../components/live/useViewerCounter";
+import { colors } from "../styles";
 
 function createLiveRoomName() {
   return `live-${Date.now()}`;
@@ -431,6 +432,6 @@ export function EmitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050506",
+    backgroundColor: colors.cameraBackground,
   },
 });

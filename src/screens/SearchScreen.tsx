@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../theme/colors";
+import { colors, controls, spacing, typography } from "../styles";
 
 const trendingSearches = [
   {
@@ -49,13 +49,13 @@ export function SearchScreen() {
           <Ionicons
             name="search"
             size={20}
-            color="rgba(255,255,255,0.55)"
+            color={colors.textOnOverlayPlaceholder}
           />
 
           <TextInput
             style={styles.input}
             placeholder="Lugar, evento o qué quieres ver..."
-            placeholderTextColor="rgba(255,255,255,0.38)"
+            placeholderTextColor={colors.textOnOverlaySubtle}
             selectionColor={colors.text}
           />
         </View>
@@ -108,7 +108,7 @@ export function SearchScreen() {
               <Ionicons
                 name="chevron-forward"
                 size={18}
-                color="rgba(255,255,255,0.28)"
+                color={colors.textOnOverlayFaint}
               />
             </Pressable>
           ))}
@@ -118,7 +118,7 @@ export function SearchScreen() {
           <Ionicons
             name="radio-outline"
             size={21}
-            color="rgba(255,255,255,0.62)"
+            color={colors.textOnOverlayMuted}
           />
 
           <View style={styles.ideaText}>
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
 
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
 
     backgroundColor: colors.background,
   },
@@ -153,8 +153,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text,
 
-    fontSize: 28,
-    fontWeight: "900",
+    ...typography.screenTitle,
   },
 
   subtitle: {
@@ -224,8 +223,8 @@ const styles = StyleSheet.create({
   },
 
   liveDot: {
-    width: 6,
-    height: 6,
+    width: controls.smallDotSize,
+    height: controls.smallDotSize,
 
     borderRadius: 3,
 
@@ -300,12 +299,12 @@ const styles = StyleSheet.create({
 
     borderRadius: 9,
 
-    backgroundColor: "rgba(255,59,48,0.12)",
+    backgroundColor: colors.liveSoft,
   },
 
   smallLiveDot: {
-    width: 6,
-    height: 6,
+    width: controls.smallDotSize,
+    height: controls.smallDotSize,
 
     borderRadius: 3,
 

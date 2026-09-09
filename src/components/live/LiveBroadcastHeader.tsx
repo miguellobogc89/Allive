@@ -5,7 +5,7 @@ import type { Animated } from "react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Animated as RNAnimated } from "react-native";
 
-import { colors, radius, spacing, typography } from "../../styles";
+import { colors, controls, layout, radius, spacing, typography } from "../../styles";
 
 type LiveBroadcastHeaderProps = {
   isLive: boolean;
@@ -69,39 +69,39 @@ export function LiveBroadcastHeader({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 18,
-    left: 18,
-    right: 18,
+    top: layout.overlayTop,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     zIndex: 20,
   },
   circleButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: controls.circleButtonSize,
+    height: controls.circleButtonSize,
+    borderRadius: controls.circleButtonSize / 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
   statusBadge: {
-    height: 32,
+    height: controls.liveBadgeHeight,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 11,
     borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
   liveBadge: {
-    backgroundColor: "rgba(255,59,48,0.88)",
+    backgroundColor: colors.liveStrong,
   },
   statusDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
     borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.5)",
+    backgroundColor: colors.textOnOverlayPlaceholder,
   },
   liveDot: {
     backgroundColor: colors.text,
@@ -116,13 +116,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   viewerBadge: {
-    height: 42,
+    height: controls.circleButtonSize,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     paddingHorizontal: spacing.sm,
     borderRadius: radius.round,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
   viewerText: {
     color: colors.text,
@@ -137,6 +137,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: radius.sm,
-    backgroundColor: "rgba(0,0,0,0.72)",
+    backgroundColor: colors.overlayDelta,
   },
 });

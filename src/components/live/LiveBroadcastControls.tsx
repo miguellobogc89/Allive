@@ -2,7 +2,7 @@
 
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, typography } from "../../styles";
+import { colors, controls, layout, typography } from "../../styles";
 
 type LiveBroadcastControlsProps = {
   isLive: boolean;
@@ -66,12 +66,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 22,
     right: 22,
-    bottom: 105,
+    bottom: layout.broadcastControlsBottom,
     alignItems: "center",
     zIndex: 20,
   },
   goLiveButton: {
-    height: 56,
+    height: controls.primaryButtonHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   finishButton: {
-    height: 56,
+    height: controls.primaryButtonHeight,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: "rgba(20,20,20,0.9)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
+    borderColor: colors.borderOnOverlaySubtle,
   },
   stopIcon: {
-    width: 12,
-    height: 12,
+    width: controls.stopIconSize,
+    height: controls.stopIconSize,
     borderRadius: 3,
     backgroundColor: colors.live,
   },
@@ -119,13 +119,13 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: 9,
-    color: "rgba(255,255,255,0.55)",
+    color: colors.textOnOverlayPlaceholder,
     fontSize: 10,
     fontWeight: "500",
   },
   roomText: {
     marginTop: 3,
-    color: "rgba(255,255,255,0.3)",
+    color: colors.textOnOverlayFaint,
     ...typography.micro,
     fontWeight: "400",
   },

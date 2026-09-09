@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "../styles";
+import { colors, controls, spacing, typography } from "../styles";
 
 type BottomNavProps = {
   activeTab: string;
@@ -67,7 +67,7 @@ export function BottomNav({ activeTab, onTabPress }: BottomNavProps) {
               color={
                 isActive
                   ? colors.text
-                  : "rgba(255,255,255,0.62)"
+                  : colors.textOnOverlayMuted
               }
             />
 
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-around",
 
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.xs,
     paddingBottom: 12,
 
     zIndex: 100,
@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    gap: 4,
+    gap: spacing.xxs,
   },
 
   label: {
-    color: "rgba(255,255,255,0.62)",
+    color: colors.textOnOverlayMuted,
 
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: typography.caption.fontWeight,
   },
 
   activeLabel: {
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "rgba(15,15,15,0.82)",
+    backgroundColor: colors.overlayRaised,
 
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.9)",
+    borderColor: colors.borderOnOverlay,
   },
 
   emitInner: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
 
     color: colors.text,
 
-    fontSize: 9,
+    fontSize: typography.micro.fontSize,
     fontWeight: "800",
   },
 });

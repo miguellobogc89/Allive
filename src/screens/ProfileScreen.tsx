@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../theme/colors";
+import { colors, controls, spacing, typography } from "../styles";
 
 const stats = [
   {
@@ -144,7 +144,7 @@ export function ProfileScreen() {
                 <Ionicons
                   name="videocam-outline"
                   size={22}
-                  color="rgba(255,255,255,0.4)"
+                  color={colors.textOnOverlaySubtle}
                 />
               </View>
 
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
     paddingTop: 22,
     paddingBottom: 130,
   },
@@ -198,13 +198,12 @@ const styles = StyleSheet.create({
   pageTitle: {
     color: colors.text,
 
-    fontSize: 28,
-    fontWeight: "900",
+    ...typography.screenTitle,
   },
 
   settingsButton: {
-    width: 42,
-    height: 42,
+    width: controls.circleButtonSize,
+    height: controls.circleButtonSize,
 
     borderRadius: 14,
 
@@ -232,7 +231,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
 
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.9)",
+    borderColor: colors.borderOnOverlay,
   },
 
   avatarText: {
@@ -378,8 +377,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.text,
 
-    fontSize: 16,
-    fontWeight: "900",
+    ...typography.sectionTitle,
   },
 
   sectionAction: {

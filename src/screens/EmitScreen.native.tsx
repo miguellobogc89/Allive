@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { LiveBroadcastScreen } from "./LiveBroadcastScreen";
 
-import { colors } from "../theme/colors";
+import { colors, controls, layout, spacing } from "../styles";
 
 export function EmitScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -154,12 +154,12 @@ export function EmitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050506",
+    backgroundColor: colors.cameraBackground,
   },
 
   cameraShade: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: colors.cameraShade,
   },
 
   permissionScreen: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.xxl,
 
     backgroundColor: colors.background,
   },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   },
 
   permissionText: {
-    marginTop: 8,
+    marginTop: spacing.xs,
 
     color: colors.textSecondary,
 
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   permissionButton: {
     height: 50,
 
-    marginTop: 24,
+    marginTop: spacing.xl,
 
     paddingHorizontal: 24,
 
@@ -232,9 +232,9 @@ const styles = StyleSheet.create({
   top: {
     position: "absolute",
 
-    top: 18,
-    left: 18,
-    right: 18,
+    top: layout.overlayTop,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
 
     flexDirection: "row",
     alignItems: "center",
@@ -242,19 +242,19 @@ const styles = StyleSheet.create({
   },
 
   circleButton: {
-    width: 42,
-    height: 42,
+    width: controls.circleButtonSize,
+    height: controls.circleButtonSize,
 
-    borderRadius: 21,
+    borderRadius: controls.circleButtonSize / 2,
 
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
 
   readyBadge: {
-    height: 32,
+    height: controls.liveBadgeHeight,
 
     flexDirection: "row",
     alignItems: "center",
@@ -265,12 +265,12 @@ const styles = StyleSheet.create({
 
     borderRadius: 10,
 
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
 
   readyDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
 
     borderRadius: 4,
 
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
 
     left: 22,
     right: 22,
-    bottom: 125,
+    bottom: layout.nativeBroadcastBottom,
 
     alignItems: "center",
   },
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 14,
 
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
 
   locationRow: {
@@ -323,14 +323,14 @@ const styles = StyleSheet.create({
   contextText: {
     marginTop: 5,
 
-    color: "rgba(255,255,255,0.65)",
+    color: colors.textOnOverlayMuted,
 
     fontSize: 12,
     lineHeight: 17,
   },
 
   goLiveButton: {
-    height: 56,
+    height: controls.primaryButtonHeight,
 
     flexDirection: "row",
     alignItems: "center",
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   hint: {
     marginTop: 9,
 
-    color: "rgba(255,255,255,0.48)",
+    color: colors.textOnOverlayPlaceholder,
 
     fontSize: 10,
     fontWeight: "500",

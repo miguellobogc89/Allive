@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
-import { colors } from "../theme/colors";
+import { colors, controls, layout } from "../styles";
 
 const liveClusters = [
   {
@@ -128,9 +128,9 @@ const styles = StyleSheet.create({
   header: {
     position: "absolute",
 
-    top: 18,
-    left: 18,
-    right: 18,
+    top: layout.overlayTop,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
 
     flexDirection: "row",
     alignItems: "center",
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 14,
 
-    backgroundColor: "rgba(10,10,10,0.82)",
+    backgroundColor: colors.overlayMapChrome,
   },
 
   title: {
@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
   },
 
   headerLiveDot: {
-    width: 6,
-    height: 6,
+    width: controls.smallDotSize,
+    height: controls.smallDotSize,
 
     borderRadius: 3,
 
@@ -172,32 +172,32 @@ const styles = StyleSheet.create({
   },
 
   totalLiveText: {
-    color: "rgba(255,255,255,0.72)",
+    color: colors.textOnOverlaySecondary,
 
     fontSize: 10,
     fontWeight: "700",
   },
 
   locationButton: {
-    width: 42,
-    height: 42,
+    width: controls.circleButtonSize,
+    height: controls.circleButtonSize,
 
     borderRadius: 14,
 
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "rgba(10,10,10,0.82)",
+    backgroundColor: colors.overlayMapChrome,
   },
 
   cluster: {
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "rgba(10,10,10,0.88)",
+    backgroundColor: colors.overlayMapCluster,
 
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.92)",
+    borderColor: colors.borderOnOverlay,
   },
 
   clusterLarge: {
@@ -229,8 +229,8 @@ const styles = StyleSheet.create({
   },
 
   liveDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
 
     borderRadius: 4,
 
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   clusterCity: {
     marginTop: 2,
 
-    color: "rgba(255,255,255,0.72)",
+    color: colors.textOnOverlaySecondary,
 
     fontSize: 9,
     fontWeight: "600",

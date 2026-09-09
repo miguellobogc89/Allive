@@ -25,4 +25,12 @@ export const typography = {
     fontSize: 17,
     fontWeight: "800" as const,
   },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "900" as const,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "900" as const,
+  },
 } as const;

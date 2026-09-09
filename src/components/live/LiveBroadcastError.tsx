@@ -2,7 +2,7 @@
 
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, radius, typography } from "../../styles";
+import { colors, layout, radius, typography } from "../../styles";
 
 type LiveBroadcastErrorProps = {
   message: string | null;
@@ -23,9 +23,9 @@ export function LiveBroadcastError({ message }: LiveBroadcastErrorProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 165,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
+    bottom: layout.broadcastErrorBottom,
     padding: 11,
     borderRadius: radius.md,
     backgroundColor: colors.dangerSurface,

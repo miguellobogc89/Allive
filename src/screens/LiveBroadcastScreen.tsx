@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../theme/colors";
+import { colors, controls, layout, typography } from "../styles";
 
 type LiveBroadcastScreenProps = {
   facing: CameraType;
@@ -131,20 +131,20 @@ export function LiveBroadcastScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: colors.pureBlack,
   },
 
   shade: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: colors.cameraShade,
   },
 
   top: {
     position: "absolute",
 
-    top: 18,
-    left: 18,
-    right: 18,
+    top: layout.overlayTop,
+    left: layout.overlayHorizontal,
+    right: layout.overlayHorizontal,
 
     flexDirection: "row",
     alignItems: "center",
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
 
   liveBadge: {
-    height: 32,
+    height: controls.liveBadgeHeight,
 
     flexDirection: "row",
     alignItems: "center",
@@ -168,8 +168,8 @@ const styles = StyleSheet.create({
   },
 
   liveDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
 
     borderRadius: 4,
 
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
 
   durationBadge: {
-    height: 32,
+    height: controls.liveBadgeHeight,
 
     alignItems: "center",
     justifyContent: "center",
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 10,
 
-    backgroundColor: "rgba(0,0,0,0.62)",
+    backgroundColor: colors.overlayStrong,
   },
 
   duration: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
 
   viewerBadge: {
-    height: 32,
+    height: controls.liveBadgeHeight,
 
     flexDirection: "row",
     alignItems: "center",
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 10,
 
-    backgroundColor: "rgba(0,0,0,0.62)",
+    backgroundColor: colors.overlayStrong,
   },
 
   viewerText: {
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
 
     left: 22,
     right: 22,
-    bottom: 125,
+    bottom: layout.nativeBroadcastBottom,
 
     alignItems: "center",
   },
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 10,
 
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlayChrome,
   },
 
   locationText: {
@@ -266,8 +266,8 @@ const styles = StyleSheet.create({
   },
 
   statusDot: {
-    width: 7,
-    height: 7,
+    width: controls.badgeDotSize,
+    height: controls.badgeDotSize,
 
     borderRadius: 4,
 
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
 
   statusText: {
-    color: "rgba(255,255,255,0.75)",
+    color: colors.textOnOverlaySecondary,
 
     fontSize: 11,
     fontWeight: "600",
@@ -296,15 +296,15 @@ const styles = StyleSheet.create({
 
     borderRadius: 18,
 
-    backgroundColor: "rgba(15,15,15,0.88)",
+    backgroundColor: colors.overlayRaisedStrong,
 
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.30)",
+    borderColor: colors.borderOnOverlaySubtle,
   },
 
   stopIcon: {
-    width: 12,
-    height: 12,
+    width: controls.stopIconSize,
+    height: controls.stopIconSize,
 
     borderRadius: 3,
 
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   finishText: {
     color: colors.text,
 
-    fontSize: 13,
+    fontSize: typography.caption.fontSize + 2,
     fontWeight: "900",
   },
 });
