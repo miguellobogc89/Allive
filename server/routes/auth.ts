@@ -26,11 +26,19 @@ function publicUser(user: {
   };
 }
 
+function normalizeUsername(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function isValidUsername(username: string) {
+  return /^[a-z0-9._]+$/.test(username);
+}
+
 export function registerAuthRoutes(app: Express) {
   app.post("/api/auth/register", async (req, res) => {
-    const username = String(req.body.username ?? "")
-      .trim()
-      .toLowerCase();
+    const username = normalizeUsername(req.body.username);
 
     const email = String(req.body.email ?? "")
       .trim()
@@ -40,26 +48,53 @@ export function registerAuthRoutes(app: Express) {
 
     if (username.length < 3) {
       res.status(400).json({
-        error: "El nombre de usuario debe tener al menos 3 caracteres",
+        error:
+          "El nombre de usuario debe tener al menos 3 caracteres",
+      });
+      return;
+    }
+
+    if (username.length > 30) {
+      res.status(400).json({
+        error:
+          "El nombre de usuario no puede superar 30 caracteres",
+      });
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      res.status(400).json({
+        error:
+          "El nombre de usuario solo puede contener letras, números, puntos y guiones bajos",
       });
       return;
     }
 
     if (!email.includes("@")) {
-      res.status(400).json({ error: "Email no válido" });
+      res.status(400).json({
+        error: "Email no válido",
+      });
       return;
     }
 
     if (password.length < 8) {
       res.status(400).json({
-        error: "La contraseña debe tener al menos 8 caracteres",
+        error:
+          "La contraseña debe tener al menos 8 caracteres",
       });
       return;
     }
 
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ username }, { email }],
+        OR: [
+          {
+            username,
+          },
+          {
+            email,
+          },
+        ],
       },
     });
 
@@ -73,7 +108,10 @@ export function registerAuthRoutes(app: Express) {
       return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(
+      password,
+      12,
+    );
 
     const user = await prisma.user.create({
       data: {
@@ -102,7 +140,9 @@ export function registerAuthRoutes(app: Express) {
     const password = String(req.body.password ?? "");
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: {
+        email,
+      },
     });
 
     if (!user) {
@@ -138,17 +178,94 @@ export function registerAuthRoutes(app: Express) {
   app.get(
     "/api/auth/me",
     requireAuth,
-    async (req: AuthenticatedRequest, res) => {
+    async (
+      req: AuthenticatedRequest,
+      res,
+    ) => {
       const userId = req.authUser!.id;
 
       const user = await prisma.user.findUnique({
-        where: { id: userId },
+        where: {
+          id: userId,
+        },
       });
 
       if (!user) {
-        res.status(401).json({ error: "Usuario no encontrado" });
+        res.status(401).json({
+          error: "Usuario no encontrado",
+        });
         return;
       }
+
+      res.json({
+        user: publicUser(user),
+      });
+    },
+  );
+
+  app.patch(
+    "/api/auth/me",
+    requireAuth,
+    async (
+      req: AuthenticatedRequest,
+      res,
+    ) => {
+      const userId = req.authUser!.id;
+      const username = normalizeUsername(
+        req.body.username,
+      );
+
+      if (username.length < 3) {
+        res.status(400).json({
+          error:
+            "El nombre de usuario debe tener al menos 3 caracteres",
+        });
+        return;
+      }
+
+      if (username.length > 30) {
+        res.status(400).json({
+          error:
+            "El nombre de usuario no puede superar 30 caracteres",
+        });
+        return;
+      }
+
+      if (!isValidUsername(username)) {
+        res.status(400).json({
+          error:
+            "El nombre de usuario solo puede contener letras, números, puntos y guiones bajos",
+        });
+        return;
+      }
+
+      const existingUser =
+        await prisma.user.findUnique({
+          where: {
+            username,
+          },
+        });
+
+      if (
+        existingUser &&
+        existingUser.id !== userId
+      ) {
+        res.status(409).json({
+          error:
+            "Ese nombre de usuario ya está en uso",
+        });
+        return;
+      }
+
+      const user = await prisma.user.update({
+        where: {
+          id: userId,
+        },
+
+        data: {
+          username,
+        },
+      });
 
       res.json({
         user: publicUser(user),

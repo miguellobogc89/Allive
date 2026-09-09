@@ -24,6 +24,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
   identity: ViewerIdentity | null;
+
   isLoading: boolean;
   isGuest: boolean;
   isAuthenticated: boolean;
@@ -39,11 +40,17 @@ type AuthContextValue = {
     password: string,
   ) => Promise<void>;
 
+  updateUsername: (
+    username: string,
+  ) => Promise<void>;
+
   continueAsGuest: () => Promise<void>;
+
   logout: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext =
+  createContext<AuthContextValue | null>(null);
 
 function createGuestId() {
   return `guest_${crypto.randomUUID()}`;
@@ -54,24 +61,34 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] =
+    useState<AuthUser | null>(null);
+
+  const [token, setToken] =
+    useState<string | null>(null);
 
   const [identity, setIdentity] =
     useState<ViewerIdentity | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] =
+    useState(true);
 
-  const isGuest = identity?.type === "guest";
-  const isAuthenticated = identity?.type === "user";
+  const isGuest =
+    identity?.type === "guest";
+
+  const isAuthenticated =
+    identity?.type === "user";
 
   useEffect(() => {
     void restoreSession();
   }, []);
 
-  async function getOrCreateGuestIdentity(): Promise<GuestIdentity> {
+  async function getOrCreateGuestIdentity():
+    Promise<GuestIdentity> {
     const storedGuestId =
-      await AsyncStorage.getItem(GUEST_ID_KEY);
+      await AsyncStorage.getItem(
+        GUEST_ID_KEY,
+      );
 
     if (storedGuestId) {
       return {
@@ -96,7 +113,9 @@ export function AuthProvider({
   async function restoreSession() {
     try {
       const storedToken =
-        await AsyncStorage.getItem(TOKEN_KEY);
+        await AsyncStorage.getItem(
+          TOKEN_KEY,
+        );
 
       if (!storedToken) {
         return;
@@ -113,7 +132,9 @@ export function AuthProvider({
         id: restoredUser.id,
       });
     } catch {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      await AsyncStorage.removeItem(
+        TOKEN_KEY,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -140,10 +161,11 @@ export function AuthProvider({
     email: string,
     password: string,
   ) {
-    const session = await authApi.login({
-      email,
-      password,
-    });
+    const session =
+      await authApi.login({
+        email,
+        password,
+      });
 
     await saveSession(session);
   }
@@ -153,17 +175,40 @@ export function AuthProvider({
     email: string,
     password: string,
   ) {
-    const session = await authApi.register({
-      username,
-      email,
-      password,
-    });
+    const session =
+      await authApi.register({
+        username,
+        email,
+        password,
+      });
 
     await saveSession(session);
   }
 
+  async function updateUsername(
+    username: string,
+  ) {
+    if (!token) {
+      throw new Error(
+        "Debes iniciar sesión para cambiar tu nombre de usuario",
+      );
+    }
+
+    const updatedUser =
+      await authApi.updateMe(
+        token,
+        {
+          username,
+        },
+      );
+
+    setUser(updatedUser);
+  }
+
   async function continueAsGuest() {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(
+      TOKEN_KEY,
+    );
 
     const guestIdentity =
       await getOrCreateGuestIdentity();
@@ -174,15 +219,16 @@ export function AuthProvider({
   }
 
   async function logout() {
-    await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(
+      TOKEN_KEY,
+    );
 
     setToken(null);
     setUser(null);
     setIdentity(null);
 
-    // Importante:
-    // NO eliminamos GUEST_ID_KEY.
-    // La instalación conserva siempre su identidad anónima.
+    // La identidad guest de esta instalación
+    // se conserva deliberadamente.
   }
 
   return (
@@ -191,11 +237,15 @@ export function AuthProvider({
         user,
         token,
         identity,
+
         isLoading,
         isGuest,
         isAuthenticated,
+
         login,
         register,
+        updateUsername,
+
         continueAsGuest,
         logout,
       }}
@@ -206,7 +256,8 @@ export function AuthProvider({
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context =
+    useContext(AuthContext);
 
   if (!context) {
     throw new Error(

@@ -22,7 +22,7 @@ import { SearchScreen } from "./src/screens/SearchScreen";
 import { colors } from "./src/styles";
 
 function AppContent() {
-  const { user, isGuest, isLoading } = useAuth();
+  const { identity, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("now");
 
   if (isLoading) {
@@ -33,9 +33,9 @@ function AppContent() {
     );
   }
 
-  if (!user && !isGuest) {
-    return <AuthScreen />;
-  }
+if (!identity) {
+  return <AuthScreen />;
+}
 
   function renderScreen() {
     if (activeTab === "now") return <NowScreen />;
