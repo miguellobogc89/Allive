@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { Room, RoomEvent } from "livekit-client";
+import { useAuth } from "../auth/AuthContext";
 
 import { LiveBroadcastControls } from "../components/live/LiveBroadcastControls";
 import { LiveBroadcastError } from "../components/live/LiveBroadcastError";
@@ -37,7 +38,7 @@ export function EmitScreen() {
   const previewVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveSessionIdRef = useRef<string | null>(null);
-
+  const { token } = useAuth();
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -187,8 +188,15 @@ export function EmitScreen() {
   }
 
   async function startLive() {
+    const authToken = token;
+
+    if (!authToken) {
+      setError("Debes iniciar sesión para emitir.");
+      return;
+    }
+
     if (!cameraReady) {
-      setError("La c\u00e1mara todav\u00eda no est\u00e1 preparada.");
+      setError("La cámara todavía no está preparada.");
       return;
     }
 
@@ -206,7 +214,7 @@ export function EmitScreen() {
       console.log("Allive creando LIVE:", roomName);
 
       const { serverUrl, participantToken } =
-        await getBroadcasterToken(roomName);
+        await getBroadcasterToken(roomName, authToken);
 
       /*
        * Liberamos Camo/getUserMedia antes de
@@ -262,11 +270,15 @@ export function EmitScreen() {
        * Solo registramos en Neon cuando LiveKit
        * ya esta conectado y publicando.
        */
-      liveSessionIdRef.current = await registerLiveInBackend(roomName, {
-        title,
-        eventName,
-        location,
-      });
+liveSessionIdRef.current = await registerLiveInBackend(
+  roomName,
+  {
+    title,
+    eventName,
+    location,
+  },
+  authToken,
+);
 
       updateViewerCount(room);
 
