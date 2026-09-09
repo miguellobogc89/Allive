@@ -42,12 +42,19 @@ import {
   registerSearchRoutes,
 } from "./routes/search";
 
+import {
+  registerLiveThumbnailRoutes,
+} from "./liveThumbnail/liveThumbnailRoutes";
+
 const app = express();
 const PORT = 3001;
 
 registerLiveKitWebhookRoute(app);
 
 app.use(cors());
+
+registerLiveThumbnailRoutes(app);
+
 app.use(express.json());
 
 registerAuthRoutes(app);

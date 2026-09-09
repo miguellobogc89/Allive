@@ -12,6 +12,10 @@ import { LiveBroadcastHeader } from "../components/live/LiveBroadcastHeader";
 import { LiveBroadcastMetadataPanel } from "../components/live/LiveBroadcastMetadataPanel";
 import { LiveBroadcastSurface } from "../components/live/LiveBroadcastSurface.web";
 import {
+  startLiveThumbnailCapture,
+  type LiveThumbnailCaptureController,
+} from "../components/live/thumbnail";
+import {
   getBroadcasterToken,
   markLiveAsEnded,
   registerLiveInBackend,
@@ -38,6 +42,9 @@ export function EmitScreen() {
   const previewVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveVideoElementRef = useRef<HTMLVideoElement | null>(null);
   const liveSessionIdRef = useRef<string | null>(null);
+
+  const thumbnailCaptureRef =
+    useRef<LiveThumbnailCaptureController | null>(null);
 
   const { token } = useAuth();
 
@@ -69,8 +76,13 @@ export function EmitScreen() {
       try {
         setCameraError(null);
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          throw new Error("El navegador no permite acceder a la cámara.");
+        if (
+          !navigator.mediaDevices ||
+          !navigator.mediaDevices.getUserMedia
+        ) {
+          throw new Error(
+            "El navegador no permite acceder a la cámara.",
+          );
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -94,7 +106,10 @@ export function EmitScreen() {
 
         setCameraReady(true);
       } catch (caughtError) {
-        console.error("Error preparando preview:", caughtError);
+        console.error(
+          "Error preparando preview:",
+          caughtError,
+        );
 
         setCameraError(
           "No se ha podido acceder a la cámara o al micrófono.",
@@ -107,7 +122,10 @@ export function EmitScreen() {
     return () => {
       cancelled = true;
 
+      stopThumbnailCapture();
+
       roomRef.current?.disconnect();
+
       clearPreview();
       clearLiveVideo();
     };
@@ -125,11 +143,20 @@ export function EmitScreen() {
 
   function clearLiveVideo() {
     detachLiveVideo(liveVideoElementRef.current);
+
     liveVideoElementRef.current = null;
   }
 
+  function stopThumbnailCapture() {
+    thumbnailCaptureRef.current?.stop();
+    thumbnailCaptureRef.current = null;
+  }
+
   async function restorePreview() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
       setCameraReady(false);
       return;
     }
@@ -152,10 +179,16 @@ export function EmitScreen() {
       setCameraReady(true);
       setCameraError(null);
     } catch (caughtError) {
-      console.error("No se pudo restaurar preview:", caughtError);
+      console.error(
+        "No se pudo restaurar preview:",
+        caughtError,
+      );
 
       setCameraReady(false);
-      setCameraError("No se ha podido volver a activar la cámara.");
+
+      setCameraError(
+        "No se ha podido volver a activar la cámara.",
+      );
     }
   }
 
@@ -168,10 +201,15 @@ export function EmitScreen() {
     }
 
     if (!authToken) {
-      throw new Error("La sesión de usuario ya no está disponible.");
+      throw new Error(
+        "La sesión de usuario ya no está disponible.",
+      );
     }
 
-    await markLiveAsEnded(liveSessionId, authToken);
+    await markLiveAsEnded(
+      liveSessionId,
+      authToken,
+    );
 
     liveSessionIdRef.current = null;
   }
@@ -188,7 +226,10 @@ export function EmitScreen() {
     }
 
     if (!authToken) {
-      setError("La sesión de usuario ya no está disponible.");
+      setError(
+        "La sesión de usuario ya no está disponible.",
+      );
+
       return;
     }
 
@@ -217,12 +258,18 @@ export function EmitScreen() {
     const authToken = token;
 
     if (!authToken) {
-      setError("Debes iniciar sesión para emitir.");
+      setError(
+        "Debes iniciar sesión para emitir.",
+      );
+
       return;
     }
 
     if (!cameraReady) {
-      setError("La cámara todavía no está preparada.");
+      setError(
+        "La cámara todavía no está preparada.",
+      );
+
       return;
     }
 
@@ -235,12 +282,21 @@ export function EmitScreen() {
       resetViewerCounter();
 
       const roomName = createLiveRoomName();
+
       setLiveRoomName(roomName);
 
-      console.log("Allive creando LIVE:", roomName);
+      console.log(
+        "Allive creando LIVE:",
+        roomName,
+      );
 
-      const { serverUrl, participantToken } =
-        await getBroadcasterToken(roomName, authToken);
+      const {
+        serverUrl,
+        participantToken,
+      } = await getBroadcasterToken(
+        roomName,
+        authToken,
+      );
 
       /*
        * Liberamos Camo/getUserMedia antes de
@@ -262,12 +318,30 @@ export function EmitScreen() {
         }
       };
 
-      room.on(RoomEvent.ParticipantConnected, updateCount);
-      room.on(RoomEvent.ParticipantDisconnected, updateCount);
-      room.on(RoomEvent.ParticipantAttributesChanged, updateCount);
-      room.on(RoomEvent.ParticipantMetadataChanged, updateCount);
+      room.on(
+        RoomEvent.ParticipantConnected,
+        updateCount,
+      );
 
-      await room.connect(serverUrl, participantToken);
+      room.on(
+        RoomEvent.ParticipantDisconnected,
+        updateCount,
+      );
+
+      room.on(
+        RoomEvent.ParticipantAttributesChanged,
+        updateCount,
+      );
+
+      room.on(
+        RoomEvent.ParticipantMetadataChanged,
+        updateCount,
+      );
+
+      await room.connect(
+        serverUrl,
+        participantToken,
+      );
 
       console.log(
         "Allive broadcaster conectado a LiveKit:",
@@ -275,11 +349,15 @@ export function EmitScreen() {
       );
 
       /*
-       * Volvemos al mecanismo que ya habíamos
-       * probado correctamente.
+       * Publicamos cámara y micrófono.
        */
-      await room.localParticipant.setCameraEnabled(true);
-      await room.localParticipant.setMicrophoneEnabled(true);
+      await room.localParticipant.setCameraEnabled(
+        true,
+      );
+
+      await room.localParticipant.setMicrophoneEnabled(
+        true,
+      );
 
       console.log(
         "Allive cámara y micrófono publicados:",
@@ -292,24 +370,51 @@ export function EmitScreen() {
         );
       }
 
-      liveVideoElementRef.current = attachLiveCamera(
-        room,
-        localVideoRef.current,
-      );
+      liveVideoElementRef.current =
+        attachLiveCamera(
+          room,
+          localVideoRef.current,
+        );
 
       /*
        * Solo registramos en Neon cuando LiveKit
        * ya está conectado y publicando.
        */
-      liveSessionIdRef.current = await registerLiveInBackend(
-        roomName,
-        {
-          title,
-          eventName,
-          location,
-        },
-        authToken,
-      );
+      liveSessionIdRef.current =
+        await registerLiveInBackend(
+          roomName,
+          {
+            title,
+            eventName,
+            location,
+          },
+          authToken,
+        );
+
+      /*
+       * Iniciamos el sistema independiente de thumbnails
+       * cuando ya existen tanto el LIVE en Neon como
+       * el elemento de vídeo real del broadcaster.
+       */
+      const liveSessionId =
+        liveSessionIdRef.current;
+
+      const liveVideoElement =
+        liveVideoElementRef.current;
+
+      if (
+        liveSessionId &&
+        liveVideoElement
+      ) {
+        stopThumbnailCapture();
+
+        thumbnailCaptureRef.current =
+          startLiveThumbnailCapture({
+            liveSessionId,
+            videoElement: liveVideoElement,
+            authToken,
+          });
+      }
 
       updateViewerCount(room);
 
@@ -333,6 +438,12 @@ export function EmitScreen() {
       );
 
       /*
+       * Detenemos primero cualquier captura pendiente
+       * antes de destruir el vídeo o cerrar el LIVE.
+       */
+      stopThumbnailCapture();
+
+      /*
        * Si llegamos a registrar en Neon antes
        * de algún fallo posterior, lo limpiamos.
        */
@@ -347,8 +458,13 @@ export function EmitScreen() {
 
       if (room) {
         try {
-          await room.localParticipant.setCameraEnabled(false);
-          await room.localParticipant.setMicrophoneEnabled(false);
+          await room.localParticipant.setCameraEnabled(
+            false,
+          );
+
+          await room.localParticipant.setMicrophoneEnabled(
+            false,
+          );
         } catch {
           // Las pistas pueden no haberse creado.
         }
@@ -376,6 +492,12 @@ export function EmitScreen() {
 
     setError(null);
 
+    /*
+     * Primero paramos el temporizador para impedir
+     * una nueva subida mientras cerramos el LIVE.
+     */
+    stopThumbnailCapture();
+
     try {
       await endRegisteredLive();
     } catch (caughtError) {
@@ -390,8 +512,13 @@ export function EmitScreen() {
 
     if (room) {
       try {
-        await room.localParticipant.setCameraEnabled(false);
-        await room.localParticipant.setMicrophoneEnabled(false);
+        await room.localParticipant.setCameraEnabled(
+          false,
+        );
+
+        await room.localParticipant.setMicrophoneEnabled(
+          false,
+        );
       } catch (caughtError) {
         console.error(
           "Error desactivando cámara/micrófono:",
@@ -423,7 +550,10 @@ export function EmitScreen() {
     setEditingTitle(false);
 
     if (isLive) {
-      void saveLiveMetadata(title, eventName);
+      void saveLiveMetadata(
+        title,
+        eventName,
+      );
     }
   }
 
@@ -431,7 +561,10 @@ export function EmitScreen() {
     setEditingEvent(false);
 
     if (isLive) {
-      void saveLiveMetadata(title, eventName);
+      void saveLiveMetadata(
+        title,
+        eventName,
+      );
     }
   }
 
@@ -447,9 +580,15 @@ export function EmitScreen() {
         isLive={isLive}
         viewers={viewers}
         viewerDelta={viewerDelta}
-        badgeScale={viewerAnimations.badgeScale}
-        deltaOpacity={viewerAnimations.deltaOpacity}
-        deltaTranslateY={viewerAnimations.deltaTranslateY}
+        badgeScale={
+          viewerAnimations.badgeScale
+        }
+        deltaOpacity={
+          viewerAnimations.deltaOpacity
+        }
+        deltaTranslateY={
+          viewerAnimations.deltaTranslateY
+        }
       />
 
       <LiveBroadcastMetadataPanel
@@ -461,13 +600,19 @@ export function EmitScreen() {
         locationStatus={locationStatus}
         onChangeTitle={setTitle}
         onChangeEventName={setEventName}
-        onEditTitle={() => setEditingTitle(true)}
-        onEditEvent={() => setEditingEvent(true)}
+        onEditTitle={() =>
+          setEditingTitle(true)
+        }
+        onEditEvent={() =>
+          setEditingEvent(true)
+        }
         onSaveTitle={saveTitle}
         onSaveEvent={saveEvent}
       />
 
-      <LiveBroadcastError message={error} />
+      <LiveBroadcastError
+        message={error}
+      />
 
       <LiveBroadcastControls
         isLive={isLive}
@@ -484,6 +629,7 @@ export function EmitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.cameraBackground,
+    backgroundColor:
+      colors.cameraBackground,
   },
 });
