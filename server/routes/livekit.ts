@@ -9,6 +9,10 @@ import {
   LIVEKIT_URL,
   webhookReceiver,
 } from "../livekit";
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from "../auth";
 
 export function registerLiveKitWebhookRoute(app: Express) {
   /*
@@ -97,36 +101,55 @@ export function registerLiveKitWebhookRoute(app: Express) {
 }
 
 export function registerLiveKitTokenRoutes(app: Express) {
-  app.post("/api/livekit/token", async (req, res) => {
-    try {
-      const { roomName, role } = req.body;
-
-      if (!roomName || typeof roomName !== "string") {
-        return res.status(400).json({
-          error: "roomName es obligatorio",
-        });
+  app.post(
+    "/api/livekit/token",
+    async (req: AuthenticatedRequest, res, next) => {
+      if (req.body?.role === "broadcaster") {
+        requireAuth(req, res, next);
+        return;
       }
 
-      if (role !== "broadcaster" && role !== "viewer") {
-        return res.status(400).json({
-          error: 'role debe ser "broadcaster" o "viewer"',
+      next();
+    },
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const { roomName, role } = req.body;
+
+        if (!roomName || typeof roomName !== "string") {
+          return res.status(400).json({
+            error: "roomName es obligatorio",
+          });
+        }
+
+        if (role !== "broadcaster" && role !== "viewer") {
+          return res.status(400).json({
+            error: 'role debe ser "broadcaster" o "viewer"',
+          });
+        }
+
+        const identity =
+          role === "broadcaster"
+            ? `broadcaster-${req.authUser!.id}`
+            : undefined;
+
+        const participantToken = await createLiveKitToken(
+          roomName,
+          role,
+          identity,
+        );
+
+        return res.json({
+          serverUrl: LIVEKIT_URL,
+          participantToken,
+          role,
+        });
+      } catch (error) {
+        console.error("Error generando token LiveKit:", error);
+
+        return res.status(500).json({
+          error: "No se pudo generar el token LiveKit",
         });
       }
-
-      const participantToken = await createLiveKitToken(roomName, role);
-
-      return res.json({
-        serverUrl: LIVEKIT_URL,
-
-        participantToken,
-        role,
-      });
-    } catch (error) {
-      console.error("Error generando token LiveKit:", error);
-
-      return res.status(500).json({
-        error: "No se pudo generar el token LiveKit",
-      });
-    }
-  });
+    },
+  );
 }
