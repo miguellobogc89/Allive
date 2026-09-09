@@ -1,9 +1,7 @@
 // src/components/live/LiveVideoSurface.web.tsx
 
 import {
-  RemoteParticipant,
   RemoteTrack,
-  RemoteTrackPublication,
   Room,
   RoomEvent,
   Track,
@@ -21,11 +19,6 @@ import {
   View,
 } from "react-native";
 
-import type {
-  AuthUser,
-  ViewerIdentity,
-} from "../../auth/types";
-
 import {
   API_URL,
 } from "../../api/apiConfig";
@@ -33,6 +26,11 @@ import {
 import {
   refreshLiveViewerCount,
 } from "../../api/liveRealtimeApi";
+
+import type {
+  AuthUser,
+  ViewerIdentity,
+} from "../../auth/types";
 
 import {
   colors,
@@ -43,14 +41,14 @@ import {
 } from "../../styles";
 
 import {
-  getParticipantRole,
-} from "./liveParticipantRole";
-
-import {
   buildLiveAudience,
   emptyLiveAudience,
   type LiveAudience,
 } from "./liveAudience";
+
+import {
+  getParticipantRole,
+} from "./liveParticipantRole";
 
 import type {
   ActiveLive,
@@ -170,23 +168,30 @@ export function LiveVideoSurface({
       null,
     );
 
+  const videoRef =
+    useRef<HTMLVideoElement | null>(
+      null,
+    );
+
+  const audioRef =
+    useRef<HTMLAudioElement | null>(
+      null,
+    );
+
   const videoTrackRef =
     useRef<RemoteTrack | null>(
       null,
     );
 
-  const connectionVersionRef =
-    useRef(0);
-
-  const videoContainerRef =
-    useRef<HTMLDivElement | null>(
+  const audioTrackRef =
+    useRef<RemoteTrack | null>(
       null,
     );
 
-  const audioContainerRef =
-    useRef<HTMLDivElement | null>(
-      null,
-    );
+  const [
+    hasVideo,
+    setHasVideo,
+  ] = useState(false);
 
   const [
     status,
@@ -194,11 +199,6 @@ export function LiveVideoSurface({
   ] = useState(
     "Buscando LIVE...",
   );
-
-  const [
-    hasVideo,
-    setHasVideo,
-  ] = useState(false);
 
   const [
     error,
@@ -209,62 +209,11 @@ export function LiveVideoSurface({
     );
 
   useEffect(() => {
-    connectionVersionRef.current +=
-      1;
-
-    const version =
-      connectionVersionRef.current;
-
     let disposed = false;
 
-    const isCurrent = (
-      room?: Room,
-    ) =>
-      !disposed &&
-      version ===
-        connectionVersionRef.current &&
-      (
-        !room ||
-        roomRef.current === room
-      );
-
-    const clearVideo = () => {
-      const track =
-        videoTrackRef.current;
-
-      if (track) {
-        track
-          .detach()
-          .forEach(
-            (element) =>
-              element.remove(),
-          );
-      }
-
-      videoTrackRef.current =
-        null;
-
-      setHasVideo(false);
-    };
-
-    const clearAudio = () => {
-      if (
-        audioContainerRef.current
-      ) {
-        audioContainerRef.current
-          .querySelectorAll(
-            "audio",
-          )
-          .forEach(
-            (element) =>
-              element.remove(),
-          );
-      }
-    };
-
-    const updateAudience = (
+    function updateAudience(
       room: Room,
-    ) => {
+    ) {
       if (
         !viewerIdentity
       ) {
@@ -286,7 +235,35 @@ export function LiveVideoSurface({
           },
         ),
       );
-    };
+    }
+
+    function detachTracks() {
+      if (
+        videoTrackRef.current &&
+        videoRef.current
+      ) {
+        videoTrackRef.current.detach(
+          videoRef.current,
+        );
+      }
+
+      if (
+        audioTrackRef.current &&
+        audioRef.current
+      ) {
+        audioTrackRef.current.detach(
+          audioRef.current,
+        );
+      }
+
+      videoTrackRef.current =
+        null;
+
+      audioTrackRef.current =
+        null;
+
+      setHasVideo(false);
+    }
 
     const previousRoom =
       roomRef.current;
@@ -295,8 +272,7 @@ export function LiveVideoSurface({
       previousRoom.disconnect();
     }
 
-    clearVideo();
-    clearAudio();
+    detachTracks();
 
     roomRef.current =
       null;
@@ -317,15 +293,13 @@ export function LiveVideoSurface({
       return;
     }
 
-    if (
-      !viewerIdentity
-    ) {
-      setError(
-        "No hay una identidad de espectador disponible.",
-      );
-
+    if (!viewerIdentity) {
       setStatus(
         "No disponible",
+      );
+
+      setError(
+        "No hay una identidad de espectador disponible.",
       );
 
       return;
@@ -349,7 +323,7 @@ export function LiveVideoSurface({
             authToken,
           );
 
-        if (!isCurrent()) {
+        if (disposed) {
           return;
         }
 
@@ -368,121 +342,60 @@ export function LiveVideoSurface({
           room,
         );
 
-        const attachTrack = (
+        function attachTrack(
           track: RemoteTrack,
-          _publication:
-            RemoteTrackPublication,
-          participant:
-            RemoteParticipant,
-        ) => {
+          participantRole:
+            string | null,
+        ) {
           if (
-            !isCurrent(room)
-          ) {
-            return;
-          }
-
-          const role =
-            getParticipantRole(
-              participant,
-            );
-
-          if (
-            role !==
-            "broadcaster"
+            disposed ||
+            participantRole !==
+              "broadcaster"
           ) {
             return;
           }
 
           if (
             track.kind ===
-            Track.Kind.Video
+              Track.Kind.Video &&
+            videoRef.current
           ) {
             if (
               videoTrackRef.current &&
               videoTrackRef.current !==
                 track
             ) {
-              videoTrackRef.current
-                .detach()
-                .forEach(
-                  (
-                    element,
-                  ) =>
-                    element.remove(),
-                );
+              videoTrackRef.current.detach(
+                videoRef.current,
+              );
             }
 
-            const element =
-              track.attach() as
-                HTMLVideoElement;
-
-            element.autoplay =
-              true;
-
-            element.playsInline =
-              true;
-
-            element.muted =
-              true;
-
-            element.style.position =
-              "absolute";
-
-            element.style.inset =
-              "0";
-
-            element.style.width =
-              "100%";
-
-            element.style.height =
-              "100%";
-
-            element.style.objectFit =
-              "cover";
-
-            element.style.backgroundColor =
-              "#000";
-
-            const container =
-              videoContainerRef.current;
-
-            if (container) {
-              container
-                .querySelectorAll(
-                  "video",
-                )
-                .forEach(
-                  (
-                    existing,
-                  ) => {
-                    if (
-                      existing !==
-                      element
-                    ) {
-                      existing.remove();
-                    }
-                  },
-                );
-
-              if (
-                !container.contains(
-                  element,
-                )
-              ) {
-                container.appendChild(
-                  element,
-                );
-              }
-
-              void element
-                .play()
-                .catch(
-                  () => {},
-                );
-            }
+            track.attach(
+              videoRef.current,
+            );
 
             videoTrackRef.current =
               track;
+
+            videoRef.current.autoplay =
+              true;
+
+            videoRef.current.playsInline =
+              true;
+
+            videoRef.current.muted =
+              true;
+
+            void videoRef.current
+              .play()
+              .catch(
+                (playError) => {
+                  console.warn(
+                    "Allive viewer video play:",
+                    playError,
+                  );
+                },
+              );
 
             setHasVideo(
               true,
@@ -491,87 +404,57 @@ export function LiveVideoSurface({
             setStatus(
               "LIVE",
             );
+
+            return;
           }
 
           if (
             track.kind ===
-            Track.Kind.Audio
+              Track.Kind.Audio &&
+            audioRef.current
           ) {
-            const element =
-              track.attach();
-
-            element.autoplay =
-              true;
-
-            const container =
-              audioContainerRef.current;
-
             if (
-              container &&
-              !container.contains(
-                element,
-              )
+              audioTrackRef.current &&
+              audioTrackRef.current !==
+                track
             ) {
-              container.appendChild(
-                element,
+              audioTrackRef.current.detach(
+                audioRef.current,
               );
             }
+
+            track.attach(
+              audioRef.current,
+            );
+
+            audioTrackRef.current =
+              track;
+
+            audioRef.current.autoplay =
+              true;
+
+            void audioRef.current
+              .play()
+              .catch(
+                () => {},
+              );
           }
-        };
-
-        const attachExistingTracks =
-          () => {
-            for (
-              const participant of
-              room.remoteParticipants.values()
-            ) {
-              if (
-                getParticipantRole(
-                  participant,
-                ) !==
-                "broadcaster"
-              ) {
-                continue;
-              }
-
-              for (
-                const publication of
-                participant.trackPublications.values()
-              ) {
-                const track =
-                  publication.track;
-
-                if (track) {
-                  attachTrack(
-                    track,
-                    publication,
-                    participant,
-                  );
-                }
-              }
-            }
-          };
-
-        const refreshAudience =
-          () => {
-            if (
-              !isCurrent(room)
-            ) {
-              return;
-            }
-
-            updateAudience(
-              room,
-            );
-
-            void refreshLiveViewerCount(
-              live!.id,
-            );
-          };
+        }
 
         room.on(
           RoomEvent.TrackSubscribed,
-          attachTrack,
+          (
+            track,
+            _publication,
+            participant,
+          ) => {
+            attachTrack(
+              track,
+              getParticipantRole(
+                participant,
+              ),
+            );
+          },
         );
 
         room.on(
@@ -590,19 +473,15 @@ export function LiveVideoSurface({
               return;
             }
 
-            track
-              .detach()
-              .forEach(
-                (element) =>
-                  element.remove(),
+            if (
+              track ===
+                videoTrackRef.current &&
+              videoRef.current
+            ) {
+              track.detach(
+                videoRef.current,
               );
 
-            if (
-              track.kind ===
-                Track.Kind.Video &&
-              videoTrackRef.current ===
-                track
-            ) {
               videoTrackRef.current =
                 null;
 
@@ -614,8 +493,28 @@ export function LiveVideoSurface({
                 "Recuperando vídeo...",
               );
             }
+
+            if (
+              track ===
+                audioTrackRef.current &&
+              audioRef.current
+            ) {
+              track.detach(
+                audioRef.current,
+              );
+
+              audioTrackRef.current =
+                null;
+            }
           },
         );
+
+        const refreshAudience =
+          () => {
+            updateAudience(
+              room,
+            );
+          };
 
         room.on(
           RoomEvent.ParticipantConnected,
@@ -640,11 +539,7 @@ export function LiveVideoSurface({
         room.on(
           RoomEvent.Reconnecting,
           () => {
-            if (
-              isCurrent(
-                room,
-              )
-            ) {
+            if (!disposed) {
               setStatus(
                 "Reconectando...",
               );
@@ -655,31 +550,22 @@ export function LiveVideoSurface({
         room.on(
           RoomEvent.Reconnected,
           () => {
-            if (
-              !isCurrent(
+            if (!disposed) {
+              updateAudience(
                 room,
-              )
-            ) {
-              return;
+              );
             }
-
-            attachExistingTracks();
-            refreshAudience();
           },
         );
 
         room.on(
           RoomEvent.Disconnected,
           () => {
-            if (
-              !isCurrent(
-                room,
-              )
-            ) {
+            if (disposed) {
               return;
             }
 
-            clearVideo();
+            detachTracks();
 
             setStatus(
               "LIVE finalizado",
@@ -691,10 +577,6 @@ export function LiveVideoSurface({
 
             onRoomChange?.(
               null,
-            );
-
-            void refreshLiveViewerCount(
-              live!.id,
             );
           },
         );
@@ -708,11 +590,8 @@ export function LiveVideoSurface({
           },
         );
 
-        if (
-          !isCurrent(room)
-        ) {
+        if (disposed) {
           room.disconnect();
-
           return;
         }
 
@@ -720,19 +599,48 @@ export function LiveVideoSurface({
           "Conectado · esperando vídeo",
         );
 
-        attachExistingTracks();
+        for (
+          const participant of
+          room.remoteParticipants.values()
+        ) {
+          const role =
+            getParticipantRole(
+              participant,
+            );
+
+          for (
+            const publication of
+            participant.trackPublications.values()
+          ) {
+            if (
+              publication.track
+            ) {
+              attachTrack(
+                publication.track,
+                role,
+              );
+            }
+          }
+        }
 
         updateAudience(
           room,
         );
 
-        void refreshLiveViewerCount(
-          live!.id,
+        window.setTimeout(
+          () => {
+            if (!disposed) {
+              void refreshLiveViewerCount(
+                live!.id,
+              );
+            }
+          },
+          750,
         );
       } catch (
         caughtError
       ) {
-        if (!isCurrent()) {
+        if (disposed) {
           return;
         }
 
@@ -763,19 +671,10 @@ export function LiveVideoSurface({
     return () => {
       disposed = true;
 
-      if (
-        version ===
-        connectionVersionRef.current
-      ) {
-        connectionVersionRef.current +=
-          1;
-      }
-
       const room =
         roomRef.current;
 
-      clearVideo();
-      clearAudio();
+      detachTracks();
 
       if (room) {
         room.disconnect();
@@ -787,6 +686,17 @@ export function LiveVideoSurface({
       onRoomChange?.(
         null,
       );
+
+      if (live?.id) {
+        window.setTimeout(
+          () => {
+            void refreshLiveViewerCount(
+              live.id,
+            );
+          },
+          750,
+        );
+      }
     };
   }, [
     live?.id,
@@ -804,17 +714,17 @@ export function LiveVideoSurface({
         styles.container
       }
     >
-      <div
-        ref={
-          videoContainerRef
-        }
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
         style={videoStyle}
       />
 
-      <div
-        ref={
-          audioContainerRef
-        }
+      <audio
+        ref={audioRef}
+        autoPlay
       />
 
       {!hasVideo ? (
@@ -855,24 +765,31 @@ export function LiveVideoSurface({
 const videoStyle = {
   position:
     "absolute" as const,
+
   inset: 0,
+
   width: "100%",
   height: "100%",
+
+  objectFit:
+    "cover" as const,
+
   backgroundColor:
     colors.background,
-  overflow: "hidden",
 };
 
 const styles =
   StyleSheet.create({
     container: {
       ...StyleSheet.absoluteFill,
+
       backgroundColor:
         colors.background,
     },
 
     waiting: {
       ...StyleSheet.absoluteFill,
+
       alignItems: "center",
       justifyContent:
         "center",
@@ -881,24 +798,31 @@ const styles =
     status: {
       color:
         colors.textMuted,
+
       ...typography.label,
     },
 
     errorBox: {
       position: "absolute",
+
       left:
         layout
           .liveErrorHorizontal,
+
       right:
         layout
           .liveErrorHorizontal,
+
       bottom:
         layout
           .liveErrorBottom,
+
       padding:
         spacing.sm,
+
       borderRadius:
         radius.md,
+
       backgroundColor:
         colors.dangerSurface,
     },
@@ -906,7 +830,9 @@ const styles =
     errorText: {
       color:
         colors.dangerText,
+
       ...typography.caption,
+
       fontWeight: "400",
     },
   });

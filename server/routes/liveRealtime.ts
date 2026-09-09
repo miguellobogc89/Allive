@@ -5,6 +5,10 @@ import type {
 } from "express";
 
 import {
+  prisma,
+} from "../db";
+
+import {
   addLiveRealtimeClient,
   publishViewerCountForLive,
 } from "../services/liveRealtime";
@@ -12,11 +16,67 @@ import {
 const HEARTBEAT_MS =
   25_000;
 
+const VIEWER_SYNC_MS =
+  2_000;
+
+let viewerSyncRunning =
+  false;
+
+async function syncLiveViewers() {
+  if (viewerSyncRunning) {
+    return;
+  }
+
+  viewerSyncRunning =
+    true;
+
+  try {
+    const lives =
+      await prisma.liveSession.findMany(
+        {
+          where: {
+            status: "LIVE",
+          },
+
+          select: {
+            id: true,
+            roomName: true,
+          },
+        },
+      );
+
+    await Promise.all(
+      lives
+        .filter(
+          (live) =>
+            !live.roomName.startsWith(
+              "allive_dev_",
+            ),
+        )
+        .map(
+          (live) =>
+            publishViewerCountForLive(
+              live.id,
+            ),
+        ),
+    );
+  } catch (error) {
+    console.error(
+      "Error sincronizando viewers:",
+      error,
+    );
+  } finally {
+    viewerSyncRunning =
+      false;
+  }
+}
+
 export function registerLiveRealtimeRoutes(
   app: Express,
 ) {
   app.get(
     "/api/live/realtime",
+
     (req, res) => {
       res.status(200);
 
@@ -48,6 +108,8 @@ export function registerLiveRealtimeRoutes(
           res,
         );
 
+      void syncLiveViewers();
+
       const heartbeat =
         setInterval(
           () => {
@@ -66,11 +128,23 @@ export function registerLiveRealtimeRoutes(
           HEARTBEAT_MS,
         );
 
+      const viewerSync =
+        setInterval(
+          () => {
+            void syncLiveViewers();
+          },
+          VIEWER_SYNC_MS,
+        );
+
       req.on(
         "close",
         () => {
           clearInterval(
             heartbeat,
+          );
+
+          clearInterval(
+            viewerSync,
           );
 
           removeClient();
@@ -81,7 +155,11 @@ export function registerLiveRealtimeRoutes(
 
   app.post(
     "/api/live/realtime/:id/viewers/refresh",
-    async (req, res) => {
+
+    async (
+      req,
+      res,
+    ) => {
       const id =
         Array.isArray(
           req.params.id,
