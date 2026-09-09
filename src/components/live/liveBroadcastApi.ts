@@ -25,12 +25,14 @@ function buildLiveMetadataBody({
 }
 
 export async function getBroadcasterToken(
-  roomName: string
+  roomName: string,
+  authToken: string,
 ): Promise<LiveKitTokenResponse> {
   const response = await fetch(`${API_URL}/api/livekit/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({
       roomName,
@@ -58,12 +60,14 @@ export async function getBroadcasterToken(
 
 export async function registerLiveInBackend(
   roomName: string,
-  metadata: LiveMetadataPayload
+  metadata: LiveMetadataPayload,
+  authToken: string,
 ) {
   const response = await fetch(`${API_URL}/api/lives`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({
       roomName,
