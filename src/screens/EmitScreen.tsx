@@ -1,3 +1,6 @@
 // src/screens/EmitScreen.tsx
 
-export { EmitScreen } from "./EmitScreen.web";
+export {
+  EmitScreen,
+  type EmitUiState,
+} from "./EmitScreen.web";

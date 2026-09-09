@@ -40,7 +40,7 @@ export function LiveCommentComposer({
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder="Escribe un comentario…"
+        placeholder="Escribe un comentario..."
         placeholderTextColor={
           colors.textOnOverlayPlaceholder
         }
@@ -77,27 +77,31 @@ export function LiveCommentComposer({
 
 const styles = StyleSheet.create({
   container: {
-    height: 48,
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
     paddingLeft: spacing.md,
     paddingRight: spacing.xs,
     borderRadius: radius.round,
-    backgroundColor: colors.overlayStrong,
+    backgroundColor:
+      colors.overlayRaisedStrong,
     borderWidth: 1,
-    borderColor: colors.borderOnOverlaySubtle,
+    borderColor:
+      colors.dividerOnOverlay,
   },
 
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: 13,
-  },
+    fontSize: 14,
+    fontWeight: "600",
+    outlineStyle: "none",
+  } as any,
 
   sendButton: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: radius.round,
     alignItems: "center",
     justifyContent: "center",

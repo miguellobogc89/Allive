@@ -46,12 +46,12 @@ export function LiveBroadcastControls({
 
       <Text style={styles.hint}>
         {isLive
-          ? "Est\u00e1s en directo"
+          ? "Estás en directo"
           : cameraReady
-            ? "La c\u00e1mara est\u00e1 preparada \u00b7 todav\u00eda no est\u00e1s en directo"
+            ? "La cámara está preparada · todavía no estás en directo"
             : isConnecting
               ? "Conectando con Allive..."
-              : "Preparando c\u00e1mara"}
+              : "Preparando cámara"}
       </Text>
 
       {isLive && liveRoomName ? (

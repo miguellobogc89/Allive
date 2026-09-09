@@ -1,6 +1,10 @@
 // App.tsx
 
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   ActivityIndicator,
@@ -17,15 +21,33 @@ import {
 import { BottomNav } from "./src/components/BottomNav";
 
 import { AuthScreen } from "./src/screens/AuthScreen";
-import { EmitScreen } from "./src/screens/EmitScreen";
+import {
+  EmitScreen,
+  type EmitUiState,
+} from "./src/screens/EmitScreen";
 import { MapScreen } from "./src/screens/MapScreen";
 import { NowScreen } from "./src/screens/NowScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SearchScreen } from "./src/screens/SearchScreen";
 
-import { colors } from "./src/styles";
+import {
+  colors,
+  typography,
+} from "./src/styles";
 
 function AppContent() {
+  useEffect(() => {
+    if (
+      typeof document ===
+      "undefined"
+    ) {
+      return;
+    }
+
+    document.body.style.fontFamily =
+      typography.fontFamily;
+  }, []);
+
   const {
     identity,
     isLoading,
@@ -42,6 +64,26 @@ function AppContent() {
   ] = useState<string | null>(
     null,
   );
+
+  const [
+    emitState,
+    setEmitState,
+  ] = useState<EmitUiState>(
+    "ready",
+  );
+
+  const [
+    emitActionRequest,
+    setEmitActionRequest,
+  ] = useState(0);
+
+  const handleEmitStateChange =
+    useCallback(
+      (state: EmitUiState) => {
+        setEmitState(state);
+      },
+      [],
+    );
 
   if (isLoading) {
     return (
@@ -92,7 +134,16 @@ function AppContent() {
     }
 
     if (activeTab === "emit") {
-      return <EmitScreen />;
+      return (
+        <EmitScreen
+          onUiStateChange={
+            handleEmitStateChange
+          }
+          actionRequest={
+            emitActionRequest
+          }
+        />
+      );
     }
 
     if (activeTab === "search") {
@@ -127,6 +178,16 @@ function AppContent() {
       <BottomNav
         activeTab={activeTab}
         onTabPress={changeTab}
+        emitState={
+          activeTab === "emit"
+            ? emitState
+            : "idle"
+        }
+        onEmitAction={() => {
+          setEmitActionRequest(
+            (current) => current + 1,
+          );
+        }}
       />
     </SafeAreaView>
   );

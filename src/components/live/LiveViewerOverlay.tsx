@@ -1,6 +1,10 @@
 // src/components/live/LiveViewerOverlay.tsx
 
 import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import {
   RoomEvent,
   type Room,
 } from "livekit-client";
@@ -12,6 +16,7 @@ import {
 } from "react";
 
 import {
+  Pressable,
   StyleSheet,
   View,
 } from "react-native";
@@ -25,7 +30,10 @@ import {
 } from "../../api/liveRealtimeApi";
 
 import {
+  colors,
+  iconSizes,
   layout,
+  radius,
 } from "../../styles";
 
 import {
@@ -107,6 +115,11 @@ export function LiveViewerOverlay({
   ] = useState("");
 
   const [
+    commentComposerOpen,
+    setCommentComposerOpen,
+  ] = useState(false);
+
+  const [
     comments,
     setComments,
   ] =
@@ -161,6 +174,7 @@ export function LiveViewerOverlay({
   useEffect(() => {
     setSaved(false);
     setAudienceOpen(false);
+    setCommentComposerOpen(false);
     setCommentValue("");
     setComments([]);
     setLiked(false);
@@ -332,6 +346,9 @@ export function LiveViewerOverlay({
       );
 
       setCommentValue("");
+      setCommentComposerOpen(
+        false,
+      );
 
       if (room) {
         await publishLiveRealtimeMessage(
@@ -425,19 +442,45 @@ export function LiveViewerOverlay({
           comments={comments}
         />
 
-        <LiveCommentComposer
-          value={commentValue}
-          disabled={
-            !viewerIdentity ||
-            commentSending
-          }
-          onChangeText={
-            setCommentValue
-          }
-          onSend={() =>
-            void sendComment()
-          }
-        />
+        {commentComposerOpen ? (
+          <LiveCommentComposer
+            value={commentValue}
+            disabled={
+              !viewerIdentity ||
+              commentSending
+            }
+            onChangeText={
+              setCommentValue
+            }
+            onSend={() =>
+              void sendComment()
+            }
+          />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Comentar"
+            disabled={!viewerIdentity}
+            onPress={() =>
+              setCommentComposerOpen(
+                true,
+              )
+            }
+            style={({ pressed }) => [
+              styles.commentButton,
+              pressed &&
+                styles.commentButtonPressed,
+              !viewerIdentity &&
+                styles.commentButtonDisabled,
+            ]}
+          >
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={iconSizes.md}
+              color={colors.text}
+            />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -459,5 +502,29 @@ const styles =
       bottom:
         layout.liveContentBottom,
       gap: 11,
+    },
+
+    commentButton: {
+      width: 48,
+      height: 48,
+      borderRadius:
+        radius.round,
+      alignItems: "center",
+      justifyContent:
+        "center",
+      backgroundColor:
+        colors.overlayStrong,
+      borderWidth:
+        StyleSheet.hairlineWidth,
+      borderColor:
+        colors.borderOnOverlaySubtle,
+    },
+
+    commentButtonPressed: {
+      opacity: 0.72,
+    },
+
+    commentButtonDisabled: {
+      opacity: 0.42,
     },
   });

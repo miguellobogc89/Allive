@@ -57,10 +57,6 @@ function ActionButton({
       <View
         style={[
           styles.circle,
-          active && {
-            backgroundColor:
-              activeColor,
-          },
           disabled &&
             styles.disabledCircle,
         ]}
@@ -70,7 +66,7 @@ function ActionButton({
           size={iconSizes.action}
           color={
             active
-              ? colors.text
+              ? activeColor
               : colors.text
           }
         />
@@ -173,6 +169,10 @@ const styles =
       justifyContent: "center",
       backgroundColor:
         colors.overlay,
+      borderWidth:
+        StyleSheet.hairlineWidth,
+      borderColor:
+        colors.dividerOnOverlay,
     },
 
     disabledCircle: {

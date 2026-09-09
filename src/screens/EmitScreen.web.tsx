@@ -6,10 +6,13 @@ import { StyleSheet, View } from "react-native";
 import { Room, RoomEvent } from "livekit-client";
 import { useAuth } from "../auth/AuthContext";
 
-import { LiveBroadcastControls } from "../components/live/LiveBroadcastControls";
+import {
+  subscribeToLiveMetrics,
+} from "../api/liveRealtimeApi";
+
 import { LiveBroadcastError } from "../components/live/LiveBroadcastError";
 import { LiveBroadcastHeader } from "../components/live/LiveBroadcastHeader";
-import { LiveBroadcastMetadataPanel } from "../components/live/LiveBroadcastMetadataPanel";
+import { LiveBroadcastContext } from "../components/live/LiveBroadcastContext";
 import { LiveBroadcastSurface } from "../components/live/LiveBroadcastSurface.web";
 import {
   startLiveThumbnailCapture,
@@ -30,14 +33,33 @@ import {
 } from "../components/live/liveBroadcastVideo.web";
 import { useBroadcastLocation } from "../components/live/useBroadcastLocation.web";
 import { useViewerCounter } from "../components/live/useViewerCounter";
+import {
+  buildLiveAudience,
+  emptyLiveAudience,
+  type LiveAudience,
+} from "../components/live/liveAudience";
 import { colors } from "../styles";
 
 function createLiveRoomName() {
   return `live-${Date.now()}`;
 }
 
-export function EmitScreen() {
+export type EmitUiState =
+  | "ready"
+  | "connecting"
+  | "live";
+
+type EmitScreenProps = {
+  onUiStateChange?: (state: EmitUiState) => void;
+  actionRequest?: number;
+};
+
+export function EmitScreen({
+  onUiStateChange,
+  actionRequest = 0,
+}: EmitScreenProps) {
   const roomRef = useRef<Room | null>(null);
+  const lastActionRequestRef = useRef(actionRequest);
   const localVideoRef = useRef<HTMLDivElement | null>(null);
   const previewStreamRef = useRef<MediaStream | null>(null);
   const previewVideoElementRef = useRef<HTMLVideoElement | null>(null);
@@ -54,11 +76,16 @@ export function EmitScreen() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isLive, setIsLive] = useState(false);
   const [liveRoomName, setLiveRoomName] = useState<string | null>(null);
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [eventName, setEventName] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(false);
+  const [locationVisible, setLocationVisible] = useState(true);
+  const [likes, setLikes] = useState(0);
+  const [audience, setAudience] =
+    useState<LiveAudience>(
+      emptyLiveAudience(),
+    );
 
   const { location, locationStatus } = useBroadcastLocation();
 
@@ -69,6 +96,65 @@ export function EmitScreen() {
     resetViewerCounter,
     updateViewerCount,
   } = useViewerCounter();
+
+  useEffect(() => {
+    if (!liveSessionId) {
+      return;
+    }
+
+    return subscribeToLiveMetrics(
+      (update) => {
+        if (
+          update.liveId !==
+          liveSessionId
+        ) {
+          return;
+        }
+
+        if (
+          typeof update.likeCount ===
+          "number"
+        ) {
+          setLikes(
+            update.likeCount,
+          );
+        }
+      },
+    );
+  }, [liveSessionId]);
+
+  useEffect(() => {
+    if (isConnecting) {
+      onUiStateChange?.("connecting");
+      return;
+    }
+
+    if (isLive) {
+      onUiStateChange?.("live");
+      return;
+    }
+
+    onUiStateChange?.("ready");
+  }, [isConnecting, isLive, onUiStateChange]);
+
+  useEffect(() => {
+    if (actionRequest === lastActionRequestRef.current) {
+      return;
+    }
+
+    lastActionRequestRef.current = actionRequest;
+
+    if (isConnecting) {
+      return;
+    }
+
+    if (isLive) {
+      void finishLive();
+      return;
+    }
+
+    void startLive();
+  }, [actionRequest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +239,26 @@ export function EmitScreen() {
     thumbnailCaptureRef.current = null;
   }
 
+  function resetLiveMetrics() {
+    resetViewerCounter();
+    setLikes(0);
+    setAudience(
+      emptyLiveAudience(),
+    );
+  }
+
+  function updateLiveMetrics(
+    room: Room,
+  ) {
+    updateViewerCount(room);
+    setAudience(
+      buildLiveAudience(
+        room,
+        null,
+      ),
+    );
+  }
+
   async function restorePreview() {
     if (
       !navigator.mediaDevices ||
@@ -213,6 +319,7 @@ export function EmitScreen() {
     );
 
     liveSessionIdRef.current = null;
+    setLiveSessionId(null);
   }
 
   async function saveLiveMetadata(
@@ -240,7 +347,7 @@ export function EmitScreen() {
         {
           title: nextTitle,
           eventName: nextEventName,
-          location,
+          location: locationVisible ? location : null,
         },
         authToken,
       );
@@ -280,7 +387,7 @@ export function EmitScreen() {
       setError(null);
       setIsConnecting(true);
 
-      resetViewerCounter();
+      resetLiveMetrics();
 
       const roomName = createLiveRoomName();
 
@@ -315,7 +422,7 @@ export function EmitScreen() {
 
       const updateCount = () => {
         if (room) {
-          updateViewerCount(room);
+          updateLiveMetrics(room);
         }
       };
 
@@ -386,11 +493,15 @@ export function EmitScreen() {
           roomName,
           {
             title,
-            eventName,
-            location,
+            eventName: "",
+            location: locationVisible ? location : null,
           },
           authToken,
         );
+
+      setLiveSessionId(
+        liveSessionIdRef.current,
+      );
 
       /*
        * Iniciamos el sistema independiente de thumbnails
@@ -425,7 +536,7 @@ export function EmitScreen() {
           });
       }
 
-      updateViewerCount(room);
+      updateLiveMetrics(room);
 
       setCameraReady(true);
       setIsLive(true);
@@ -488,7 +599,7 @@ export function EmitScreen() {
       setLiveRoomName(null);
       setIsLive(false);
 
-      resetViewerCounter();
+      resetLiveMetrics();
 
       await restorePreview();
     } finally {
@@ -540,13 +651,14 @@ export function EmitScreen() {
 
     roomRef.current = null;
     liveSessionIdRef.current = null;
+    setLiveSessionId(null);
 
     clearLiveVideo();
 
     setLiveRoomName(null);
     setIsLive(false);
 
-    resetViewerCounter();
+    resetLiveMetrics();
 
     /*
      * Al terminar volvemos al estado LISTO:
@@ -561,21 +673,11 @@ export function EmitScreen() {
     if (isLive) {
       void saveLiveMetadata(
         title,
-        eventName,
+        "",
       );
     }
   }
 
-  function saveEvent() {
-    setEditingEvent(false);
-
-    if (isLive) {
-      void saveLiveMetadata(
-        title,
-        eventName,
-      );
-    }
-  }
 
   return (
     <View style={styles.container}>
@@ -588,6 +690,8 @@ export function EmitScreen() {
       <LiveBroadcastHeader
         isLive={isLive}
         viewers={viewers}
+        likes={likes}
+        audience={audience}
         viewerDelta={viewerDelta}
         badgeScale={
           viewerAnimations.badgeScale
@@ -600,37 +704,28 @@ export function EmitScreen() {
         }
       />
 
-      <LiveBroadcastMetadataPanel
+      <LiveBroadcastContext
         title={title}
-        eventName={eventName}
         editingTitle={editingTitle}
-        editingEvent={editingEvent}
         location={location}
         locationStatus={locationStatus}
+        locationVisible={locationVisible}
         onChangeTitle={setTitle}
-        onChangeEventName={setEventName}
         onEditTitle={() =>
           setEditingTitle(true)
         }
-        onEditEvent={() =>
-          setEditingEvent(true)
-        }
         onSaveTitle={saveTitle}
-        onSaveEvent={saveEvent}
+        onToggleLocation={() =>
+          setLocationVisible(
+            (current) => !current,
+          )
+        }
       />
 
       <LiveBroadcastError
         message={error}
       />
 
-      <LiveBroadcastControls
-        isLive={isLive}
-        isConnecting={isConnecting}
-        cameraReady={cameraReady}
-        liveRoomName={liveRoomName}
-        onStartLive={startLive}
-        onFinishLive={finishLive}
-      />
     </View>
   );
 }
