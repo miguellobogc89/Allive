@@ -117,17 +117,21 @@ function applyMetricUpdate(
 
         changed = true;
 
-        return {
-          ...live,
+return {
+  ...live,
 
-          likeCount:
-            update.likeCount ??
-            live.likeCount,
+  likeCount:
+    update.likeCount ??
+    live.likeCount,
 
-          viewerCount:
-            update.viewerCount ??
-            live.viewerCount,
-        };
+  viewerCount:
+    update.viewerCount ??
+    live.viewerCount,
+
+  thumbnailUrl:
+    update.thumbnailUrl ??
+    live.thumbnailUrl,
+};
       },
     );
 

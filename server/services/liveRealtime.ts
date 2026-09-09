@@ -18,6 +18,7 @@ export type LiveMetricUpdate = {
   liveId: string;
   likeCount?: number;
   viewerCount?: number;
+  thumbnailUrl?: string;
 };
 
 const clients =

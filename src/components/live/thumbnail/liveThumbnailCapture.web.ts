@@ -1,7 +1,12 @@
 // src/components/live/thumbnail/liveThumbnailCapture.web.ts
 
-import { captureLiveThumbnail } from "./captureLiveThumbnail.web";
-import { uploadLiveThumbnail } from "./liveThumbnailApi";
+import {
+  captureLiveThumbnail,
+} from "./captureLiveThumbnail.web";
+
+import {
+  uploadLiveThumbnail,
+} from "./liveThumbnailApi";
 
 const FIRST_CAPTURE_DELAY_MS = 5_000;
 const CAPTURE_INTERVAL_MS = 5_000;
@@ -24,24 +29,36 @@ export function startLiveThumbnailCapture({
   let stopped = false;
   let captureRunning = false;
 
-  let firstCaptureTimeout: ReturnType<typeof setTimeout> | null = null;
-  let captureInterval: ReturnType<typeof setInterval> | null = null;
+  let firstCaptureTimeout:
+    | ReturnType<typeof setTimeout>
+    | null = null;
+
+  let captureInterval:
+    | ReturnType<typeof setInterval>
+    | null = null;
 
   async function captureAndUpload() {
-    if (stopped || captureRunning) {
+    if (
+      stopped ||
+      captureRunning
+    ) {
       return;
     }
 
     captureRunning = true;
 
     try {
-      const thumbnail = await captureLiveThumbnail(videoElement);
+      const thumbnail =
+        await captureLiveThumbnail(
+          videoElement,
+        );
 
-      const result = await uploadLiveThumbnail(
-        liveSessionId,
-        thumbnail,
-        authToken,
-      );
+      const result =
+        await uploadLiveThumbnail(
+          liveSessionId,
+          thumbnail,
+          authToken,
+        );
 
       console.log(
         "Allive thumbnail actualizada:",
@@ -57,30 +74,44 @@ export function startLiveThumbnailCapture({
     }
   }
 
-  firstCaptureTimeout = setTimeout(() => {
-    void captureAndUpload();
-
-    if (stopped) {
-      return;
-    }
-
-    captureInterval = setInterval(() => {
+  firstCaptureTimeout =
+    setTimeout(() => {
       void captureAndUpload();
-    }, CAPTURE_INTERVAL_MS);
-  }, FIRST_CAPTURE_DELAY_MS);
+
+      if (stopped) {
+        return;
+      }
+
+      captureInterval =
+        setInterval(() => {
+          void captureAndUpload();
+        }, CAPTURE_INTERVAL_MS);
+    }, FIRST_CAPTURE_DELAY_MS);
 
   return {
     stop() {
       stopped = true;
 
-      if (firstCaptureTimeout) {
-        clearTimeout(firstCaptureTimeout);
-        firstCaptureTimeout = null;
+      if (
+        firstCaptureTimeout
+      ) {
+        clearTimeout(
+          firstCaptureTimeout,
+        );
+
+        firstCaptureTimeout =
+          null;
       }
 
-      if (captureInterval) {
-        clearInterval(captureInterval);
-        captureInterval = null;
+      if (
+        captureInterval
+      ) {
+        clearInterval(
+          captureInterval,
+        );
+
+        captureInterval =
+          null;
       }
     },
   };
