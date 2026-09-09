@@ -9,14 +9,15 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  username      String        @unique
+  id            String          @id @default(cuid())
+  username      String          @unique
   displayName   String?
   avatarUrl     String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  email         String        @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  email         String          @unique
   password_hash String
+  live_comments live_comments[]
   live_likes    live_likes[]
   liveSessions  LiveSession[]
 
@@ -24,22 +25,23 @@ model User {
 }
 
 model LiveSession {
-  id          String       @id @default(cuid())
-  roomName    String       @unique
-  creatorId   String
-  status      LiveStatus   @default(LIVE)
-  title       String?
-  description String?
-  latitude    Float?
-  longitude   Float?
-  placeName   String?
-  startedAt   DateTime     @default(now())
-  endedAt     DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  eventName   String?
-  live_likes  live_likes[]
-  creator     User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  id            String          @id @default(cuid())
+  roomName      String          @unique
+  creatorId     String
+  status        LiveStatus      @default(LIVE)
+  title         String?
+  description   String?
+  latitude      Float?
+  longitude     Float?
+  placeName     String?
+  startedAt     DateTime        @default(now())
+  endedAt       DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  eventName     String?
+  live_comments live_comments[]
+  live_likes    live_likes[]
+  creator       User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@index([status, startedAt])
   @@index([creatorId])
@@ -61,6 +63,23 @@ model live_likes {
   @@unique([live_session_id, user_id], map: "live_likes_live_session_user_key", where: raw("(user_id IS NOT NULL)"))
   @@index([guest_id])
   @@index([live_session_id])
+  @@index([user_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model live_comments {
+  id              String      @id
+  live_session_id String
+  user_id         String?
+  guest_id        String?
+  username        String
+  body            String
+  created_at      DateTime    @default(now())
+  live_sessions   LiveSession @relation(fields: [live_session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           User?       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guest_id])
+  @@index([live_session_id, created_at], map: "live_comments_live_session_created_at_idx")
   @@index([user_id])
 }
 
