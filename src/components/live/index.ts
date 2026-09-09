@@ -1,12 +1,21 @@
 // src/components/live/index.ts
 
 export { LiveActions } from "./LiveActions";
+export { LiveBroadcastControls } from "./LiveBroadcastControls";
+export { LiveBroadcastError } from "./LiveBroadcastError";
+export { LiveBroadcastHeader } from "./LiveBroadcastHeader";
+export { LiveBroadcastMetadataPanel } from "./LiveBroadcastMetadataPanel";
 export { LiveCommentInput } from "./LiveCommentInput";
 export { LiveComments } from "./LiveComments";
 export { LiveHeader } from "./LiveHeader";
 export { LiveMetadata } from "./LiveMetadata";
 export { LiveNavigation } from "./LiveNavigation";
 export { LiveViewerOverlay } from "./LiveViewerOverlay";
+export type {
+  BroadcastLocation,
+  LiveKitTokenResponse,
+  LocationStatus,
+} from "./broadcastTypes";
 export type { ActiveLive, LiveComment, LiveCreator } from "./types";
 [{
 	"resource": "/E:/Proyectos/allive/server/index.ts",
