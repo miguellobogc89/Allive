@@ -13,7 +13,7 @@ export function LiveAudienceDrawer({open,viewers,members=[],onClose}:Props){
  </View></View>;
 }
 const styles=StyleSheet.create({
- layer:{...StyleSheet.absoluteFillObject,zIndex:80},scrim:{...StyleSheet.absoluteFillObject,backgroundColor:"rgba(0,0,0,0.16)"},
+ layer:{...StyleSheet.absoluteFill,zIndex:80},scrim:{...StyleSheet.absoluteFill,backgroundColor:"rgba(0,0,0,0.16)"},
  drawer:{position:"absolute",top:16,right:16,bottom:16,width:320,maxWidth:"86%",borderRadius:radius.lg,backgroundColor:"rgba(18,18,20,0.94)",overflow:"hidden"},
  header:{padding:spacing.lg,flexDirection:"row",alignItems:"center",justifyContent:"space-between",borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:"rgba(255,255,255,0.14)"},
  eyebrow:{color:colors.textOnOverlayPlaceholder,fontSize:10,fontWeight:"800",letterSpacing:1.6},title:{marginTop:4,color:colors.text,fontSize:18,fontWeight:"700"},

@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import {
+  ActivityIndicator,
   StyleSheet,
   View,
 } from "react-native";
@@ -81,6 +82,11 @@ export function LiveViewerScreen({
   ] = useState<Room | null>(
     null,
   );
+
+  const [
+    loadingLives,
+    setLoadingLives,
+  ] = useState(true);
 
   const activeLive =
     lives[currentIndex] ??
@@ -223,6 +229,8 @@ export function LiveViewerScreen({
             "Allive NOW refresh error:",
             error,
           );
+        } finally {
+          setLoadingLives(false);
         }
       },
       [currentIndex],
@@ -284,20 +292,33 @@ export function LiveViewerScreen({
         styles.container
       }
     >
-      <LiveVideoSurface
-        live={activeLive}
-        viewerIdentity={
-          identity
-        }
-        viewerUser={user}
-        authToken={token}
-        onAudienceChange={
-          setAudience
-        }
-        onRoomChange={
-          setViewerRoom
-        }
-      />
+      {loadingLives &&
+      !activeLive ? (
+        <View
+          style={
+            styles.loading
+          }
+        >
+          <ActivityIndicator
+            color={colors.accent}
+          />
+        </View>
+      ) : (
+        <LiveVideoSurface
+          live={activeLive}
+          viewerIdentity={
+            identity
+          }
+          viewerUser={user}
+          authToken={token}
+          onAudienceChange={
+            setAudience
+          }
+          onRoomChange={
+            setViewerRoom
+          }
+        />
+      )}
 
       {activeLive ? (
         <LiveViewerOverlay
@@ -332,6 +353,15 @@ const styles =
       flex: 1,
       position:
         "relative",
+      backgroundColor:
+        colors.background,
+    },
+
+    loading: {
+      ...StyleSheet.absoluteFill,
+      alignItems: "center",
+      justifyContent:
+        "center",
       backgroundColor:
         colors.background,
     },

@@ -21,6 +21,10 @@ import type {
 } from "../../auth/types";
 
 import {
+  subscribeToLiveMetrics,
+} from "../../api/liveRealtimeApi";
+
+import {
   layout,
 } from "../../styles";
 
@@ -238,6 +242,25 @@ export function LiveViewerOverlay({
       );
     };
   }, [room, live.id]);
+
+  useEffect(() => {
+    return subscribeToLiveMetrics(
+      (update) => {
+        if (
+          update.liveId !==
+            live.id ||
+          typeof update.likeCount !==
+            "number"
+        ) {
+          return;
+        }
+
+        setLikeCount(
+          update.likeCount,
+        );
+      },
+    );
+  }, [live.id]);
 
   async function handleLikePress() {
     if (

@@ -5,7 +5,6 @@ import {
   Room,
   RoomEvent,
   Track,
-  type RemoteTrackPublication,
 } from "livekit-client";
 
 import {
@@ -83,6 +82,18 @@ type VideoFrameElement =
       handle: number,
     ) => void;
   };
+
+type SubscribablePublication = {
+  track?: unknown;
+  setSubscribed: (
+    subscribed: boolean,
+  ) => void;
+};
+
+type TrackPublicationLike = {
+  track?: unknown;
+  setSubscribed?: unknown;
+};
 
 async function getViewerToken(
   roomName: string,
@@ -195,7 +206,7 @@ export function LiveVideoSurface({
     );
 
   const videoPublicationRef =
-    useRef<RemoteTrackPublication | null>(
+    useRef<SubscribablePublication | null>(
       null,
     );
 
@@ -552,7 +563,7 @@ export function LiveVideoSurface({
           participantRole:
             string | null,
           publication?:
-            RemoteTrackPublication,
+            SubscribablePublication,
         ) {
           if (
             disposed ||
@@ -658,16 +669,32 @@ export function LiveVideoSurface({
 
         function attachPublicationTrack(
           publication:
-            RemoteTrackPublication,
+            TrackPublicationLike,
         ) {
           if (
             publication.track instanceof
             RemoteTrack
           ) {
+            const subscribablePublication =
+              typeof publication
+                .setSubscribed ===
+              "function"
+                ? {
+                    track:
+                      publication.track,
+                    setSubscribed:
+                      publication
+                        .setSubscribed
+                        .bind(
+                          publication,
+                        ),
+                  }
+                : undefined;
+
             attachTrack(
               publication.track,
               "broadcaster",
-              publication,
+              subscribablePublication,
             );
           }
         }
