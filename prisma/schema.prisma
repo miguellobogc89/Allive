@@ -9,17 +9,19 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  username      String          @unique
-  displayName   String?
-  avatarUrl     String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  email         String          @unique
-  password_hash String
-  live_comments live_comments[]
-  live_likes    live_likes[]
-  liveSessions  LiveSession[]
+  id                                            String          @id @default(cuid())
+  username                                      String          @unique
+  displayName                                   String?
+  avatarUrl                                     String?
+  createdAt                                     DateTime        @default(now())
+  updatedAt                                     DateTime        @updatedAt
+  email                                         String          @unique
+  password_hash                                 String
+  live_comments                                 live_comments[]
+  live_likes                                    live_likes[]
+  liveSessions                                  LiveSession[]
+  user_follows_user_follows_follower_idTousers  user_follows[]  @relation("user_follows_follower_idTousers")
+  user_follows_user_follows_following_idTousers user_follows[]  @relation("user_follows_following_idTousers")
 
   @@map("users")
 }
@@ -82,6 +84,20 @@ model live_comments {
   @@index([guest_id])
   @@index([live_session_id, created_at], map: "live_comments_live_session_created_at_idx")
   @@index([user_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_follows {
+  id                                     String   @id
+  follower_id                            String
+  following_id                           String
+  created_at                             DateTime @default(now()) @db.Timestamptz(6)
+  users_user_follows_follower_idTousers  User     @relation("user_follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_follower_fk")
+  users_user_follows_following_idTousers User     @relation("user_follows_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_following_fk")
+
+  @@unique([follower_id, following_id], map: "user_follows_unique")
+  @@index([follower_id], map: "user_follows_follower_idx")
+  @@index([following_id], map: "user_follows_following_idx")
 }
 
 enum LiveStatus {
