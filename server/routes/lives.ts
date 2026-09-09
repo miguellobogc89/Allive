@@ -2,6 +2,10 @@
 
 import type { Express } from "express";
 
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from "../auth";
 import { prisma } from "../db";
 import {
   createLiveSession,
@@ -9,78 +13,98 @@ import {
   reconcileActiveLives,
   updateLiveSession,
 } from "../services/liveSessions";
-import {
-  requireAuth,
-  type AuthenticatedRequest,
-} from "../auth";
 
 export function registerLiveRoutes(app: Express) {
   /*
    * Crear LIVE.
    */
-  app.post("/api/lives",requireAuth,async (req: AuthenticatedRequest, res) => {
-    try {
-      const { roomName } = req.body;
+  app.post(
+    "/api/lives",
+    requireAuth,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const { roomName } = req.body;
 
-      if (!roomName || typeof roomName !== "string") {
-        return res.status(400).json({
-          error: "roomName es obligatorio",
+        if (!roomName || typeof roomName !== "string") {
+          return res.status(400).json({
+            error: "roomName es obligatorio",
+          });
+        }
+
+        const live = await createLiveSession(
+          req.authUser!.id,
+          req.body
+        );
+
+        return res.status(201).json(live);
+      } catch (error) {
+        console.error("Error creando LIVE:", error);
+
+        return res.status(500).json({
+          error: "No se pudo crear la emisión",
         });
       }
-
-      const live = await createLiveSession(req.authUser!.id,req.body,);
-
-      return res.status(201).json(live);
-    } catch (error) {
-      console.error("Error creando LIVE:", error);
-
-      return res.status(500).json({
-        error: "No se pudo crear la emisi\u00f3n",
-      });
     }
-  });
+  );
 
   /*
    * Editar datos de un LIVE.
-   *
-   * Esto nos permite cambiar titulo,
-   * evento o ubicacion sin cortar
-   * la emision.
    */
-  app.patch("/api/lives/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
+  app.patch(
+    "/api/lives/:id",
+    requireAuth,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const idParam = req.params.id;
+const id = Array.isArray(idParam) ? idParam[0] : idParam;
 
-      const existing = await prisma.liveSession.findUnique({
-        where: {
-          id,
-        },
-      });
-
-      if (!existing) {
-        return res.status(404).json({
-          error: "Emisi\u00f3n no encontrada",
-        });
-      }
-
-      if (existing.status !== "LIVE") {
-        return res.status(409).json({
-          error: "La emisi\u00f3n ya ha terminado",
-        });
-      }
-
-      const live = await updateLiveSession(id, req.body);
-
-      return res.json(live);
-    } catch (error) {
-      console.error("Error editando LIVE:", error);
-
-      return res.status(500).json({
-        error: "No se pudo editar la emisi\u00f3n",
-      });
-    }
+if (!id) {
+  return res.status(400).json({
+    error: "ID de emisión inválido",
   });
+}
 
+        const existing = await prisma.liveSession.findUnique({
+          where: {
+            id,
+          },
+        });
+
+        if (!existing) {
+          return res.status(404).json({
+            error: "Emisión no encontrada",
+          });
+        }
+
+        if (existing.creatorId !== req.authUser!.id) {
+          return res.status(403).json({
+            error: "No puedes modificar esta emisión",
+          });
+        }
+
+        if (existing.status !== "LIVE") {
+          return res.status(409).json({
+            error: "La emisión ya ha terminado",
+          });
+        }
+
+        const live = await updateLiveSession(id, req.body);
+
+        return res.json(live);
+      } catch (error) {
+        console.error("Error editando LIVE:", error);
+
+        return res.status(500).json({
+          error: "No se pudo editar la emisión",
+        });
+      }
+    }
+  );
+
+  /*
+   * Obtener LIVE activos.
+   * Sigue siendo público para usuarios registrados e invitados.
+   */
   app.get("/api/lives/active", async (_req, res) => {
     try {
       const lives = await reconcileActiveLives();
@@ -95,25 +119,63 @@ export function registerLiveRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/lives/:id/end", async (req, res) => {
-    try {
-      const { id } = req.params;
+  /*
+   * Finalizar LIVE.
+   */
+  app.patch(
+    "/api/lives/:id/end",
+    requireAuth,
+    async (req: AuthenticatedRequest, res) => {
+      try {
+        const idParam = req.params.id;
+const id = Array.isArray(idParam) ? idParam[0] : idParam;
 
-      const live = await endLiveSession(id);
+if (!id) {
+  return res.status(400).json({
+    error: "ID de emisión inválido",
+  });
+}
 
-      if (!live) {
-        return res.status(404).json({
-          error: "Emisi\u00f3n no encontrada",
+        const existing = await prisma.liveSession.findUnique({
+          where: {
+            id,
+          },
+        });
+
+        if (!existing) {
+          return res.status(404).json({
+            error: "Emisión no encontrada",
+          });
+        }
+
+        if (existing.creatorId !== req.authUser!.id) {
+          return res.status(403).json({
+            error: "No puedes finalizar esta emisión",
+          });
+        }
+
+        if (existing.status !== "LIVE") {
+          return res.status(409).json({
+            error: "La emisión ya ha terminado",
+          });
+        }
+
+        const live = await endLiveSession(id);
+
+        if (!live) {
+          return res.status(404).json({
+            error: "Emisión no encontrada",
+          });
+        }
+
+        return res.json(live);
+      } catch (error) {
+        console.error("Error finalizando LIVE:", error);
+
+        return res.status(500).json({
+          error: "No se pudo finalizar la emisión",
         });
       }
-
-      return res.json(live);
-    } catch (error) {
-      console.error("Error finalizando LIVE:", error);
-
-      return res.status(500).json({
-        error: "No se pudo finalizar la emisi\u00f3n",
-      });
     }
-  });
+  );
 }
