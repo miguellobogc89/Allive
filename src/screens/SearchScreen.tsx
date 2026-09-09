@@ -9,6 +9,7 @@ import {
 import {
   ActivityIndicator,
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -24,13 +25,28 @@ import {
 } from "../api/searchApi";
 
 import {
+  subscribeToLiveMetrics,
+  type LiveMetricUpdate,
+} from "../api/liveRealtimeApi";
+
+import {
   SearchResultCard,
-} from "../components/search/result-card/SearchResultCard";
+} from "../components/search/SearchResultCard";
 
 import {
   SearchTabs,
-  type SearchTab,
 } from "../components/search/SearchTabs";
+
+import {
+  colors,
+  spacing,
+} from "../styles";
+
+type SearchTab =
+  | "for-you"
+  | "live"
+  | "people"
+  | "nearby";
 
 type GridItem =
   | {
@@ -64,28 +80,113 @@ function getColumnCount(
   return 2;
 }
 
-function liveItems(
-  lives: SearchLive[],
-): GridItem[] {
-  return lives.map((live) => ({
-    id: `live-${live.id}`,
-    type: "live",
-    live,
-  }));
+function getForYouItems(
+  response: SearchResponse,
+) {
+  const items: GridItem[] = [];
+
+  for (
+    const live of
+    response.lives
+  ) {
+    items.push({
+      id: `live-${live.id}`,
+      type: "live",
+      live,
+    });
+  }
+
+  return items;
 }
 
-function peopleItems(
+function getLiveItems(
+  lives: SearchLive[],
+) {
+  return lives.map(
+    (live) => ({
+      id: `live-${live.id}`,
+      type: "live" as const,
+      live,
+    }),
+  );
+}
+
+function getPeopleItems(
   users: SearchUser[],
-): GridItem[] {
-  return users.map((user) => ({
-    id: `user-${user.id}`,
-    type: "user",
-    user,
-  }));
+) {
+  return users.map(
+    (user) => ({
+      id: `user-${user.id}`,
+      type: "user" as const,
+      user,
+    }),
+  );
+}
+
+function getNearbyItems(
+  lives: SearchLive[],
+) {
+  const nearby:
+    SearchLive[] = [];
+
+  for (const live of lives) {
+    if (
+      live.latitude !== null &&
+      live.longitude !== null
+    ) {
+      nearby.push(live);
+    }
+  }
+
+  return getLiveItems(
+    nearby,
+  );
+}
+
+function applyMetricUpdate(
+  response: SearchResponse,
+  update: LiveMetricUpdate,
+): SearchResponse {
+  let changed = false;
+
+  const lives =
+    response.lives.map(
+      (live) => {
+        if (
+          live.id !==
+          update.liveId
+        ) {
+          return live;
+        }
+
+        changed = true;
+
+        return {
+          ...live,
+
+          likeCount:
+            update.likeCount ??
+            live.likeCount,
+
+          viewerCount:
+            update.viewerCount ??
+            live.viewerCount,
+        };
+      },
+    );
+
+  if (!changed) {
+    return response;
+  }
+
+  return {
+    ...response,
+    lives,
+  };
 }
 
 type SearchScreenProps = {
-  onOpenLive: (
+  onOpenLive?: (
     liveId: string,
   ) => void;
 };
@@ -102,20 +203,31 @@ export function SearchScreen({
   const [
     activeTab,
     setActiveTab,
-  ] = useState<SearchTab>(
-    "for-you",
-  );
+  ] =
+    useState<SearchTab>(
+      "for-you",
+    );
 
-  const [response, setResponse] =
+  const [
+    response,
+    setResponse,
+  ] =
     useState<SearchResponse>(
       EMPTY_RESPONSE,
     );
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const columns =
     getColumnCount(width);
@@ -124,47 +236,53 @@ export function SearchScreen({
     const controller =
       new AbortController();
 
-    const timer = setTimeout(
-      async () => {
-        try {
-          setLoading(true);
-          setError(null);
+    const timer =
+      setTimeout(
+        async () => {
+          try {
+            setLoading(true);
+            setError(null);
 
-          const result =
-            await searchAll(
-              query,
-              controller.signal,
+            const result =
+              await searchAll(
+                query,
+                controller.signal,
+              );
+
+            setResponse(result);
+          } catch (
+            caughtError
+          ) {
+            if (
+              caughtError instanceof
+                Error &&
+              caughtError.name ===
+                "AbortError"
+            ) {
+              return;
+            }
+
+            console.error(
+              "Error cargando Search:",
+              caughtError,
             );
 
-          setResponse(result);
-        } catch (caughtError) {
-          if (
-            caughtError instanceof
-              Error &&
-            caughtError.name ===
-              "AbortError"
-          ) {
-            return;
+            setError(
+              "No se pudo cargar la búsqueda.",
+            );
+          } finally {
+            if (
+              !controller
+                .signal.aborted
+            ) {
+              setLoading(
+                false,
+              );
+            }
           }
-
-          console.error(
-            "Error cargando Search:",
-            caughtError,
-          );
-
-          setError(
-            "No se pudo cargar la búsqueda.",
-          );
-        } finally {
-          if (
-            !controller.signal.aborted
-          ) {
-            setLoading(false);
-          }
-        }
-      },
-      250,
-    );
+        },
+        250,
+      );
 
     return () => {
       clearTimeout(timer);
@@ -172,58 +290,97 @@ export function SearchScreen({
     };
   }, [query]);
 
-  const items = useMemo(() => {
-    if (activeTab === "people") {
-      return peopleItems(
-        response.users,
-      );
-    }
-
-    if (activeTab === "nearby") {
-      return liveItems(
-        response.lives.filter(
-          (live) =>
-            live.latitude !== null &&
-            live.longitude !== null,
-        ),
-      );
-    }
-
-    return liveItems(
-      response.lives,
+  useEffect(() => {
+    return subscribeToLiveMetrics(
+      (update) => {
+        setResponse(
+          (current) =>
+            applyMetricUpdate(
+              current,
+              update,
+            ),
+        );
+      },
     );
-  }, [
-    activeTab,
-    response,
-  ]);
+  }, []);
+
+  const items =
+    useMemo(() => {
+      if (
+        activeTab ===
+        "live"
+      ) {
+        return getLiveItems(
+          response.lives,
+        );
+      }
+
+      if (
+        activeTab ===
+        "people"
+      ) {
+        return getPeopleItems(
+          response.users,
+        );
+      }
+
+      if (
+        activeTab ===
+        "nearby"
+      ) {
+        return getNearbyItems(
+          response.lives,
+        );
+      }
+
+      return getForYouItems(
+        response,
+      );
+    }, [
+      activeTab,
+      response,
+    ]);
 
   function renderItem({
     item,
   }: {
     item: GridItem;
   }) {
-    return (
-      <View style={styles.gridCell}>
-        {item.type === "live" ? (
+    if (
+      item.type === "live"
+    ) {
+      return (
+        <View
+          style={
+            styles.gridCell
+          }
+        >
 <SearchResultCard
   type="live"
   live={item.live}
-  onPress={() => {
-    if (item.live.isSimulated) {
-      return;
+  onPress={
+    item.live.isSimulated
+      ? undefined
+      : () =>
+          onOpenLive?.(
+            item.live.id,
+          )
+  }
+/>
+        </View>
+      );
     }
 
-    onOpenLive(
-      item.live.id,
-    );
-  }}
-/>
-        ) : (
-          <SearchResultCard
-            type="user"
-            user={item.user}
-          />
-        )}
+    return (
+      <View
+        style={
+          styles.gridCell
+        }
+      >
+        <SearchResultCard
+          type="user"
+          user={item.user}
+        />
       </View>
     );
   }
@@ -231,15 +388,22 @@ export function SearchScreen({
   function renderEmpty() {
     if (loading) {
       return (
-        <View style={styles.state}>
+        <View
+          style={styles.state}
+        >
           <ActivityIndicator
-            color="#FF6B5F"
+            size="small"
+            color={
+              colors.accent
+            }
           />
 
           <Text
-            style={styles.stateText}
+            style={
+              styles.stateText
+            }
           >
-            Buscando…
+            Buscando...
           </Text>
         </View>
       );
@@ -247,15 +411,21 @@ export function SearchScreen({
 
     if (error) {
       return (
-        <View style={styles.state}>
+        <View
+          style={styles.state}
+        >
           <Text
-            style={styles.stateTitle}
+            style={
+              styles.stateTitle
+            }
           >
             No se pudo cargar
           </Text>
 
           <Text
-            style={styles.stateText}
+            style={
+              styles.stateText
+            }
           >
             {error}
           </Text>
@@ -264,31 +434,68 @@ export function SearchScreen({
     }
 
     return (
-      <View style={styles.state}>
-        <Text style={styles.stateTitle}>
-          Sin resultados
+      <View
+        style={styles.state}
+      >
+        <Text
+          style={
+            styles.stateTitle
+          }
+        >
+          No encontramos nada
         </Text>
 
-        <Text style={styles.stateText}>
-          Prueba con otra búsqueda.
+        <Text
+          style={
+            styles.stateText
+          }
+        >
+          Prueba con otra
+          búsqueda.
         </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>
+    <View
+      style={
+        styles.container
+      }
+    >
+      <View
+        style={styles.header}
+      >
+        <Text
+          style={
+            styles.screenTitle
+          }
+        >
+          Buscar
+        </Text>
+
+        <View
+          style={
+            styles.searchBox
+          }
+        >
+          <Text
+            style={
+              styles.searchIcon
+            }
+          >
             ⌕
           </Text>
 
           <TextInput
             value={query}
-            onChangeText={setQuery}
+            onChangeText={
+              setQuery
+            }
             placeholder="Directos, personas, lugares..."
-            placeholderTextColor="#969691"
+            placeholderTextColor={
+              colors.textMuted
+            }
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -296,19 +503,35 @@ export function SearchScreen({
           />
         </View>
 
-        <SearchTabs
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.tabsScroll
+          }
+        >
+          <SearchTabs
+            activeTab={
+              activeTab
+            }
+            onChange={
+              setActiveTab
+            }
+          />
+        </ScrollView>
       </View>
 
       <FlatList
         key={`${columns}-${activeTab}`}
         data={items}
-        renderItem={renderItem}
-        keyExtractor={(item) =>
-          item.id
+        renderItem={
+          renderItem
         }
+        keyExtractor={(
+          item,
+        ) => item.id}
         numColumns={columns}
         showsVerticalScrollIndicator={
           false
@@ -331,113 +554,108 @@ export function SearchScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        colors.background,
+    },
 
-    backgroundColor: "#F7F7F5",
-  },
+    header: {
+      paddingTop:
+        spacing.lg,
+      backgroundColor:
+        colors.background,
+    },
 
-  header: {
-    paddingTop: 16,
+    screenTitle: {
+      color: colors.text,
+      fontSize: 28,
+      lineHeight: 34,
+      fontWeight: "800",
+      paddingHorizontal:
+        spacing.lg,
+      marginBottom:
+        spacing.md,
+    },
 
-    backgroundColor: "#F7F7F5",
-  },
+    searchBox: {
+      height: 48,
+      marginHorizontal:
+        spacing.lg,
+      borderRadius: 14,
+      backgroundColor:
+        colors.surface,
+      borderWidth: 1,
+      borderColor:
+        colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 14,
+    },
 
-  searchBox: {
-    height: 46,
+    searchIcon: {
+      color:
+        colors.textMuted,
+      fontSize: 22,
+      marginRight: 9,
+    },
 
-    marginHorizontal: 16,
-    marginBottom: 8,
+    input: {
+      flex: 1,
+      height: "100%",
+      color: colors.text,
+      fontSize: 15,
+      outlineStyle: "none",
+    } as any,
 
-    paddingHorizontal: 13,
+    tabsScroll: {
+      paddingHorizontal:
+        spacing.lg,
+    },
 
-    flexDirection: "row",
-    alignItems: "center",
+    list: {
+      paddingTop: 0,
+      paddingBottom: 140,
+    },
 
-    borderWidth: 1,
-    borderColor: "#DEDEDA",
+    row: {
+      gap: 0,
+    },
 
-    borderRadius: 13,
+    gridCell: {
+      flex: 1,
+      minWidth: 0,
+    },
 
-    backgroundColor: "#FFFFFF",
-  },
+    emptyList: {
+      flexGrow: 1,
+      paddingBottom: 140,
+    },
 
-  searchIcon: {
-    marginRight: 8,
+    state: {
+      flex: 1,
+      minHeight: 280,
+      justifyContent:
+        "center",
+      alignItems: "center",
+      padding: spacing.xl,
+    },
 
-    color: "#898984",
+    stateTitle: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: "800",
+      textAlign: "center",
+    },
 
-    fontSize: 21,
-
-    fontWeight: "300",
-  },
-
-  input: {
-    flex: 1,
-    height: "100%",
-
-    color: "#292927",
-
-    fontSize: 15,
-
-    fontWeight: "400",
-
-    outlineStyle: "none",
-  } as any,
-
-  list: {
-    paddingBottom: 140,
-  },
-
-  row: {
-    gap: 1,
-
-    backgroundColor: "#E4E4E0",
-  },
-
-  gridCell: {
-    flex: 1,
-    minWidth: 0,
-
-    borderBottomWidth: 1,
-    borderBottomColor: "#E4E4E0",
-  },
-
-  emptyList: {
-    flexGrow: 1,
-
-    paddingBottom: 140,
-  },
-
-  state: {
-    minHeight: 300,
-
-    flex: 1,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    padding: 24,
-  },
-
-  stateTitle: {
-    color: "#343432",
-
-    fontSize: 16,
-
-    fontWeight: "500",
-  },
-
-  stateText: {
-    marginTop: 7,
-
-    color: "#8A8A85",
-
-    fontSize: 13,
-
-    fontWeight: "400",
-
-    textAlign: "center",
-  },
-});
+    stateText: {
+      color:
+        colors.textMuted,
+      fontSize: 14,
+      lineHeight: 20,
+      marginTop: 8,
+      textAlign: "center",
+    },
+  });

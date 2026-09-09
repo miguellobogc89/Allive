@@ -1,12 +1,18 @@
 // server/routes/liveLikes.ts
 
-import type { Express } from "express";
+import type {
+  Express,
+} from "express";
 
 import {
   optionalAuth,
   type AuthenticatedRequest,
 } from "../auth";
-import { prisma } from "../db";
+
+import {
+  prisma,
+} from "../db";
+
 import {
   getLiveLikeState,
   parseGuestActor,
@@ -14,8 +20,15 @@ import {
   type LiveLikeActor,
 } from "../services/liveLikes";
 
+import {
+  publishLiveMetricUpdate,
+} from "../services/liveRealtime";
+
 function getRouteId(
-  value: string | string[] | undefined,
+  value:
+    | string
+    | string[]
+    | undefined,
 ) {
   return Array.isArray(value)
     ? value[0]
@@ -46,6 +59,7 @@ async function liveExists(
       where: {
         id: liveSessionId,
       },
+
       select: {
         id: true,
       },
@@ -64,43 +78,53 @@ export function registerLiveLikeRoutes(
       res,
     ) => {
       try {
-        const id = getRouteId(
-          req.params.id,
-        );
+        const id =
+          getRouteId(
+            req.params.id,
+          );
 
         if (!id) {
-          return res.status(400).json({
-            error:
-              "ID de emisión inválido",
-          });
+          return res
+            .status(400)
+            .json({
+              error:
+                "ID de emisión inválido",
+            });
         }
 
-        if (!(await liveExists(id))) {
-          return res.status(404).json({
-            error:
-              "Emisión no encontrada",
-          });
+        if (
+          !(await liveExists(id))
+        ) {
+          return res
+            .status(404)
+            .json({
+              error:
+                "Emisión no encontrada",
+            });
         }
 
         const actor =
           resolveActor(req);
 
-        return res.json(
+        const state =
           await getLiveLikeState(
             id,
             actor,
-          ),
-        );
+          );
+
+        return res.json(state);
       } catch (error) {
         console.error(
           "Error obteniendo likes:",
           error,
         );
 
-        return res.status(500).json({
-          error:
-            "No se pudieron obtener los likes",
-        });
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudieron obtener los likes",
+          });
       }
     },
   );
@@ -113,50 +137,68 @@ export function registerLiveLikeRoutes(
       res,
     ) => {
       try {
-        const id = getRouteId(
-          req.params.id,
-        );
+        const id =
+          getRouteId(
+            req.params.id,
+          );
 
         if (!id) {
-          return res.status(400).json({
-            error:
-              "ID de emisión inválido",
-          });
+          return res
+            .status(400)
+            .json({
+              error:
+                "ID de emisión inválido",
+            });
         }
 
         const actor =
           resolveActor(req);
 
         if (!actor) {
-          return res.status(400).json({
-            error:
-              "Identidad de usuario o invitado inválida",
-          });
+          return res
+            .status(400)
+            .json({
+              error:
+                "Identidad de usuario o invitado inválida",
+            });
         }
 
-        if (!(await liveExists(id))) {
-          return res.status(404).json({
-            error:
-              "Emisión no encontrada",
-          });
+        if (
+          !(await liveExists(id))
+        ) {
+          return res
+            .status(404)
+            .json({
+              error:
+                "Emisión no encontrada",
+            });
         }
 
-        return res.json(
+        const state =
           await toggleLiveLike(
             id,
             actor,
-          ),
-        );
+          );
+
+        publishLiveMetricUpdate({
+          type: "live-metrics",
+          liveId: id,
+          likeCount: state.count,
+        });
+
+        return res.json(state);
       } catch (error) {
         console.error(
           "Error cambiando like:",
           error,
         );
 
-        return res.status(500).json({
-          error:
-            "No se pudo cambiar el like",
-        });
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudo cambiar el like",
+          });
       }
     },
   );
