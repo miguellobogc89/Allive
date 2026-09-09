@@ -1,9 +1,17 @@
 // src/components/live/liveBroadcastVideo.web.ts
 
-import type { Room } from "livekit-client";
-import { Track } from "livekit-client";
+import type {
+  LocalVideoTrack,
+  Room,
+} from "livekit-client";
 
-function applyVideoElementStyles(element: HTMLVideoElement) {
+import {
+  Track,
+} from "livekit-client";
+
+function applyVideoElementStyles(
+  element: HTMLVideoElement,
+) {
   element.style.position = "absolute";
   element.style.inset = "0";
   element.style.width = "100%";
@@ -13,9 +21,10 @@ function applyVideoElementStyles(element: HTMLVideoElement) {
 
 export function attachPreviewStream(
   container: HTMLDivElement,
-  stream: MediaStream
+  stream: MediaStream,
 ) {
-  const video = document.createElement("video");
+  const video =
+    document.createElement("video");
 
   video.autoplay = true;
   video.playsInline = true;
@@ -27,21 +36,28 @@ export function attachPreviewStream(
   container.innerHTML = "";
   container.appendChild(video);
 
-  void video.play().catch((playError) => {
-    console.warn("Preview play:", playError);
-  });
+  void video
+    .play()
+    .catch((playError) => {
+      console.warn(
+        "Preview play:",
+        playError,
+      );
+    });
 
   return video;
 }
 
 export function stopPreviewStream(
   stream: MediaStream | null,
-  element: HTMLVideoElement | null
+  element: HTMLVideoElement | null,
 ) {
   if (stream) {
-    stream.getTracks().forEach((track) => {
-      track.stop();
-    });
+    stream
+      .getTracks()
+      .forEach((track) => {
+        track.stop();
+      });
   }
 
   if (element) {
@@ -51,7 +67,9 @@ export function stopPreviewStream(
   }
 }
 
-export function detachLiveVideo(element: HTMLVideoElement | null) {
+export function detachLiveVideo(
+  element: HTMLVideoElement | null,
+) {
   if (!element) {
     return;
   }
@@ -60,18 +78,62 @@ export function detachLiveVideo(element: HTMLVideoElement | null) {
   element.remove();
 }
 
-export function attachLiveCamera(room: Room, container: HTMLDivElement) {
-  const cameraPublication = room.localParticipant.getTrackPublication(
-    Track.Source.Camera
-  );
+export function getAttachedVideoTrack(
+  element: HTMLVideoElement,
+) {
+  const { srcObject } = element;
 
-  const cameraTrack = cameraPublication?.track;
-
-  if (!cameraTrack) {
-    throw new Error("LiveKit no ha creado la pista de c\u00e1mara.");
+  if (!(srcObject instanceof MediaStream)) {
+    throw new Error(
+      "El preview del LIVE no contiene un MediaStream.",
+    );
   }
 
-  const element = cameraTrack.attach() as HTMLVideoElement;
+  const videoTrack =
+    srcObject.getVideoTracks()[0];
+
+  if (
+    !videoTrack ||
+    videoTrack.readyState !== "live"
+  ) {
+    throw new Error(
+      "El preview del LIVE no contiene una pista de camara activa.",
+    );
+  }
+
+  return videoTrack;
+}
+
+export function getLiveCameraTrack(
+  room: Room,
+): LocalVideoTrack {
+  const cameraPublication =
+    room.localParticipant
+      .getTrackPublication(
+        Track.Source.Camera,
+      );
+
+  const cameraTrack =
+    cameraPublication?.track;
+
+  if (!cameraTrack) {
+    throw new Error(
+      "LiveKit no ha creado la pista de cámara.",
+    );
+  }
+
+  return cameraTrack as LocalVideoTrack;
+}
+
+export function attachLiveCamera(
+  room: Room,
+  container: HTMLDivElement,
+) {
+  const cameraTrack =
+    getLiveCameraTrack(room);
+
+  const element =
+    cameraTrack.attach() as HTMLVideoElement;
 
   element.autoplay = true;
   element.playsInline = true;
@@ -82,9 +144,14 @@ export function attachLiveCamera(room: Room, container: HTMLDivElement) {
   container.innerHTML = "";
   container.appendChild(element);
 
-  void element.play().catch((playError) => {
-    console.warn("Live preview play:", playError);
-  });
+  void element
+    .play()
+    .catch((playError) => {
+      console.warn(
+        "Live preview play:",
+        playError,
+      );
+    });
 
   return element;
 }

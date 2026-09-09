@@ -5,6 +5,7 @@ import {
   Room,
   RoomEvent,
   Track,
+  type RemoteTrackPublication,
 } from "livekit-client";
 
 import {
@@ -72,6 +73,16 @@ type Props = {
     room: Room | null,
   ) => void;
 };
+
+type VideoFrameElement =
+  HTMLVideoElement & {
+    requestVideoFrameCallback?: (
+      callback: () => void,
+    ) => number;
+    cancelVideoFrameCallback?: (
+      handle: number,
+    ) => void;
+  };
 
 async function getViewerToken(
   roomName: string,
@@ -183,6 +194,11 @@ export function LiveVideoSurface({
       null,
     );
 
+  const videoPublicationRef =
+    useRef<RemoteTrackPublication | null>(
+      null,
+    );
+
   const audioTrackRef =
     useRef<RemoteTrack | null>(
       null,
@@ -210,6 +226,189 @@ export function LiveVideoSurface({
 
   useEffect(() => {
     let disposed = false;
+    let videoFrameCallback:
+      number | null = null;
+    let videoFrameTimeout:
+      ReturnType<typeof setTimeout> | null =
+        null;
+    let resubscribeTimeout:
+      ReturnType<typeof setTimeout> | null =
+        null;
+
+    function clearVideoFrameWatch() {
+      const element =
+        videoRef.current as
+          | VideoFrameElement
+          | null;
+
+      if (
+        videoFrameCallback !==
+          null &&
+        element
+      ) {
+        element.cancelVideoFrameCallback?.(
+          videoFrameCallback,
+        );
+      }
+
+      if (videoFrameTimeout) {
+        clearTimeout(
+          videoFrameTimeout,
+        );
+      }
+
+      videoFrameCallback =
+        null;
+
+      videoFrameTimeout =
+        null;
+    }
+
+    function clearResubscribeTimeout() {
+      if (resubscribeTimeout) {
+        clearTimeout(
+          resubscribeTimeout,
+        );
+      }
+
+      resubscribeTimeout =
+        null;
+    }
+
+    function playVideoElement(
+      element: HTMLVideoElement,
+    ) {
+      element.autoplay =
+        true;
+
+      element.playsInline =
+        true;
+
+      element.muted =
+        true;
+
+      void element
+        .play()
+        .catch(
+          (playError) => {
+            console.warn(
+              "Allive viewer video play:",
+              playError,
+            );
+          },
+        );
+    }
+
+    function watchVideoFrames() {
+      clearVideoFrameWatch();
+
+      const element =
+        videoRef.current as
+          | VideoFrameElement
+          | null;
+
+      if (
+        disposed ||
+        !element ||
+        !videoTrackRef.current ||
+        !element
+          .requestVideoFrameCallback
+      ) {
+        return;
+      }
+
+      videoFrameTimeout =
+        setTimeout(() => {
+          videoFrameTimeout =
+            null;
+
+          resetVideoElement();
+        }, 3_000);
+
+      videoFrameCallback =
+        element.requestVideoFrameCallback(
+          () => {
+            videoFrameCallback =
+              null;
+
+            if (
+              videoFrameTimeout
+            ) {
+              clearTimeout(
+                videoFrameTimeout,
+              );
+
+              videoFrameTimeout =
+                null;
+            }
+
+            if (
+              !disposed &&
+              videoTrackRef.current
+            ) {
+              watchVideoFrames();
+            }
+          },
+        );
+    }
+
+    function resetVideoElement() {
+      const track =
+        videoTrackRef.current;
+
+      const element =
+        videoRef.current;
+
+      if (
+        disposed ||
+        !track ||
+        !element ||
+        track.mediaStreamTrack
+          .readyState !== "live"
+      ) {
+        return;
+      }
+
+      track.detach(
+        element,
+      );
+
+      element.pause();
+      element.srcObject = null;
+
+      track.attach(
+        element,
+      );
+
+      playVideoElement(
+        element,
+      );
+
+      if (
+        videoPublicationRef.current
+      ) {
+        videoPublicationRef.current
+          .setSubscribed(false);
+
+        clearResubscribeTimeout();
+
+        resubscribeTimeout =
+          setTimeout(() => {
+            resubscribeTimeout =
+              null;
+
+            if (
+              !disposed &&
+              videoPublicationRef.current
+            ) {
+              videoPublicationRef.current
+                .setSubscribed(true);
+            }
+          }, 100);
+      }
+
+      watchVideoFrames();
+    }
 
     function updateAudience(
       room: Room,
@@ -238,6 +437,9 @@ export function LiveVideoSurface({
     }
 
     function detachTracks() {
+      clearVideoFrameWatch();
+      clearResubscribeTimeout();
+
       if (
         videoTrackRef.current &&
         videoRef.current
@@ -257,6 +459,9 @@ export function LiveVideoSurface({
       }
 
       videoTrackRef.current =
+        null;
+
+      videoPublicationRef.current =
         null;
 
       audioTrackRef.current =
@@ -346,6 +551,8 @@ export function LiveVideoSurface({
           track: RemoteTrack,
           participantRole:
             string | null,
+          publication?:
+            RemoteTrackPublication,
         ) {
           if (
             disposed ||
@@ -360,6 +567,23 @@ export function LiveVideoSurface({
               Track.Kind.Video &&
             videoRef.current
           ) {
+            if (
+              track.mediaStreamTrack
+                .readyState !==
+                "live" ||
+              track.isMuted
+            ) {
+              setHasVideo(
+                false,
+              );
+
+              setStatus(
+                "Recuperando video...",
+              );
+
+              return;
+            }
+
             if (
               videoTrackRef.current &&
               videoTrackRef.current !==
@@ -377,25 +601,16 @@ export function LiveVideoSurface({
             videoTrackRef.current =
               track;
 
-            videoRef.current.autoplay =
-              true;
+            if (publication) {
+              videoPublicationRef.current =
+                publication;
+            }
 
-            videoRef.current.playsInline =
-              true;
+            playVideoElement(
+              videoRef.current,
+            );
 
-            videoRef.current.muted =
-              true;
-
-            void videoRef.current
-              .play()
-              .catch(
-                (playError) => {
-                  console.warn(
-                    "Allive viewer video play:",
-                    playError,
-                  );
-                },
-              );
+            watchVideoFrames();
 
             setHasVideo(
               true,
@@ -441,6 +656,50 @@ export function LiveVideoSurface({
           }
         }
 
+        function attachPublicationTrack(
+          publication:
+            RemoteTrackPublication,
+        ) {
+          if (
+            publication.track instanceof
+            RemoteTrack
+          ) {
+            attachTrack(
+              publication.track,
+              "broadcaster",
+              publication,
+            );
+          }
+        }
+
+        function attachBroadcasterTracks() {
+          for (
+            const participant of
+            room.remoteParticipants.values()
+          ) {
+            const role =
+              getParticipantRole(
+                participant,
+              );
+
+            if (
+              role !==
+              "broadcaster"
+            ) {
+              continue;
+            }
+
+            for (
+              const publication of
+              participant.trackPublications.values()
+            ) {
+              attachPublicationTrack(
+                publication,
+              );
+            }
+          }
+        }
+
         room.on(
           RoomEvent.TrackSubscribed,
           (
@@ -453,6 +712,29 @@ export function LiveVideoSurface({
               getParticipantRole(
                 participant,
               ),
+              _publication,
+            );
+          },
+        );
+
+        room.on(
+          RoomEvent.TrackPublished,
+          (
+            publication,
+            participant,
+          ) => {
+            if (
+              getParticipantRole(
+                participant,
+              ) !==
+                "broadcaster" ||
+              !publication.track
+            ) {
+              return;
+            }
+
+            attachPublicationTrack(
+              publication,
             );
           },
         );
@@ -490,7 +772,7 @@ export function LiveVideoSurface({
               );
 
               setStatus(
-                "Recuperando vídeo...",
+                "Recuperando video...",
               );
             }
 
@@ -509,11 +791,110 @@ export function LiveVideoSurface({
           },
         );
 
+        room.on(
+          RoomEvent.TrackMuted,
+          (
+            publication,
+            participant,
+          ) => {
+            if (
+              getParticipantRole(
+                participant,
+              ) !==
+                "broadcaster" ||
+              publication.kind !==
+                Track.Kind.Video
+            ) {
+              return;
+            }
+
+            setHasVideo(
+              false,
+            );
+
+            setStatus(
+              "Recuperando video...",
+            );
+          },
+        );
+
+        room.on(
+          RoomEvent.TrackUnmuted,
+          (
+            publication,
+            participant,
+          ) => {
+            if (
+              getParticipantRole(
+                participant,
+              ) !==
+                "broadcaster" ||
+              publication.kind !==
+                Track.Kind.Video ||
+              !publication.track
+            ) {
+              return;
+            }
+
+            attachPublicationTrack(
+              publication,
+            );
+          },
+        );
+
+        room.on(
+          RoomEvent.TrackStreamStateChanged,
+          (
+            publication,
+            streamState,
+            participant,
+          ) => {
+            if (
+              getParticipantRole(
+                participant,
+              ) !==
+                "broadcaster" ||
+              publication.kind !==
+                Track.Kind.Video
+            ) {
+              return;
+            }
+
+            if (
+              streamState ===
+              Track.StreamState.Paused
+            ) {
+              setHasVideo(
+                false,
+              );
+
+              setStatus(
+                "Recuperando video...",
+              );
+
+              return;
+            }
+
+            attachPublicationTrack(
+              publication,
+            );
+          },
+        );
+
         const refreshAudience =
           () => {
             updateAudience(
               room,
             );
+          };
+
+        const refreshAudienceAndTracks =
+          () => {
+            updateAudience(
+              room,
+            );
+
+            attachBroadcasterTracks();
           };
 
         room.on(
@@ -528,12 +909,12 @@ export function LiveVideoSurface({
 
         room.on(
           RoomEvent.ParticipantAttributesChanged,
-          refreshAudience,
+          refreshAudienceAndTracks,
         );
 
         room.on(
           RoomEvent.ParticipantMetadataChanged,
-          refreshAudience,
+          refreshAudienceAndTracks,
         );
 
         room.on(
@@ -554,6 +935,8 @@ export function LiveVideoSurface({
               updateAudience(
                 room,
               );
+
+              attachBroadcasterTracks();
             }
           },
         );
@@ -599,29 +982,7 @@ export function LiveVideoSurface({
           "Conectado · esperando vídeo",
         );
 
-        for (
-          const participant of
-          room.remoteParticipants.values()
-        ) {
-          const role =
-            getParticipantRole(
-              participant,
-            );
-
-          for (
-            const publication of
-            participant.trackPublications.values()
-          ) {
-            if (
-              publication.track
-            ) {
-              attachTrack(
-                publication.track,
-                role,
-              );
-            }
-          }
-        }
+        attachBroadcasterTracks();
 
         updateAudience(
           room,

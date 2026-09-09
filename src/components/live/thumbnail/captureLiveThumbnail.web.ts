@@ -4,67 +4,136 @@ const THUMBNAIL_WIDTH = 640;
 const THUMBNAIL_HEIGHT = 360;
 const THUMBNAIL_QUALITY = 0.72;
 
-export async function captureLiveThumbnail(
-  video: HTMLVideoElement,
-): Promise<Blob> {
-  if (
-    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-    video.videoWidth <= 0 ||
-    video.videoHeight <= 0
-  ) {
-    throw new Error("El vídeo todavía no tiene un frame disponible.");
-  }
+type BrowserImageCapture = {
+  grabFrame: () => Promise<ImageBitmap>;
+};
 
-  const canvas = document.createElement("canvas");
+type BrowserImageCaptureConstructor = new (
+  track: MediaStreamTrack,
+) => BrowserImageCapture;
 
-  canvas.width = THUMBNAIL_WIDTH;
-  canvas.height = THUMBNAIL_HEIGHT;
+function getImageCaptureConstructor() {
+  return (
+    globalThis as typeof globalThis & {
+      ImageCapture?: BrowserImageCaptureConstructor;
+    }
+  ).ImageCapture;
+}
 
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("No se pudo crear el canvas de miniatura.");
-  }
-
-  const sourceAspect = video.videoWidth / video.videoHeight;
+function getSourceCrop(
+  image: ImageBitmap,
+) {
+  const sourceAspect = image.width / image.height;
   const targetAspect = THUMBNAIL_WIDTH / THUMBNAIL_HEIGHT;
 
   let sourceX = 0;
   let sourceY = 0;
-  let sourceWidth = video.videoWidth;
-  let sourceHeight = video.videoHeight;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
 
   if (sourceAspect > targetAspect) {
-    sourceWidth = video.videoHeight * targetAspect;
-    sourceX = (video.videoWidth - sourceWidth) / 2;
+    sourceWidth = image.height * targetAspect;
+    sourceX = (image.width - sourceWidth) / 2;
   } else if (sourceAspect < targetAspect) {
-    sourceHeight = video.videoWidth / targetAspect;
-    sourceY = (video.videoHeight - sourceHeight) / 2;
+    sourceHeight = image.width / targetAspect;
+    sourceY = (image.height - sourceHeight) / 2;
   }
 
-  context.drawImage(
-    video,
+  return {
     sourceX,
     sourceY,
     sourceWidth,
     sourceHeight,
-    0,
-    0,
-    THUMBNAIL_WIDTH,
-    THUMBNAIL_HEIGHT,
-  );
+  };
+}
 
-  const blob = await new Promise<Blob | null>((resolve) => {
+function createWebPBlob(
+  canvas: HTMLCanvasElement,
+) {
+  return new Promise<Blob | null>((resolve) => {
     canvas.toBlob(
       resolve,
       "image/webp",
       THUMBNAIL_QUALITY,
     );
   });
+}
 
-  if (!blob) {
-    throw new Error("No se pudo generar la miniatura WebP.");
+export async function captureLiveThumbnail(
+  mediaStreamTrack: MediaStreamTrack,
+): Promise<Blob> {
+  if (
+    mediaStreamTrack.kind !== "video" ||
+    mediaStreamTrack.readyState !== "live"
+  ) {
+    throw new Error(
+      "La pista de camara para miniaturas no esta activa.",
+    );
   }
 
-  return blob;
+  const ImageCaptureConstructor =
+    getImageCaptureConstructor();
+
+  if (!ImageCaptureConstructor) {
+    throw new Error(
+      "El navegador no soporta ImageCapture para generar miniaturas del LIVE.",
+    );
+  }
+
+  const imageCapture =
+    new ImageCaptureConstructor(
+      mediaStreamTrack,
+    );
+
+  const image =
+    await imageCapture.grabFrame();
+
+  try {
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width = THUMBNAIL_WIDTH;
+    canvas.height = THUMBNAIL_HEIGHT;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error(
+        "No se pudo crear el canvas de miniatura.",
+      );
+    }
+
+    const {
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+    } = getSourceCrop(image);
+
+    context.drawImage(
+      image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      THUMBNAIL_WIDTH,
+      THUMBNAIL_HEIGHT,
+    );
+
+    const blob =
+      await createWebPBlob(canvas);
+
+    if (!blob) {
+      throw new Error(
+        "No se pudo generar la miniatura WebP.",
+      );
+    }
+
+    return blob;
+  } finally {
+    image.close();
+  }
 }

@@ -25,6 +25,7 @@ import {
   attachLiveCamera,
   attachPreviewStream,
   detachLiveVideo,
+  getAttachedVideoTrack,
   stopPreviewStream,
 } from "../components/live/liveBroadcastVideo.web";
 import { useBroadcastLocation } from "../components/live/useBroadcastLocation.web";
@@ -399,19 +400,27 @@ export function EmitScreen() {
       const liveSessionId =
         liveSessionIdRef.current;
 
-      const liveVideoElement =
-        liveVideoElementRef.current;
+      if (liveSessionId) {
+        const liveVideoElement =
+          liveVideoElementRef.current;
 
-      if (
-        liveSessionId &&
-        liveVideoElement
-      ) {
+        if (!liveVideoElement) {
+          throw new Error(
+            "No se ha encontrado el preview activo del LIVE.",
+          );
+        }
+
+        const mediaStreamTrack =
+          getAttachedVideoTrack(
+            liveVideoElement,
+          );
+
         stopThumbnailCapture();
 
         thumbnailCaptureRef.current =
           startLiveThumbnailCapture({
             liveSessionId,
-            videoElement: liveVideoElement,
+            mediaStreamTrack,
             authToken,
           });
       }

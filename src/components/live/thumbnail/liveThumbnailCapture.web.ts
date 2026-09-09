@@ -8,12 +8,15 @@ import {
   uploadLiveThumbnail,
 } from "./liveThumbnailApi";
 
-const FIRST_CAPTURE_DELAY_MS = 5_000;
-const CAPTURE_INTERVAL_MS = 5_000;
+const FIRST_CAPTURE_DELAY_MS =
+  5_000;
+
+const CAPTURE_INTERVAL_MS =
+  5_000;
 
 type StartLiveThumbnailCaptureOptions = {
   liveSessionId: string;
-  videoElement: HTMLVideoElement;
+  mediaStreamTrack: MediaStreamTrack;
   authToken: string;
 };
 
@@ -23,7 +26,7 @@ export type LiveThumbnailCaptureController = {
 
 export function startLiveThumbnailCapture({
   liveSessionId,
-  videoElement,
+  mediaStreamTrack,
   authToken,
 }: StartLiveThumbnailCaptureOptions): LiveThumbnailCaptureController {
   let stopped = false;
@@ -50,7 +53,7 @@ export function startLiveThumbnailCapture({
     try {
       const thumbnail =
         await captureLiveThumbnail(
-          videoElement,
+          mediaStreamTrack,
         );
 
       const result =
@@ -90,6 +93,10 @@ export function startLiveThumbnailCapture({
 
   return {
     stop() {
+      if (stopped) {
+        return;
+      }
+
       stopped = true;
 
       if (
