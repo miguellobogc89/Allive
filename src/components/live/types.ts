@@ -18,6 +18,12 @@ export type ActiveLive = {
   creator?: LiveCreator | null;
 };
 
+export type LiveKitTokenResponse = {
+  serverUrl: string;
+  participantToken: string;
+  role: "broadcaster" | "viewer";
+};
+
 export type LiveComment = {
   id: string;
   username: string;

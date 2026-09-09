@@ -1,17 +1,17 @@
-// src/components/live/LiveNavigation.tsx
+// src/components/live/LiveViewerNavigation.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, iconSizes, radius, typography } from "../../styles";
 
-type LiveNavigationProps = {
+type LiveViewerNavigationProps = {
   currentIndex: number;
   total: number;
   onPrevious: () => void;
   onNext: () => void;
 };
 
-export function LiveNavigation({ currentIndex, total, onPrevious, onNext }: LiveNavigationProps) {
+export function LiveViewerNavigation({ currentIndex, total, onPrevious, onNext }: LiveViewerNavigationProps) {
   if (total <= 1) return null;
 
   return (

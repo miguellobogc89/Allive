@@ -1,12 +1,12 @@
-// src/components/live/LiveHeader.tsx
+// src/components/live/LiveViewerHeader.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import { colors, controls, iconSizes, spacing, typography } from "../../styles";
 
-type LiveHeaderProps = { viewerCount: number };
+type LiveViewerHeaderProps = { viewerCount: number };
 
-export function LiveHeader({ viewerCount }: LiveHeaderProps) {
+export function LiveViewerHeader({ viewerCount }: LiveViewerHeaderProps) {
   return (
     <View style={styles.container} pointerEvents="none">
       <View style={styles.liveBadge}>

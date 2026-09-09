@@ -3,37 +3,9 @@
 import { useRef, useState } from "react";
 import { Animated } from "react-native";
 
-import type { Participant, Room } from "livekit-client";
+import type { Room } from "livekit-client";
 
-function getParticipantRole(participant: Participant) {
-  const attributeRole = participant.attributes?.role;
-
-  if (attributeRole === "viewer" || attributeRole === "broadcaster") {
-    return attributeRole;
-  }
-
-  if (participant.metadata) {
-    try {
-      const parsed = JSON.parse(participant.metadata);
-
-      if (parsed?.role === "viewer" || parsed?.role === "broadcaster") {
-        return parsed.role;
-      }
-    } catch {
-      // Fallback a identity.
-    }
-  }
-
-  if (participant.identity.startsWith("viewer-")) {
-    return "viewer";
-  }
-
-  if (participant.identity.startsWith("broadcaster-")) {
-    return "broadcaster";
-  }
-
-  return null;
-}
+import { getParticipantRole } from "./liveParticipantRole";
 
 export function useViewerCounter() {
   const previousViewerCountRef = useRef(0);

@@ -1,13 +1,13 @@
-// src/components/live/LiveComments.tsx
+// src/components/live/LiveViewerComments.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, iconSizes, radius, spacing, typography } from "../../styles";
 import type { LiveComment } from "./types";
 
-type LiveCommentsProps = { comments: LiveComment[]; onLikeComment?: (commentId: string) => void };
+type LiveViewerCommentsProps = { comments: LiveComment[]; onLikeComment?: (commentId: string) => void };
 
-export function LiveComments({ comments, onLikeComment }: LiveCommentsProps) {
+export function LiveViewerComments({ comments, onLikeComment }: LiveViewerCommentsProps) {
   if (comments.length === 0) return null;
 
   return (

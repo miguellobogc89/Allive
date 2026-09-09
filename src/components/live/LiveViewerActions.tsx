@@ -1,11 +1,11 @@
-// src/components/live/LiveActions.tsx
+// src/components/live/LiveViewerActions.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import type React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, controls, iconSizes, layout, typography } from "../../styles";
 
-type LiveActionsProps = {
+type LiveViewerActionsProps = {
   saved?: boolean;
   onProfilePress?: () => void;
   onSavePress?: () => void;
@@ -31,7 +31,7 @@ function ActionButton({ icon, label, onPress, active = false }: ActionButtonProp
   );
 }
 
-export function LiveActions({ saved = false, onProfilePress, onSavePress, onSharePress, onMorePress }: LiveActionsProps) {
+export function LiveViewerActions({ saved = false, onProfilePress, onSavePress, onSharePress, onMorePress }: LiveViewerActionsProps) {
   return (
     <View style={styles.container}>
       <ActionButton icon="person-outline" label="Perfil" onPress={onProfilePress} />

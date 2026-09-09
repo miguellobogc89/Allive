@@ -1,10 +1,10 @@
-// src/components/live/LiveMetadata.tsx
+// src/components/live/LiveViewerMetadata.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, iconSizes, typography } from "../../styles";
 
-type LiveMetadataProps = {
+type LiveViewerMetadataProps = {
   title?: string | null;
   eventName?: string | null;
   placeName?: string | null;
@@ -13,7 +13,7 @@ type LiveMetadataProps = {
   onPressLocation?: () => void;
 };
 
-export function LiveMetadata({ title, eventName, placeName, creatorName, onPressEvent, onPressLocation }: LiveMetadataProps) {
+export function LiveViewerMetadata({ title, eventName, placeName, creatorName, onPressEvent, onPressLocation }: LiveViewerMetadataProps) {
   return (
     <View style={styles.container}>
       {creatorName ? <Text style={styles.creator} numberOfLines={1}>@{creatorName}</Text> : null}

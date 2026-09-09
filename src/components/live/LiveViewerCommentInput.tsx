@@ -1,10 +1,10 @@
-// src/components/live/LiveCommentInput.tsx
+// src/components/live/LiveViewerCommentInput.tsx
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { colors, iconSizes, radius, spacing } from "../../styles";
 
-type LiveCommentInputProps = {
+type LiveViewerCommentInputProps = {
   value: string;
   onChangeText: (value: string) => void;
   onSend: () => void;
@@ -12,7 +12,7 @@ type LiveCommentInputProps = {
   disabled?: boolean;
 };
 
-export function LiveCommentInput({ value, onChangeText, onSend, placeholder = "Escribe un comentario…", disabled = false }: LiveCommentInputProps) {
+export function LiveViewerCommentInput({ value, onChangeText, onSend, placeholder = "Escribe un comentario…", disabled = false }: LiveViewerCommentInputProps) {
   const canSend = !disabled && value.trim().length > 0;
 
   return (

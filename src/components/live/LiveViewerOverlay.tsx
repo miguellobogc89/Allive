@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { layout } from "../../styles";
-import { LiveActions } from "./LiveActions";
-import { LiveCommentInput } from "./LiveCommentInput";
-import { LiveComments } from "./LiveComments";
-import { LiveHeader } from "./LiveHeader";
-import { LiveMetadata } from "./LiveMetadata";
-import { LiveNavigation } from "./LiveNavigation";
+import { LiveViewerActions } from "./LiveViewerActions";
+import { LiveViewerCommentInput } from "./LiveViewerCommentInput";
+import { LiveViewerComments } from "./LiveViewerComments";
+import { LiveViewerHeader } from "./LiveViewerHeader";
+import { LiveViewerMetadata } from "./LiveViewerMetadata";
+import { LiveViewerNavigation } from "./LiveViewerNavigation";
 import type { ActiveLive, LiveComment } from "./types";
 
 type Props = {
@@ -65,19 +65,19 @@ export function LiveViewerOverlay({
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      <LiveHeader viewerCount={viewerCount} />
-      <LiveNavigation currentIndex={currentIndex} total={totalLives} onPrevious={onPreviousLive} onNext={onNextLive} />
-      <LiveActions saved={saved} onSavePress={() => setSaved((value) => !value)} />
+      <LiveViewerHeader viewerCount={viewerCount} />
+      <LiveViewerNavigation currentIndex={currentIndex} total={totalLives} onPrevious={onPreviousLive} onNext={onNextLive} />
+      <LiveViewerActions saved={saved} onSavePress={() => setSaved((value) => !value)} />
 
       <View style={styles.bottomLeft} pointerEvents="box-none">
-        <LiveMetadata
+        <LiveViewerMetadata
           title={live.title}
           eventName={live.eventName}
           placeName={live.placeName}
           creatorName={creatorName}
         />
-        <LiveComments comments={comments} onLikeComment={toggleCommentLike} />
-        <LiveCommentInput value={commentValue} onChangeText={setCommentValue} onSend={sendComment} />
+        <LiveViewerComments comments={comments} onLikeComment={toggleCommentLike} />
+        <LiveViewerCommentInput value={commentValue} onChangeText={setCommentValue} onSend={sendComment} />
       </View>
     </View>
   );

@@ -1,7 +1,6 @@
 // src/components/live/LiveVideoSurface.web.tsx
 
 import {
-  Participant,
   RemoteParticipant,
   RemoteTrack,
   RemoteTrackPublication,
@@ -13,41 +12,17 @@ import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, layout, radius, spacing, typography } from "../../styles";
-import type { ActiveLive } from "./types";
-
-const API_URL = "http://localhost:3001";
+import { LIVE_API_URL } from "./liveApiConfig";
+import { getParticipantRole } from "./liveParticipantRole";
+import type { ActiveLive, LiveKitTokenResponse } from "./types";
 
 type Props = {
   live: ActiveLive | null;
   onViewerCountChange?: (count: number) => void;
 };
 
-type LiveKitTokenResponse = {
-  serverUrl: string;
-  participantToken: string;
-  role: "broadcaster" | "viewer";
-};
-
-function getParticipantRole(participant: Participant) {
-  const attributeRole = participant.attributes?.role;
-  if (attributeRole === "viewer" || attributeRole === "broadcaster") return attributeRole;
-
-  if (participant.metadata) {
-    try {
-      const parsed = JSON.parse(participant.metadata);
-      if (parsed?.role === "viewer" || parsed?.role === "broadcaster") return parsed.role;
-    } catch {
-      // Fallback a identity.
-    }
-  }
-
-  if (participant.identity.startsWith("viewer-")) return "viewer";
-  if (participant.identity.startsWith("broadcaster-")) return "broadcaster";
-  return null;
-}
-
 async function getViewerToken(roomName: string): Promise<LiveKitTokenResponse> {
-  const response = await fetch(`${API_URL}/api/livekit/token`, {
+  const response = await fetch(`${LIVE_API_URL}/api/livekit/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ roomName, role: "viewer" }),
