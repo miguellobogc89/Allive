@@ -68,8 +68,13 @@ export function getParticipantRole(
   return null;
 }
 
-export async function createLiveKitToken(roomName: string, role: LiveRole) {
-  const participantIdentity = `${role}-${randomUUID()}`;
+export async function createLiveKitToken(
+  roomName: string,
+  role: LiveRole,
+  identity?: string,
+) {
+  const participantIdentity =
+    identity ?? `${role}-${randomUUID()}`;
 
   const token = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
     identity: participantIdentity,

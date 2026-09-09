@@ -13,21 +13,6 @@ export function cleanOptionalString(value: unknown, maxLength: number) {
   return cleaned || null;
 }
 
-export async function getDevUser() {
-  return prisma.user.upsert({
-    where: {
-      username: "miguel-dev",
-    },
-    update: {},
-    create: {
-      username: "miguel-dev",
-      email: "miguel-dev@allive.local",
-      password_hash: "DEV_USER_NO_PASSWORD",
-      displayName: "Miguel",
-    },
-  });
-}
-
 export async function reconcileActiveLives() {
   const dbLives = await prisma.liveSession.findMany({
     where: {
@@ -173,7 +158,10 @@ export async function cleanupDevLives() {
   };
 }
 
-export async function createLiveSession(body: Record<string, unknown>) {
+export async function createLiveSession(
+  creatorId: string,
+  body: Record<string, unknown>,
+) {
   const {
     roomName,
     title,
@@ -184,13 +172,11 @@ export async function createLiveSession(body: Record<string, unknown>) {
     placeName,
   } = body;
 
-  const user = await getDevUser();
-
   return prisma.liveSession.create({
     data: {
       roomName: roomName as string,
 
-      creatorId: user.id,
+      creatorId,
 
       status: "LIVE",
 

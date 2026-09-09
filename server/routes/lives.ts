@@ -9,12 +9,16 @@ import {
   reconcileActiveLives,
   updateLiveSession,
 } from "../services/liveSessions";
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from "../auth";
 
 export function registerLiveRoutes(app: Express) {
   /*
    * Crear LIVE.
    */
-  app.post("/api/lives", async (req, res) => {
+  app.post("/api/lives",requireAuth,async (req: AuthenticatedRequest, res) => {
     try {
       const { roomName } = req.body;
 
@@ -24,7 +28,7 @@ export function registerLiveRoutes(app: Express) {
         });
       }
 
-      const live = await createLiveSession(req.body);
+      const live = await createLiveSession(req.authUser!.id,req.body,);
 
       return res.status(201).json(live);
     } catch (error) {
