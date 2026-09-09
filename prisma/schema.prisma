@@ -34,6 +34,7 @@ model LiveSession {
   latitude      Float?
   longitude     Float?
   placeName     String?
+  thumbnailUrl  String?
   startedAt     DateTime        @default(now())
   endedAt       DateTime?
   createdAt     DateTime        @default(now())

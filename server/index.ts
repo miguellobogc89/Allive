@@ -5,16 +5,17 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 
+import { registerAuthRoutes } from "./routes/auth";
 import { registerDevRoutes } from "./routes/dev";
 import { registerHealthRoutes } from "./routes/health";
+import { registerLiveCommentRoutes } from "./routes/liveComments";
+import { registerLiveLikeRoutes } from "./routes/liveLikes";
 import {
   registerLiveKitTokenRoutes,
   registerLiveKitWebhookRoute,
 } from "./routes/livekit";
-import { registerLiveCommentRoutes } from "./routes/liveComments";
-import { registerLiveLikeRoutes } from "./routes/liveLikes";
 import { registerLiveRoutes } from "./routes/lives";
-import { registerAuthRoutes } from "./routes/auth";
+import { registerSearchRoutes } from "./routes/search";
 
 const app = express();
 const PORT = 3001;
@@ -31,6 +32,7 @@ registerLiveKitTokenRoutes(app);
 registerLiveRoutes(app);
 registerLiveLikeRoutes(app);
 registerLiveCommentRoutes(app);
+registerSearchRoutes(app);
 
 app.listen(PORT, () => {
   console.log(`Allive API funcionando en http://localhost:${PORT}`);

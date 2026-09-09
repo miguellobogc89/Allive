@@ -1,138 +1,363 @@
 // src/screens/SearchScreen.tsx
 
-import { Ionicons } from "@expo/vector-icons";
 import {
-  Pressable,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
-import { colors, controls, spacing, typography } from "../styles";
+import {
+  searchAll,
+  type SearchLive,
+  type SearchResponse,
+  type SearchUser,
+} from "../api/searchApi";
 
-const trendingSearches = [
-  {
-    id: "1",
-    icon: "location-outline",
-    title: "Puerta del Sol",
-    subtitle: "Madrid",
-    liveCount: 18,
-  },
-  {
-    id: "2",
-    icon: "football-outline",
-    title: "Real Madrid",
-    subtitle: "Partido y alrededores",
-    liveCount: 42,
-  },
-  {
-    id: "3",
-    icon: "musical-notes-outline",
-    title: "Festival de Málaga",
-    subtitle: "Málaga",
-    liveCount: 27,
-  },
-];
+import { SearchResultCard } from "../components/search/SearchResultCard";
+import { SearchTabs } from "../components/search/SearchTabs";
+
+import {
+  colors,
+  spacing,
+} from "../styles";
+
+type SearchTab =
+  | "for-you"
+  | "live"
+  | "people"
+  | "nearby";
+
+type GridItem =
+  | {
+      id: string;
+      type: "live";
+      live: SearchLive;
+    }
+  | {
+      id: string;
+      type: "user";
+      user: SearchUser;
+    };
+
+const EMPTY_RESPONSE: SearchResponse = {
+  query: "",
+  lives: [],
+  users: [],
+};
+
+function getColumnCount(
+  width: number,
+) {
+  if (width >= 1180) {
+    return 4;
+  }
+
+  if (width >= 760) {
+    return 3;
+  }
+
+  return 2;
+}
+
+function getForYouItems(
+  response: SearchResponse,
+) {
+  const items: GridItem[] = [];
+
+  for (const live of response.lives) {
+    items.push({
+      id: `live-${live.id}`,
+      type: "live",
+      live,
+    });
+  }
+
+  return items;
+}
+
+function getLiveItems(
+  lives: SearchLive[],
+) {
+  return lives.map((live) => ({
+    id: `live-${live.id}`,
+    type: "live" as const,
+    live,
+  }));
+}
+
+function getPeopleItems(
+  users: SearchUser[],
+) {
+  return users.map((user) => ({
+    id: `user-${user.id}`,
+    type: "user" as const,
+    user,
+  }));
+}
+
+function getNearbyItems(
+  lives: SearchLive[],
+) {
+  const nearby: SearchLive[] = [];
+
+  for (const live of lives) {
+    if (
+      live.latitude !== null &&
+      live.longitude !== null
+    ) {
+      nearby.push(live);
+    }
+  }
+
+  return getLiveItems(nearby);
+}
 
 export function SearchScreen() {
+  const { width } = useWindowDimensions();
+
+  const [query, setQuery] =
+    useState("");
+
+  const [activeTab, setActiveTab] =
+    useState<SearchTab>("for-you");
+
+  const [response, setResponse] =
+    useState<SearchResponse>(
+      EMPTY_RESPONSE,
+    );
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const columns = getColumnCount(width);
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    const timer = setTimeout(
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          const result =
+            await searchAll(
+              query,
+              controller.signal,
+            );
+
+          setResponse(result);
+        } catch (caughtError) {
+          if (
+            caughtError instanceof Error &&
+            caughtError.name ===
+              "AbortError"
+          ) {
+            return;
+          }
+
+          console.error(
+            "Error cargando Search:",
+            caughtError,
+          );
+
+          setError(
+            "No se pudo cargar la búsqueda.",
+          );
+        } finally {
+          if (
+            !controller.signal.aborted
+          ) {
+            setLoading(false);
+          }
+        }
+      },
+      250,
+    );
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
+
+  const items = useMemo(() => {
+    if (activeTab === "live") {
+      return getLiveItems(
+        response.lives,
+      );
+    }
+
+    if (activeTab === "people") {
+      return getPeopleItems(
+        response.users,
+      );
+    }
+
+    if (activeTab === "nearby") {
+      return getNearbyItems(
+        response.lives,
+      );
+    }
+
+    return getForYouItems(
+      response,
+    );
+  }, [
+    activeTab,
+    response,
+  ]);
+
+  const isPeople =
+    activeTab === "people";
+
+  function renderItem({
+    item,
+  }: {
+    item: GridItem;
+  }) {
+    if (item.type === "live") {
+      return (
+        <View style={styles.gridCell}>
+          <SearchResultCard
+            type="live"
+            live={item.live}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.gridCell}>
+        <SearchResultCard
+          type="user"
+          user={item.user}
+        />
+      </View>
+    );
+  }
+
+  function renderEmpty() {
+    if (loading) {
+      return (
+        <View style={styles.state}>
+          <ActivityIndicator
+            size="small"
+            color={colors.accent}
+          />
+
+          <Text style={styles.stateText}>
+            Buscando...
+          </Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.state}>
+          <Text style={styles.stateTitle}>
+            No se pudo cargar
+          </Text>
+
+          <Text style={styles.stateText}>
+            {error}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.state}>
+        <Text style={styles.stateTitle}>
+          No encontramos nada
+        </Text>
+
+        <Text style={styles.stateText}>
+          Prueba con otra búsqueda.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Buscar</Text>
-
-        <Text style={styles.subtitle}>
-          Mira qué está pasando ahora.
+        <Text style={styles.screenTitle}>
+          Buscar
         </Text>
 
         <View style={styles.searchBox}>
-          <Ionicons
-            name="search"
-            size={20}
-            color={colors.textOnOverlayPlaceholder}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Lugar, evento o qué quieres ver..."
-            placeholderTextColor={colors.textOnOverlaySubtle}
-            selectionColor={colors.text}
-          />
-        </View>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            EN DIRECTO AHORA
+          <Text style={styles.searchIcon}>
+            ⌕
           </Text>
 
-          <View style={styles.liveIndicator}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveIndicatorText}>LIVE</Text>
-          </View>
-        </View>
-
-        <View style={styles.results}>
-          {trendingSearches.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.result}
-            >
-              <View style={styles.resultIcon}>
-                <Ionicons
-                  name={item.icon as any}
-                  size={21}
-                  color={colors.text}
-                />
-              </View>
-
-              <View style={styles.resultInfo}>
-                <Text style={styles.resultTitle}>
-                  {item.title}
-                </Text>
-
-                <Text style={styles.resultSubtitle}>
-                  {item.subtitle}
-                </Text>
-              </View>
-
-              <View style={styles.liveCount}>
-                <View style={styles.smallLiveDot} />
-
-                <Text style={styles.liveCountText}>
-                  {item.liveCount}
-                </Text>
-              </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={colors.textOnOverlayFaint}
-              />
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.idea}>
-          <Ionicons
-            name="radio-outline"
-            size={21}
-            color={colors.textOnOverlayMuted}
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Directos, personas, lugares..."
+            placeholderTextColor={
+              colors.textMuted
+            }
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            style={styles.input}
           />
-
-          <View style={styles.ideaText}>
-            <Text style={styles.ideaTitle}>
-              ¿No encuentras lo que buscas?
-            </Text>
-
-            <Text style={styles.ideaDescription}>
-              Búscalo igualmente. Si hay gente cerca, Allive podrá detectar
-              que alguien quiere verlo.
-            </Text>
-          </View>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.tabsScroll
+          }
+        >
+          <SearchTabs
+            activeTab={activeTab}
+            onChange={setActiveTab}
+          />
+        </ScrollView>
       </View>
+
+      <FlatList
+        key={`${columns}-${activeTab}`}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        numColumns={columns}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          items.length === 0
+            ? styles.emptyList
+            : styles.list
+        }
+        columnWrapperStyle={
+          columns > 1
+            ? styles.row
+            : undefined
+        }
+        ListEmptyComponent={renderEmpty}
+      />
     </View>
   );
 }
@@ -140,218 +365,92 @@ export function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
-    paddingHorizontal: spacing.lg,
-
     backgroundColor: colors.background,
   },
 
   header: {
-    paddingTop: 24,
+    paddingTop: spacing.lg,
+    backgroundColor: colors.background,
   },
 
-  title: {
+  screenTitle: {
     color: colors.text,
-
-    ...typography.screenTitle,
-  },
-
-  subtitle: {
-    marginTop: 4,
-
-    color: colors.textSecondary,
-
-    fontSize: 14,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "800",
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
 
   searchBox: {
-    height: 52,
-
-    marginTop: 20,
-
-    flexDirection: "row",
-    alignItems: "center",
-
-    gap: 10,
-
-    paddingHorizontal: 15,
-
-    borderRadius: 16,
-
-    backgroundColor: colors.surfaceElevated,
-
+    height: 48,
+    marginHorizontal: spacing.lg,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
+
+  searchIcon: {
+    color: colors.textMuted,
+    fontSize: 22,
+    marginRight: 9,
   },
 
   input: {
     flex: 1,
-
+    height: "100%",
     color: colors.text,
-
     fontSize: 15,
-
     outlineStyle: "none",
   } as any,
 
-  content: {
-    marginTop: 30,
+  tabsScroll: {
+    paddingHorizontal: spacing.lg,
   },
 
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+list: {
+  paddingTop: 0,
+  paddingBottom: 140,
+},
 
-    marginBottom: 10,
+  row: {
+    gap: 0,
   },
 
-  sectionTitle: {
-    color: colors.textMuted,
-
-    fontSize: 11,
-    fontWeight: "800",
-
-    letterSpacing: 1.2,
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
   },
 
-  liveIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
+emptyList: {
+  flexGrow: 1,
+  paddingBottom: 140,
+},
 
-    gap: 5,
-  },
-
-  liveDot: {
-    width: controls.smallDotSize,
-    height: controls.smallDotSize,
-
-    borderRadius: 3,
-
-    backgroundColor: colors.live,
-  },
-
-  liveIndicatorText: {
-    color: colors.live,
-
-    fontSize: 10,
-    fontWeight: "900",
-  },
-
-  results: {
-    gap: 4,
-  },
-
-  result: {
-    minHeight: 68,
-
-    flexDirection: "row",
-    alignItems: "center",
-
-    paddingHorizontal: 10,
-
-    borderRadius: 14,
-  },
-
-  resultIcon: {
-    width: 42,
-    height: 42,
-
-    borderRadius: 13,
-
-    alignItems: "center",
+  state: {
+    flex: 1,
+    minHeight: 280,
     justifyContent: "center",
-
-    backgroundColor: colors.surfaceElevated,
-  },
-
-  resultInfo: {
-    flex: 1,
-
-    marginLeft: 12,
-  },
-
-  resultTitle: {
-    color: colors.text,
-
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  resultSubtitle: {
-    marginTop: 3,
-
-    color: colors.textSecondary,
-
-    fontSize: 11,
-  },
-
-  liveCount: {
-    flexDirection: "row",
     alignItems: "center",
-
-    gap: 5,
-
-    marginRight: 10,
-
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-
-    borderRadius: 9,
-
-    backgroundColor: colors.liveSoft,
+    padding: spacing.xl,
   },
 
-  smallLiveDot: {
-    width: controls.smallDotSize,
-    height: controls.smallDotSize,
-
-    borderRadius: 3,
-
-    backgroundColor: colors.live,
-  },
-
-  liveCountText: {
+  stateTitle: {
     color: colors.text,
-
-    fontSize: 11,
+    fontSize: 17,
     fontWeight: "800",
+    textAlign: "center",
   },
 
-  idea: {
-    marginTop: 32,
-
-    flexDirection: "row",
-
-    gap: 12,
-
-    padding: 16,
-
-    borderRadius: 16,
-
-    backgroundColor: colors.surface,
-
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  ideaText: {
-    flex: 1,
-  },
-
-  ideaTitle: {
-    color: colors.text,
-
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  ideaDescription: {
-    marginTop: 5,
-
-    color: colors.textSecondary,
-
-    fontSize: 11,
-    lineHeight: 16,
+  stateText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+    textAlign: "center",
   },
 });
