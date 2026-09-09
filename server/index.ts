@@ -11,6 +11,7 @@ import {
   registerLiveKitTokenRoutes,
   registerLiveKitWebhookRoute,
 } from "./routes/livekit";
+import { registerLiveLikeRoutes } from "./routes/liveLikes";
 import { registerLiveRoutes } from "./routes/lives";
 import { registerAuthRoutes } from "./routes/auth";
 
@@ -21,12 +22,13 @@ registerLiveKitWebhookRoute(app);
 
 app.use(cors());
 app.use(express.json());
-registerAuthRoutes(app);
 
+registerAuthRoutes(app);
 registerHealthRoutes(app);
 registerDevRoutes(app);
 registerLiveKitTokenRoutes(app);
 registerLiveRoutes(app);
+registerLiveLikeRoutes(app);
 
 app.listen(PORT, () => {
   console.log(`Allive API funcionando en http://localhost:${PORT}`);

@@ -29,6 +29,43 @@ export async function createAccessToken(user: AuthUser) {
     .sign(secret);
 }
 
+async function resolveAuthUser(
+  authorization: string | undefined,
+): Promise<AuthUser | null> {
+  if (!authorization?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  try {
+    const { payload } = await jwtVerify(
+      authorization.slice(7),
+      secret,
+    );
+
+    if (!payload.sub || typeof payload.username !== "string") {
+      return null;
+    }
+
+    return {
+      id: payload.sub,
+      username: payload.username,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function optionalAuth(
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction,
+) {
+  req.authUser =
+    (await resolveAuthUser(req.headers.authorization)) ?? undefined;
+
+  next();
+}
+
 export async function requireAuth(
   req: AuthenticatedRequest,
   res: Response,
@@ -41,24 +78,13 @@ export async function requireAuth(
     return;
   }
 
-  try {
-    const { payload } = await jwtVerify(
-      authorization.slice(7),
-      secret,
-    );
+  const authUser = await resolveAuthUser(authorization);
 
-    if (!payload.sub || typeof payload.username !== "string") {
-      res.status(401).json({ error: "Token inválido" });
-      return;
-    }
-
-    req.authUser = {
-      id: payload.sub,
-      username: payload.username,
-    };
-
-    next();
-  } catch {
+  if (!authUser) {
     res.status(401).json({ error: "Token inválido o caducado" });
+    return;
   }
+
+  req.authUser = authUser;
+  next();
 }

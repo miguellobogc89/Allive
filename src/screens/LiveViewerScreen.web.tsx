@@ -258,6 +258,10 @@ export function LiveViewerScreen() {
         <LiveViewerOverlay
           live={activeLive}
           audience={audience}
+          viewerIdentity={
+            identity
+          }
+          authToken={token}
           currentIndex={
             currentIndex
           }
@@ -280,10 +284,8 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-
       position:
         "relative",
-
       backgroundColor:
         colors.background,
     },
