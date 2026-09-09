@@ -12,6 +12,7 @@ import {
   registerLiveKitWebhookRoute,
 } from "./routes/livekit";
 import { registerLiveRoutes } from "./routes/lives";
+import { registerAuthRoutes } from "./routes/auth";
 
 const app = express();
 const PORT = 3001;
@@ -20,6 +21,7 @@ registerLiveKitWebhookRoute(app);
 
 app.use(cors());
 app.use(express.json());
+registerAuthRoutes(app);
 
 registerHealthRoutes(app);
 registerDevRoutes(app);

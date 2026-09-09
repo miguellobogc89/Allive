@@ -1,9 +1,19 @@
 // App.tsx
 
 import { useState } from "react";
-import { SafeAreaView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  View,
+} from "react-native";
 
+import {
+  AuthProvider,
+  useAuth,
+} from "./src/auth/AuthContext";
 import { BottomNav } from "./src/components/BottomNav";
+import { AuthScreen } from "./src/screens/AuthScreen";
 import { EmitScreen } from "./src/screens/EmitScreen";
 import { MapScreen } from "./src/screens/MapScreen";
 import { NowScreen } from "./src/screens/NowScreen";
@@ -11,8 +21,21 @@ import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SearchScreen } from "./src/screens/SearchScreen";
 import { colors } from "./src/styles";
 
-export default function App() {
+function AppContent() {
+  const { user, isGuest, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("now");
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.loading}>
+        <ActivityIndicator />
+      </SafeAreaView>
+    );
+  }
+
+  if (!user && !isGuest) {
+    return <AuthScreen />;
+  }
 
   function renderScreen() {
     if (activeTab === "now") {
@@ -52,6 +75,14 @@ export default function App() {
   );
 }
 
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -60,5 +91,12 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
+  },
+
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.background,
   },
 });

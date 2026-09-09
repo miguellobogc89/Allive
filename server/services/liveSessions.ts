@@ -21,6 +21,8 @@ export async function getDevUser() {
     update: {},
     create: {
       username: "miguel-dev",
+      email: "miguel-dev@allive.local",
+      password_hash: "DEV_USER_NO_PASSWORD",
       displayName: "Miguel",
     },
   });
@@ -45,13 +47,7 @@ export async function reconcileActiveLives() {
     return [];
   }
 
-  console.log("");
-  console.log("===== ALLIVE RECONCILIATION =====");
 
-  console.log(
-    "Neon cree que est\u00e1n LIVE:",
-    dbLives.map((live) => live.roomName)
-  );
 
   let liveKitRooms;
 
