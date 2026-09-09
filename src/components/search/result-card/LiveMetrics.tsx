@@ -5,9 +5,7 @@ import {
   View,
 } from "react-native";
 
-import {
-  searchResultCardStyles as styles,
-} from "./searchResultCard.styles";
+import { styles } from "./searchResultCard.styles";
 
 type Props = {
   likeCount?: number;
@@ -15,7 +13,7 @@ type Props = {
 };
 
 function normalizeCount(
-  value: number | undefined,
+  value?: number,
 ) {
   if (
     typeof value !== "number" ||
@@ -32,11 +30,15 @@ function formatCount(
   value: number,
 ) {
   if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M`;
+    return `${(
+      value / 1_000_000
+    ).toFixed(1)}M`;
   }
 
   if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K`;
+    return `${(
+      value / 1000
+    ).toFixed(1)}K`;
   }
 
   return String(value);
@@ -46,18 +48,16 @@ export function LiveMetrics({
   likeCount,
   viewerCount,
 }: Props) {
-  const likes = normalizeCount(
-    likeCount,
-  );
+  const likes =
+    normalizeCount(likeCount);
 
-  const viewers = normalizeCount(
-    viewerCount,
-  );
+  const viewers =
+    normalizeCount(viewerCount);
 
   return (
     <View style={styles.metrics}>
       <View style={styles.metric}>
-        <Text style={styles.metricIcon}>
+        <Text style={styles.likeIcon}>
           ♥
         </Text>
 
@@ -67,7 +67,7 @@ export function LiveMetrics({
       </View>
 
       <View style={styles.metric}>
-        <Text style={styles.metricIcon}>
+        <Text style={styles.viewerIcon}>
           ◉
         </Text>
 

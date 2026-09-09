@@ -1,3 +1,21 @@
 // src/screens/NowScreen.web.tsx
 
-export { LiveViewerScreen as NowScreen } from "./LiveViewerScreen.web";
+import {
+  LiveViewerScreen,
+} from "./LiveViewerScreen.web";
+
+type NowScreenProps = {
+  requestedLiveId?: string | null;
+};
+
+export function NowScreen({
+  requestedLiveId = null,
+}: NowScreenProps) {
+  return (
+    <LiveViewerScreen
+      requestedLiveId={
+        requestedLiveId
+      }
+    />
+  );
+}

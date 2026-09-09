@@ -12,6 +12,7 @@ type Props =
   | {
       type: "live";
       live: SearchLive;
+      onPress?: () => void;
     }
   | {
       type: "user";
@@ -25,6 +26,7 @@ export function SearchResultCard(
     return (
       <LiveSearchCard
         live={props.live}
+        onPress={props.onPress}
       />
     );
   }

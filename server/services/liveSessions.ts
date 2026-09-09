@@ -1,129 +1,158 @@
 // server/services/liveSessions.ts
 
 import { prisma } from "../db";
-import { getParticipantRole, roomService } from "../livekit";
+import {
+  getParticipantRole,
+  roomService,
+} from "../livekit";
 
-export function cleanOptionalString(value: unknown, maxLength: number) {
+export class ActiveLiveExistsError extends Error {
+  liveId: string;
+  roomName: string;
+
+  constructor(
+    liveId: string,
+    roomName: string,
+  ) {
+    super(
+      "El usuario ya tiene una emisión activa",
+    );
+
+    this.name = "ActiveLiveExistsError";
+    this.liveId = liveId;
+    this.roomName = roomName;
+  }
+}
+
+export function cleanOptionalString(
+  value: unknown,
+  maxLength: number,
+) {
   if (typeof value !== "string") {
     return null;
   }
 
-  const cleaned = value.trim().slice(0, maxLength);
+  const cleaned = value
+    .trim()
+    .slice(0, maxLength);
 
   return cleaned || null;
 }
 
+async function hasBroadcaster(
+  roomName: string,
+) {
+  try {
+    const rooms =
+      await roomService.listRooms();
+
+    const roomExists = rooms.some(
+      (room) =>
+        room.name === roomName,
+    );
+
+    if (!roomExists) {
+      return false;
+    }
+
+    const participants =
+      await roomService.listParticipants(
+        roomName,
+      );
+
+    return participants.some(
+      (participant) =>
+        getParticipantRole(
+          participant.metadata,
+          participant.identity,
+        ) === "broadcaster",
+    );
+  } catch (error) {
+    console.warn(
+      `No se pudo reconciliar ${roomName}:`,
+      error,
+    );
+
+    return null;
+  }
+}
+
 export async function reconcileActiveLives() {
-  const dbLives = await prisma.liveSession.findMany({
-    where: {
-      status: "LIVE",
-    },
+  const dbLives =
+    await prisma.liveSession.findMany({
+      where: {
+        status: "LIVE",
+      },
 
-    orderBy: {
-      startedAt: "desc",
-    },
+      orderBy: {
+        startedAt: "desc",
+      },
 
-    include: {
-      creator: true,
-    },
-  });
+      include: {
+        creator: true,
+      },
+    });
 
   if (dbLives.length === 0) {
     return [];
   }
 
-  let liveKitRooms;
-
-  try {
-    liveKitRooms = await roomService.listRooms();
-  } catch (error) {
-    console.error(
-      "No se pudieron consultar las salas de LiveKit:",
-      error,
-    );
-
-    return dbLives;
-  }
-
-  const existingRoomNames = new Set(
-    liveKitRooms.map((room) => room.name),
-  );
-
   const activeLives = [];
 
   for (const live of dbLives) {
-    /*
-     * Una lectura de Now nunca debe cambiar el estado
-     * persistente de una emisión.
-     *
-     * LiveKit puede tardar brevemente en mostrar una sala
-     * o un participante durante conexiones/reconexiones.
-     */
-    if (!existingRoomNames.has(live.roomName)) {
-      console.log(
-        `LIVE temporalmente no visible en LiveKit: ${live.roomName}`,
-      );
-
-      continue;
-    }
-
-    try {
-      const participants = await roomService.listParticipants(
+    const broadcasterActive =
+      await hasBroadcaster(
         live.roomName,
       );
 
-      const hasBroadcaster = participants.some(
-        (participant) =>
-          getParticipantRole(
-            participant.metadata,
-            participant.identity,
-          ) === "broadcaster",
-      );
-
-      if (!hasBroadcaster) {
-        console.log(
-          `LIVE sin broadcaster visible temporalmente: ${live.roomName}`,
-        );
-
-        continue;
-      }
-
+    if (broadcasterActive === true) {
       activeLives.push(live);
-    } catch (error) {
-      console.warn(
-        `No se pudo comprobar temporalmente el LIVE ${live.roomName}:`,
-        error,
-      );
+      continue;
     }
+
+    if (broadcasterActive === null) {
+      continue;
+    }
+
+    console.log(
+      `LIVE sin broadcaster activo: ${live.roomName}`,
+    );
   }
 
   return activeLives;
 }
 
 export async function cleanupDevLives() {
-  const result = await prisma.liveSession.updateMany({
-    where: {
-      status: "LIVE",
-    },
+  const result =
+    await prisma.liveSession.updateMany({
+      where: {
+        status: "LIVE",
+      },
 
-    data: {
-      status: "ENDED",
-      endedAt: new Date(),
-    },
-  });
+      data: {
+        status: "ENDED",
+        endedAt: new Date(),
+      },
+    });
 
   let deletedRooms = 0;
 
   try {
-    const rooms = await roomService.listRooms();
+    const rooms =
+      await roomService.listRooms();
 
     for (const room of rooms) {
       try {
-        await roomService.deleteRoom(room.name);
+        await roomService.deleteRoom(
+          room.name,
+        );
 
         deletedRooms += 1;
       } catch {
-        console.warn("No se pudo eliminar sala:", room.name);
+        console.warn(
+          "No se pudo eliminar sala:",
+          room.name,
+        );
       }
     }
   } catch (error) {
@@ -139,10 +168,77 @@ export async function cleanupDevLives() {
   };
 }
 
+async function resolveExistingLive(
+  creatorId: string,
+) {
+  const existingLives =
+    await prisma.liveSession.findMany({
+      where: {
+        creatorId,
+        status: "LIVE",
+      },
+
+      orderBy: {
+        startedAt: "desc",
+      },
+    });
+
+  if (existingLives.length === 0) {
+    return null;
+  }
+
+  for (const live of existingLives) {
+    const broadcasterActive =
+      await hasBroadcaster(
+        live.roomName,
+      );
+
+    if (broadcasterActive === true) {
+      return live;
+    }
+
+    if (broadcasterActive === null) {
+      throw new ActiveLiveExistsError(
+        live.id,
+        live.roomName,
+      );
+    }
+
+    await prisma.liveSession.update({
+      where: {
+        id: live.id,
+      },
+
+      data: {
+        status: "ENDED",
+        endedAt: new Date(),
+      },
+    });
+
+    console.log(
+      `LIVE huérfano finalizado: ${live.roomName}`,
+    );
+  }
+
+  return null;
+}
+
 export async function createLiveSession(
   creatorId: string,
   body: Record<string, unknown>,
 ) {
+  const existingLive =
+    await resolveExistingLive(
+      creatorId,
+    );
+
+  if (existingLive) {
+    throw new ActiveLiveExistsError(
+      existingLive.id,
+      existingLive.roomName,
+    );
+  }
+
   const {
     roomName,
     title,
@@ -161,17 +257,35 @@ export async function createLiveSession(
 
       status: "LIVE",
 
-      title: cleanOptionalString(title, 120),
+      title: cleanOptionalString(
+        title,
+        120,
+      ),
 
-      eventName: cleanOptionalString(eventName, 120),
+      eventName: cleanOptionalString(
+        eventName,
+        120,
+      ),
 
-      description: cleanOptionalString(description, 500),
+      description: cleanOptionalString(
+        description,
+        500,
+      ),
 
-      latitude: typeof latitude === "number" ? latitude : null,
+      latitude:
+        typeof latitude === "number"
+          ? latitude
+          : null,
 
-      longitude: typeof longitude === "number" ? longitude : null,
+      longitude:
+        typeof longitude === "number"
+          ? longitude
+          : null,
 
-      placeName: cleanOptionalString(placeName, 160),
+      placeName: cleanOptionalString(
+        placeName,
+        160,
+      ),
     },
 
     include: {
@@ -199,25 +313,39 @@ export async function updateLiveSession(
 
     data: {
       ...(title !== undefined && {
-        title: cleanOptionalString(title, 120),
+        title: cleanOptionalString(
+          title,
+          120,
+        ),
       }),
 
       ...(eventName !== undefined && {
-        eventName: cleanOptionalString(eventName, 120),
+        eventName: cleanOptionalString(
+          eventName,
+          120,
+        ),
       }),
 
       ...(latitude !== undefined && {
         latitude:
-          typeof latitude === "number" ? latitude : null,
+          typeof latitude === "number"
+            ? latitude
+            : null,
       }),
 
       ...(longitude !== undefined && {
         longitude:
-          typeof longitude === "number" ? longitude : null,
+          typeof longitude === "number"
+            ? longitude
+            : null,
       }),
 
       ...(placeName !== undefined && {
-        placeName: cleanOptionalString(placeName, 160),
+        placeName:
+          cleanOptionalString(
+            placeName,
+            160,
+          ),
       }),
     },
 
@@ -227,30 +355,36 @@ export async function updateLiveSession(
   });
 }
 
-export async function endLiveSession(id: string) {
-  const existingLive = await prisma.liveSession.findUnique({
-    where: {
-      id,
-    },
-  });
+export async function endLiveSession(
+  id: string,
+) {
+  const existingLive =
+    await prisma.liveSession.findUnique({
+      where: {
+        id,
+      },
+    });
 
   if (!existingLive) {
     return null;
   }
 
-  const live = await prisma.liveSession.update({
-    where: {
-      id,
-    },
+  const live =
+    await prisma.liveSession.update({
+      where: {
+        id,
+      },
 
-    data: {
-      status: "ENDED",
-      endedAt: new Date(),
-    },
-  });
+      data: {
+        status: "ENDED",
+        endedAt: new Date(),
+      },
+    });
 
   try {
-    await roomService.deleteRoom(existingLive.roomName);
+    await roomService.deleteRoom(
+      existingLive.roomName,
+    );
   } catch {
     console.warn(
       "Sala LiveKit ya cerrada:",

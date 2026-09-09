@@ -34,12 +34,12 @@ model LiveSession {
   latitude      Float?
   longitude     Float?
   placeName     String?
-  thumbnailUrl  String?
   startedAt     DateTime        @default(now())
   endedAt       DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   eventName     String?
+  thumbnailUrl  String?
   live_comments live_comments[]
   live_likes    live_likes[]
   creator       User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)

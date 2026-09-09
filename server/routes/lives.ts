@@ -8,6 +8,7 @@ import {
 } from "../auth";
 import { prisma } from "../db";
 import {
+  ActiveLiveExistsError,
   createLiveSession,
   endLiveSession,
   reconcileActiveLives,
@@ -37,13 +38,26 @@ export function registerLiveRoutes(app: Express) {
         );
 
         return res.status(201).json(live);
-      } catch (error) {
-        console.error("Error creando LIVE:", error);
+} catch (error) {
+  if (
+    error instanceof ActiveLiveExistsError
+  ) {
+    return res.status(409).json({
+      error: "Ya tienes una emisión activa",
+      activeLiveId: error.liveId,
+      roomName: error.roomName,
+    });
+  }
 
-        return res.status(500).json({
-          error: "No se pudo crear la emisión",
-        });
-      }
+  console.error(
+    "Error creando LIVE:",
+    error,
+  );
+
+  return res.status(500).json({
+    error: "No se pudo crear la emisión",
+  });
+}
     }
   );
 

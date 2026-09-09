@@ -8,17 +8,17 @@ import {
   View,
 } from "react-native";
 
-import { colors, spacing } from "../../styles";
-
 export type SearchTab =
   | "for-you"
   | "live"
   | "people"
   | "nearby";
 
-type SearchTabsProps = {
+type Props = {
   activeTab: SearchTab;
-  onChange: (tab: SearchTab) => void;
+  onChange: (
+    tab: SearchTab,
+  ) => void;
 };
 
 const tabs: {
@@ -46,27 +46,35 @@ const tabs: {
 export function SearchTabs({
   activeTab,
   onChange,
-}: SearchTabsProps) {
+}: Props) {
   return (
     <View style={styles.container}>
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        showsHorizontalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
       >
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
+          const active =
+            activeTab === tab.id;
 
           return (
             <Pressable
               key={tab.id}
               style={styles.tab}
-              onPress={() => onChange(tab.id)}
+              onPress={() =>
+                onChange(tab.id)
+              }
             >
               <Text
                 style={[
-                  styles.text,
-                  isActive && styles.textActive,
+                  styles.label,
+                  active &&
+                    styles.labelActive,
                 ]}
               >
                 {tab.label}
@@ -75,7 +83,8 @@ export function SearchTabs({
               <View
                 style={[
                   styles.indicator,
-                  isActive && styles.indicatorActive,
+                  active &&
+                    styles.indicatorActive,
                 ]}
               />
             </Pressable>
@@ -88,45 +97,52 @@ export function SearchTabs({
 
 const styles = StyleSheet.create({
   container: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    backgroundColor: "#F7F7F5",
+
+    borderBottomWidth:
+      StyleSheet.hairlineWidth,
+
+    borderBottomColor: "#DDDCD8",
   },
 
   content: {
-    paddingHorizontal: spacing.lg,
-    gap: 26,
+    paddingHorizontal: 18,
+
+    gap: 28,
   },
 
   tab: {
-    minHeight: 47,
+    minHeight: 43,
+
     justifyContent: "flex-end",
     alignItems: "center",
   },
 
-  text: {
-    paddingBottom: 13,
+  label: {
+    paddingBottom: 11,
 
-    color: colors.textMuted,
+    color: "#858581",
 
     fontSize: 14,
-    fontWeight: "700",
+
+    fontWeight: "400",
   },
 
-  textActive: {
-    color: colors.text,
-    fontWeight: "800",
+  labelActive: {
+    color: "#292927",
+
+    fontWeight: "500",
   },
 
   indicator: {
     width: "100%",
     height: 2,
 
-    borderRadius: 2,
-
-    backgroundColor: "transparent",
+    backgroundColor:
+      "transparent",
   },
 
   indicatorActive: {
-    backgroundColor: colors.accent,
+    backgroundColor: "#FF6B5F",
   },
 });

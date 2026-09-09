@@ -11,7 +11,13 @@ import {
 
 import { colors, controls, spacing } from "../styles";
 
-export function NowScreen() {
+type NowScreenProps = {
+  requestedLiveId?: string | null;
+};
+
+export function NowScreen({
+  requestedLiveId: _requestedLiveId,
+}: NowScreenProps) {
   return (
     <ImageBackground
       source={{

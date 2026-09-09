@@ -1,6 +1,7 @@
 // App.tsx
 
 import { useState } from "react";
+
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -12,48 +13,120 @@ import {
   AuthProvider,
   useAuth,
 } from "./src/auth/AuthContext";
+
 import { BottomNav } from "./src/components/BottomNav";
+
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { EmitScreen } from "./src/screens/EmitScreen";
 import { MapScreen } from "./src/screens/MapScreen";
 import { NowScreen } from "./src/screens/NowScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { SearchScreen } from "./src/screens/SearchScreen";
+
 import { colors } from "./src/styles";
 
 function AppContent() {
-  const { identity, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("now");
+  const {
+    identity,
+    isLoading,
+  } = useAuth();
+
+  const [
+    activeTab,
+    setActiveTab,
+  ] = useState("now");
+
+  const [
+    requestedLiveId,
+    setRequestedLiveId,
+  ] = useState<string | null>(
+    null,
+  );
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.loading}>
-        <ActivityIndicator color={colors.accent} />
+      <SafeAreaView
+        style={styles.loading}
+      >
+        <ActivityIndicator
+          color={colors.accent}
+        />
       </SafeAreaView>
     );
   }
 
-if (!identity) {
-  return <AuthScreen />;
-}
+  if (!identity) {
+    return <AuthScreen />;
+  }
+
+  function openLive(
+    liveId: string,
+  ) {
+    setRequestedLiveId(liveId);
+    setActiveTab("now");
+  }
+
+  function changeTab(
+    tab: string,
+  ) {
+    if (tab !== "now") {
+      setRequestedLiveId(null);
+    }
+
+    setActiveTab(tab);
+  }
 
   function renderScreen() {
-    if (activeTab === "now") return <NowScreen />;
-    if (activeTab === "map") return <MapScreen />;
-    if (activeTab === "emit") return <EmitScreen />;
-    if (activeTab === "search") return <SearchScreen />;
-    if (activeTab === "profile") return <ProfileScreen />;
+    if (activeTab === "now") {
+      return (
+        <NowScreen
+          requestedLiveId={
+            requestedLiveId
+          }
+        />
+      );
+    }
 
-    return <NowScreen />;
+    if (activeTab === "map") {
+      return <MapScreen />;
+    }
+
+    if (activeTab === "emit") {
+      return <EmitScreen />;
+    }
+
+    if (activeTab === "search") {
+      return (
+        <SearchScreen
+          onOpenLive={openLive}
+        />
+      );
+    }
+
+    if (activeTab === "profile") {
+      return <ProfileScreen />;
+    }
+
+    return (
+      <NowScreen
+        requestedLiveId={
+          requestedLiveId
+        }
+      />
+    );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>{renderScreen()}</View>
+    <SafeAreaView
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        {renderScreen()}
+      </View>
 
       <BottomNav
         activeTab={activeTab}
-        onTabPress={setActiveTab}
+        onTabPress={changeTab}
       />
     </SafeAreaView>
   );
@@ -70,7 +143,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor:
+      colors.background,
   },
 
   content: {
@@ -81,6 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
+    backgroundColor:
+      colors.background,
   },
 });

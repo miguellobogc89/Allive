@@ -47,7 +47,13 @@ import {
 const REFRESH_INTERVAL_MS =
   5000;
 
-export function LiveViewerScreen() {
+type LiveViewerScreenProps = {
+  requestedLiveId?: string | null;
+};
+
+export function LiveViewerScreen({
+  requestedLiveId = null,
+}: LiveViewerScreenProps) {
   const {
     identity,
     user,
@@ -79,6 +85,29 @@ export function LiveViewerScreen() {
   const activeLive =
     lives[currentIndex] ??
     null;
+
+    useEffect(() => {
+  if (!requestedLiveId) {
+    return;
+  }
+
+  const requestedIndex =
+    lives.findIndex(
+      (live) =>
+        live.id === requestedLiveId,
+    );
+
+  if (requestedIndex < 0) {
+    return;
+  }
+
+  setCurrentIndex(
+    requestedIndex,
+  );
+}, [
+  requestedLiveId,
+  lives,
+]);
 
   const loadActiveLives =
     useCallback(
