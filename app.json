@@ -10,9 +10,11 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Allive necesita acceso a la cámara para emitir vídeo en directo.",
-        "NSMicrophoneUsageDescription": "Allive necesita acceso al micrófono para emitir audio en directo."
+        "NSMicrophoneUsageDescription": "Allive necesita acceso al micrófono para emitir audio en directo.",
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "bitcode": false
+      "bitcode": false,
+      "bundleIdentifier": "com.miguel.lobogc.89.allive"
     },
     "android": {
       "adaptiveIcon": {
