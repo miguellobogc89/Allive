@@ -6,9 +6,11 @@ import type {
 
 import {
   addLiveRealtimeClient,
+  publishViewerCountForLive,
 } from "../services/liveRealtime";
 
-const HEARTBEAT_MS = 25_000;
+const HEARTBEAT_MS =
+  25_000;
 
 export function registerLiveRealtimeRoutes(
   app: Express,
@@ -42,22 +44,27 @@ export function registerLiveRealtimeRoutes(
       );
 
       const removeClient =
-        addLiveRealtimeClient(res);
+        addLiveRealtimeClient(
+          res,
+        );
 
       const heartbeat =
-        setInterval(() => {
-          try {
-            res.write(
-              ": heartbeat\n\n",
-            );
-          } catch {
-            clearInterval(
-              heartbeat,
-            );
+        setInterval(
+          () => {
+            try {
+              res.write(
+                ": heartbeat\n\n",
+              );
+            } catch {
+              clearInterval(
+                heartbeat,
+              );
 
-            removeClient();
-          }
-        }, HEARTBEAT_MS);
+              removeClient();
+            }
+          },
+          HEARTBEAT_MS,
+        );
 
       req.on(
         "close",
@@ -69,6 +76,49 @@ export function registerLiveRealtimeRoutes(
           removeClient();
         },
       );
+    },
+  );
+
+  app.post(
+    "/api/live/realtime/:id/viewers/refresh",
+    async (req, res) => {
+      const id =
+        Array.isArray(
+          req.params.id,
+        )
+          ? req.params.id[0]
+          : req.params.id;
+
+      if (!id) {
+        return res
+          .status(400)
+          .json({
+            error:
+              "ID inválido",
+          });
+      }
+
+      try {
+        await publishViewerCountForLive(
+          id,
+        );
+
+        return res.json({
+          ok: true,
+        });
+      } catch (error) {
+        console.error(
+          "Error refrescando viewers:",
+          error,
+        );
+
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudieron refrescar los viewers",
+          });
+      }
     },
   );
 }

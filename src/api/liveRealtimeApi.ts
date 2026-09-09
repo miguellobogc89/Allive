@@ -50,10 +50,6 @@ export function subscribeToLiveMetrics(
         return;
       }
 
-      if (!message.liveId) {
-        return;
-      }
-
       onUpdate(message);
     } catch (error) {
       console.error(
@@ -63,16 +59,25 @@ export function subscribeToLiveMetrics(
     }
   };
 
-  source.onerror = (
-    error,
-  ) => {
-    console.error(
-      "Allive realtime connection error:",
-      error,
-    );
-  };
-
   return () => {
     source.close();
   };
+}
+
+export async function refreshLiveViewerCount(
+  liveId: string,
+) {
+  try {
+    await fetch(
+      `${API_URL}/api/live/realtime/${liveId}/viewers/refresh`,
+      {
+        method: "POST",
+      },
+    );
+  } catch (error) {
+    console.error(
+      "Allive viewer refresh error:",
+      error,
+    );
+  }
 }

@@ -4,7 +4,9 @@ import express, {
   type Express,
 } from "express";
 
-import { prisma } from "../db";
+import {
+  prisma,
+} from "../db";
 
 import {
   createLiveKitToken,
@@ -18,6 +20,28 @@ import {
   type AuthenticatedRequest,
 } from "../auth";
 
+import {
+  publishViewerCountForRoom,
+} from "../services/liveRealtime";
+
+async function endLiveByRoomName(
+  roomName: string,
+) {
+  await prisma.liveSession.updateMany(
+    {
+      where: {
+        roomName,
+        status: "LIVE",
+      },
+
+      data: {
+        status: "ENDED",
+        endedAt: new Date(),
+      },
+    },
+  );
+}
+
 export function registerLiveKitWebhookRoute(
   app: Express,
 ) {
@@ -25,13 +49,16 @@ export function registerLiveKitWebhookRoute(
     "/api/livekit/webhook",
 
     express.raw({
-      type: "application/webhook+json",
+      type:
+        "application/webhook+json",
     }),
 
     async (req, res) => {
       try {
         const rawBody =
-          req.body.toString("utf8");
+          req.body.toString(
+            "utf8",
+          );
 
         const event =
           await webhookReceiver.receive(
@@ -41,76 +68,66 @@ export function registerLiveKitWebhookRoute(
             ) ?? undefined,
           );
 
+        const roomName =
+          event.room?.name;
+
         console.log(
           "LiveKit webhook:",
           event.event,
-          event.room?.name,
+          roomName,
           event.participant
             ?.identity,
         );
 
         if (
-          event.event ===
-            "participant_left" &&
-          event.room?.name &&
-          event.participant
+          (
+            event.event ===
+              "participant_joined" ||
+            event.event ===
+              "participant_left"
+          ) &&
+          roomName
         ) {
-          const role =
-            getParticipantRole(
-              event.participant
-                .metadata,
-              event.participant
-                .identity,
-            );
-
           if (
-            role ===
-            "broadcaster"
+            event.event ===
+              "participant_left" &&
+            event.participant
           ) {
-            await prisma.liveSession.updateMany(
-              {
-                where: {
-                  roomName:
-                    event.room.name,
+            const role =
+              getParticipantRole(
+                event.participant
+                  .metadata,
+                event.participant
+                  .identity,
+              );
 
-                  status: "LIVE",
-                },
+            if (
+              role ===
+              "broadcaster"
+            ) {
+              await endLiveByRoomName(
+                roomName,
+              );
 
-                data: {
-                  status: "ENDED",
-                  endedAt:
-                    new Date(),
-                },
-              },
-            );
-
-            console.log(
-              "Allive LIVE finalizado automáticamente:",
-              event.room.name,
-            );
+              console.log(
+                "Allive LIVE finalizado automáticamente:",
+                roomName,
+              );
+            }
           }
+
+          await publishViewerCountForRoom(
+            roomName,
+          );
         }
 
         if (
           event.event ===
             "room_finished" &&
-          event.room?.name
+          roomName
         ) {
-          await prisma.liveSession.updateMany(
-            {
-              where: {
-                roomName:
-                  event.room.name,
-
-                status: "LIVE",
-              },
-
-              data: {
-                status: "ENDED",
-                endedAt:
-                  new Date(),
-              },
-            },
+          await endLiveByRoomName(
+            roomName,
           );
         }
 
@@ -222,7 +239,8 @@ export function registerLiveKitTokenRoutes(
                 actorType:
                   "user",
 
-                actorId: userId,
+                actorId:
+                  userId,
               },
             );
 
@@ -241,13 +259,16 @@ export function registerLiveKitTokenRoutes(
             await prisma.user.findUnique(
               {
                 where: {
-                  id: req
-                    .authUser.id,
+                  id:
+                    req
+                      .authUser
+                      .id,
                 },
 
                 select: {
                   id: true,
-                  username: true,
+                  username:
+                    true,
                 },
               },
             );
@@ -284,7 +305,8 @@ export function registerLiveKitTokenRoutes(
 
             participantToken,
 
-            role: "viewer",
+            role:
+              "viewer",
           });
         }
 

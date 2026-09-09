@@ -9,7 +9,6 @@ import {
 import {
   ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -31,22 +30,12 @@ import {
 
 import {
   SearchResultCard,
-} from "../components/search/SearchResultCard";
+} from "../components/search/result-card/SearchResultCard";
 
 import {
   SearchTabs,
+  type SearchTab,
 } from "../components/search/SearchTabs";
-
-import {
-  colors,
-  spacing,
-} from "../styles";
-
-type SearchTab =
-  | "for-you"
-  | "live"
-  | "people"
-  | "nearby";
 
 type GridItem =
   | {
@@ -59,6 +48,12 @@ type GridItem =
       type: "user";
       user: SearchUser;
     };
+
+type SearchScreenProps = {
+  onOpenLive: (
+    liveId: string,
+  ) => void;
+};
 
 const EMPTY_RESPONSE: SearchResponse = {
   query: "",
@@ -80,66 +75,27 @@ function getColumnCount(
   return 2;
 }
 
-function getForYouItems(
-  response: SearchResponse,
-) {
-  const items: GridItem[] = [];
-
-  for (
-    const live of
-    response.lives
-  ) {
-    items.push({
-      id: `live-${live.id}`,
-      type: "live",
-      live,
-    });
-  }
-
-  return items;
-}
-
-function getLiveItems(
+function liveItems(
   lives: SearchLive[],
-) {
+): GridItem[] {
   return lives.map(
     (live) => ({
       id: `live-${live.id}`,
-      type: "live" as const,
+      type: "live",
       live,
     }),
   );
 }
 
-function getPeopleItems(
+function peopleItems(
   users: SearchUser[],
-) {
+): GridItem[] {
   return users.map(
     (user) => ({
       id: `user-${user.id}`,
-      type: "user" as const,
+      type: "user",
       user,
     }),
-  );
-}
-
-function getNearbyItems(
-  lives: SearchLive[],
-) {
-  const nearby:
-    SearchLive[] = [];
-
-  for (const live of lives) {
-    if (
-      live.latitude !== null &&
-      live.longitude !== null
-    ) {
-      nearby.push(live);
-    }
-  }
-
-  return getLiveItems(
-    nearby,
   );
 }
 
@@ -185,20 +141,16 @@ function applyMetricUpdate(
   };
 }
 
-type SearchScreenProps = {
-  onOpenLive?: (
-    liveId: string,
-  ) => void;
-};
-
 export function SearchScreen({
   onOpenLive,
 }: SearchScreenProps) {
   const { width } =
     useWindowDimensions();
 
-  const [query, setQuery] =
-    useState("");
+  const [
+    query,
+    setQuery,
+  ] = useState("");
 
   const [
     activeTab,
@@ -308,18 +260,9 @@ export function SearchScreen({
     useMemo(() => {
       if (
         activeTab ===
-        "live"
-      ) {
-        return getLiveItems(
-          response.lives,
-        );
-      }
-
-      if (
-        activeTab ===
         "people"
       ) {
-        return getPeopleItems(
+        return peopleItems(
           response.users,
         );
       }
@@ -328,13 +271,19 @@ export function SearchScreen({
         activeTab ===
         "nearby"
       ) {
-        return getNearbyItems(
-          response.lives,
+        return liveItems(
+          response.lives.filter(
+            (live) =>
+              live.latitude !==
+                null &&
+              live.longitude !==
+                null,
+          ),
         );
       }
 
-      return getForYouItems(
-        response,
+      return liveItems(
+        response.lives,
       );
     }, [
       activeTab,
@@ -346,41 +295,36 @@ export function SearchScreen({
   }: {
     item: GridItem;
   }) {
-    if (
-      item.type === "live"
-    ) {
-      return (
-        <View
-          style={
-            styles.gridCell
-          }
-        >
-<SearchResultCard
-  type="live"
-  live={item.live}
-  onPress={
-    item.live.isSimulated
-      ? undefined
-      : () =>
-          onOpenLive?.(
-            item.live.id,
-          )
-  }
-/>
-        </View>
-      );
-    }
-
     return (
       <View
         style={
           styles.gridCell
         }
       >
-        <SearchResultCard
-          type="user"
-          user={item.user}
-        />
+        {item.type ===
+        "live" ? (
+          <SearchResultCard
+            type="live"
+            live={item.live}
+            onPress={() => {
+              if (
+                item.live
+                  .isSimulated
+              ) {
+                return;
+              }
+
+              onOpenLive(
+                item.live.id,
+              );
+            }}
+          />
+        ) : (
+          <SearchResultCard
+            type="user"
+            user={item.user}
+          />
+        )}
       </View>
     );
   }
@@ -392,10 +336,7 @@ export function SearchScreen({
           style={styles.state}
         >
           <ActivityIndicator
-            size="small"
-            color={
-              colors.accent
-            }
+            color="#FF6B5F"
           />
 
           <Text
@@ -403,7 +344,7 @@ export function SearchScreen({
               styles.stateText
             }
           >
-            Buscando...
+            Buscando…
           </Text>
         </View>
       );
@@ -442,7 +383,7 @@ export function SearchScreen({
             styles.stateTitle
           }
         >
-          No encontramos nada
+          Sin resultados
         </Text>
 
         <Text
@@ -464,16 +405,10 @@ export function SearchScreen({
       }
     >
       <View
-        style={styles.header}
+        style={
+          styles.header
+        }
       >
-        <Text
-          style={
-            styles.screenTitle
-          }
-        >
-          Buscar
-        </Text>
-
         <View
           style={
             styles.searchBox
@@ -493,9 +428,7 @@ export function SearchScreen({
               setQuery
             }
             placeholder="Directos, personas, lugares..."
-            placeholderTextColor={
-              colors.textMuted
-            }
+            placeholderTextColor="#969691"
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -503,24 +436,14 @@ export function SearchScreen({
           />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={
-            false
+        <SearchTabs
+          activeTab={
+            activeTab
           }
-          contentContainerStyle={
-            styles.tabsScroll
+          onChange={
+            setActiveTab
           }
-        >
-          <SearchTabs
-            activeTab={
-              activeTab
-            }
-            onChange={
-              setActiveTab
-            }
-          />
-        </ScrollView>
+        />
       </View>
 
       <FlatList
@@ -559,74 +482,66 @@ const styles =
     container: {
       flex: 1,
       backgroundColor:
-        colors.background,
+        "#F7F7F5",
     },
 
     header: {
-      paddingTop:
-        spacing.lg,
+      paddingTop: 16,
       backgroundColor:
-        colors.background,
-    },
-
-    screenTitle: {
-      color: colors.text,
-      fontSize: 28,
-      lineHeight: 34,
-      fontWeight: "800",
-      paddingHorizontal:
-        spacing.lg,
-      marginBottom:
-        spacing.md,
+        "#F7F7F5",
     },
 
     searchBox: {
-      height: 48,
-      marginHorizontal:
-        spacing.lg,
-      borderRadius: 14,
-      backgroundColor:
-        colors.surface,
-      borderWidth: 1,
-      borderColor:
-        colors.border,
+      height: 46,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      paddingHorizontal: 13,
+
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 14,
+
+      borderWidth: 1,
+      borderColor:
+        "#DEDEDA",
+
+      borderRadius: 13,
+
+      backgroundColor:
+        "#FFFFFF",
     },
 
     searchIcon: {
-      color:
-        colors.textMuted,
-      fontSize: 22,
-      marginRight: 9,
+      marginRight: 8,
+      color: "#898984",
+      fontSize: 21,
+      fontWeight: "300",
     },
 
     input: {
       flex: 1,
       height: "100%",
-      color: colors.text,
+      color: "#292927",
       fontSize: 15,
+      fontWeight: "400",
       outlineStyle: "none",
     } as any,
 
-    tabsScroll: {
-      paddingHorizontal:
-        spacing.lg,
-    },
-
     list: {
-      paddingTop: 0,
       paddingBottom: 140,
     },
 
     row: {
-      gap: 0,
+      gap: 1,
+      backgroundColor:
+        "#E4E4E0",
     },
 
     gridCell: {
       flex: 1,
       minWidth: 0,
+      borderBottomWidth: 1,
+      borderBottomColor:
+        "#E4E4E0",
     },
 
     emptyList: {
@@ -635,27 +550,25 @@ const styles =
     },
 
     state: {
+      minHeight: 300,
       flex: 1,
-      minHeight: 280,
       justifyContent:
         "center",
       alignItems: "center",
-      padding: spacing.xl,
+      padding: 24,
     },
 
     stateTitle: {
-      color: colors.text,
-      fontSize: 17,
-      fontWeight: "800",
-      textAlign: "center",
+      color: "#343432",
+      fontSize: 16,
+      fontWeight: "500",
     },
 
     stateText: {
-      color:
-        colors.textMuted,
-      fontSize: 14,
-      lineHeight: 20,
-      marginTop: 8,
+      marginTop: 7,
+      color: "#8A8A85",
+      fontSize: 13,
+      fontWeight: "400",
       textAlign: "center",
     },
   });
