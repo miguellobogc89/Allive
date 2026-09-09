@@ -8,8 +8,8 @@ import App from "./App";
 
 import {
   registerLiveKitGlobals,
-} from "./src/livekit/registerLiveKit.native";
+} from "./src/livekit/registerLiveKit";
 
-registerLiveKitGlobals();
+void registerLiveKitGlobals();
 
 registerRootComponent(App);
