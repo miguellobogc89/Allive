@@ -30,7 +30,7 @@ import {
 
 import {
   LiveViewerOverlay,
-} from "../components/live/LiveViewerOverlay";
+} from "../components/live/viewer/overlay/LiveViewerOverlay";
 
 import {
   emptyLiveAudience,

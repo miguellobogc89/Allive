@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
-import { colors, iconSizes, radius, spacing } from "../../styles";
+import { colors, iconSizes, radius, spacing } from "../../../../styles";
 
 type LiveViewerCommentInputProps = {
   value: string;

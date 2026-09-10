@@ -2,7 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, iconSizes, radius, typography } from "../../styles";
+import { colors, iconSizes, radius, typography } from "../../../../styles";
 
 type LiveViewerNavigationProps = {
   currentIndex: number;

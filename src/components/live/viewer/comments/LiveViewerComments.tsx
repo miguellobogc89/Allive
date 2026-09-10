@@ -2,8 +2,8 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { colors, iconSizes, radius, spacing, typography } from "../../styles";
-import type { LiveComment } from "./types";
+import { colors, iconSizes, radius, spacing, typography } from "../../../../styles";
+import type { LiveComment } from "../../types";
 
 type LiveViewerCommentsProps = { comments: LiveComment[]; onLikeComment?: (commentId: string) => void };
 

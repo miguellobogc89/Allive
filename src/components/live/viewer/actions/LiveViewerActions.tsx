@@ -15,7 +15,7 @@ import {
   iconSizes,
   layout,
   typography,
-} from "../../styles";
+} from "../../../../styles";
 
 type LiveViewerActionsProps = {
   liked?: boolean;

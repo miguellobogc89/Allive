@@ -18,21 +18,21 @@ import {
 
 import type {
   ViewerIdentity,
-} from "../../auth/types";
+} from "../../../../auth/types";
 
 import {
   followUser,
   getUserProfile,
   unfollowUser,
-} from "../../api/userProfileApi";
+} from "../../../../api/userProfileApi";
 
 import {
   subscribeToLiveMetrics,
-} from "../../api/liveRealtimeApi";
+} from "../../../../api/liveRealtimeApi";
 
 import {
   layout,
-} from "../../styles";
+} from "../../../../styles";
 
 import {
   LiveCommentComposer,
@@ -40,37 +40,37 @@ import {
   createLiveComment,
   getLiveComments,
   type LiveCommentModel,
-} from "./comments";
+} from "../../comments";
 
 import {
   LiveViewerActions,
-} from "./LiveViewerActions";
+} from "../actions/LiveViewerActions";
 
 import {
   LiveViewerHeader,
-} from "./LiveViewerHeader";
+} from "../header/LiveViewerHeader";
 
 import {
   LiveViewerNavigation,
-} from "./LiveViewerNavigation";
+} from "../navigation/LiveViewerNavigation";
 
 import type {
   LiveAudience,
-} from "./liveAudience";
+} from "../../liveAudience";
 
 import {
   getLiveLikeState,
   toggleLiveLike,
-} from "./liveLikesApi";
+} from "../../liveLikesApi";
 
 import {
   parseLiveRealtimeMessage,
   publishLiveRealtimeMessage,
-} from "./liveRealtime";
+} from "../../liveRealtime";
 
 import type {
   ActiveLive,
-} from "./types";
+} from "../../types";
 
 type Props = {
   live: ActiveLive;
