@@ -215,6 +215,7 @@ export function ReplayViewerScreen({
                 }
               : undefined
           }
+          onOpenLives={onOpenLives}
         />
       </ImageBackground>
     </View>

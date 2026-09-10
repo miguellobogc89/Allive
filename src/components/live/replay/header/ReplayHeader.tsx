@@ -5,6 +5,7 @@ import {
 } from "@expo/vector-icons";
 
 import {
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -32,6 +33,7 @@ type ReplayHeaderProps = {
   isFollowing?: boolean;
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
+  onOpenLives?: () => void;
 };
 
 export function ReplayHeader({
@@ -40,6 +42,7 @@ export function ReplayHeader({
   isFollowing = false,
   onFollowPress,
   onOpenCreator,
+  onOpenLives,
 }: ReplayHeaderProps) {
   return (
     <View
@@ -50,16 +53,30 @@ export function ReplayHeader({
         style={styles.topBar}
         pointerEvents="box-none"
       >
-        <View style={styles.replaysBadge}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ver directos"
+          hitSlop={6}
+          onPress={onOpenLives}
+          style={({ pressed }) => [
+            styles.livesBadge,
+            pressed
+              ? styles.livesBadgePressed
+              : null,
+          ]}
+        >
           <Ionicons
-            name="play-back"
+            name="radio"
             size={14}
             color="#FFFFFF"
           />
-          <Text style={styles.replaysText}>
-            Replays
+
+          <Text
+            style={styles.livesText}
+          >
+            Directos
           </Text>
-        </View>
+        </Pressable>
 
         <ReplayStatus
           endedAt={replay.endedAt}
@@ -85,6 +102,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     zIndex: 30,
   },
+
   topBar: {
     position: "relative",
     width: "100%",
@@ -93,7 +111,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  replaysBadge: {
+
+  livesBadge: {
     position: "absolute",
     left: 0,
     top: 0,
@@ -104,7 +123,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "rgba(35,39,44,0.92)",
+    backgroundColor:
+      "rgba(35,39,44,0.92)",
     shadowColor: "#000000",
     shadowOffset: {
       width: 0,
@@ -114,7 +134,17 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  replaysText: {
+
+  livesBadgePressed: {
+    opacity: 0.72,
+    transform: [
+      {
+        scale: 0.97,
+      },
+    ],
+  },
+
+  livesText: {
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "600",
