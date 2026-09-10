@@ -1,8 +1,6 @@
 // src/components/live/broadcast/overlay/LiveBroadcastBottomBar.tsx
 
-import { StyleSheet, View } from "react-native";
-
-import { LiveBroadcastControlsBar } from "../controls/LiveBroadcastControlsBar";
+import { LiveBroadcastBottomNav } from "../bottom-nav";
 
 type LiveBroadcastBottomBarProps = {
   isLive: boolean;
@@ -20,17 +18,5 @@ type LiveBroadcastBottomBarProps = {
 export function LiveBroadcastBottomBar(
   props: LiveBroadcastBottomBarProps,
 ) {
-  return (
-    <View pointerEvents="box-none" style={styles.container}>
-      <LiveBroadcastControlsBar {...props} />
-    </View>
-  );
+  return <LiveBroadcastBottomNav {...props} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    paddingHorizontal: 18,
-    paddingBottom: 24,
-  },
-});
