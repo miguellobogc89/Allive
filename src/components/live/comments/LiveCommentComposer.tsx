@@ -21,7 +21,9 @@ import {
 type Props = {
   value: string;
   disabled?: boolean;
-  onChangeText: (value: string) => void;
+  onChangeText: (
+    value: string,
+  ) => void;
   onSend: () => void;
 };
 
@@ -109,20 +111,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.round,
 
     backgroundColor:
-      colors.overlayStrong,
+      "rgba(0,0,0,0.38)",
 
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.38)",
   },
 
-input: {
-  flex: 1,
+  input: {
+    flex: 1,
 
-  color: colors.text,
-  fontSize: 13,
+    color: colors.text,
+    fontSize: 13,
 
-  borderWidth: 0,
-  outlineWidth: 0,
-},
+    borderWidth: 0,
+    outlineWidth: 0,
+  },
 
   sendButton: {
     width: 36,

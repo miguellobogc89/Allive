@@ -1,10 +1,18 @@
 // src/components/BottomNav.tsx
 
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { colors, controls, spacing, typography } from "../styles";
+import {
+  colors,
+  spacing,
+  typography,
+} from "../styles";
 
 type BottomNavProps = {
   activeTab: string;
@@ -22,29 +30,41 @@ export function BottomNav({
   onEmitStart,
 }: BottomNavProps) {
   const tabs = [
-    { id: "now", label: "NOW", icon: "play-circle-outline" },
-    { id: "map", label: "MAPA", icon: "map-outline" },
-    { id: "emit", label: "EMITIR", icon: "radio-outline" },
-    { id: "search", label: "BUSCAR", icon: "search-outline" },
-    { id: "profile", label: "TÚ", icon: "person-outline" },
+    {
+      id: "now",
+      label: "NOW",
+      icon: "play-circle-outline",
+    },
+    {
+      id: "map",
+      label: "MAPA",
+      icon: "map-outline",
+    },
+    {
+      id: "emit",
+      label: "EMITIR",
+      icon: "radio-outline",
+    },
+    {
+      id: "search",
+      label: "BUSCAR",
+      icon: "search-outline",
+    },
+    {
+      id: "profile",
+      label: "TÚ",
+      icon: "person-outline",
+    },
   ];
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[
-          "rgba(0,0,0,0)",
-          "rgba(0,0,0,0.35)",
-          "rgba(0,0,0,0.78)",
-        ]}
-        locations={[0, 0.38, 1]}
-        style={styles.gradient}
-        pointerEvents="none"
-      />
-
       {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        const isEmit = tab.id === "emit";
+        const isActive =
+          activeTab === tab.id;
+
+        const isEmit =
+          tab.id === "emit";
 
         if (isEmit) {
           const emitStartMode =
@@ -61,8 +81,10 @@ export function BottomNav({
               ]}
               disabled={
                 emitStartMode &&
-                (!emitCanStart ||
-                  emitIsConnecting)
+                (
+                  !emitCanStart ||
+                  emitIsConnecting
+                )
               }
               onPress={() => {
                 if (emitStartMode) {
@@ -79,8 +101,10 @@ export function BottomNav({
                   emitStartMode &&
                     styles.emitButtonStart,
                   emitStartMode &&
-                    (!emitCanStart ||
-                      emitIsConnecting) &&
+                    (
+                      !emitCanStart ||
+                      emitIsConnecting
+                    ) &&
                     styles.emitButtonDisabled,
                 ]}
               >
@@ -106,7 +130,9 @@ export function BottomNav({
           <Pressable
             key={tab.id}
             style={styles.tab}
-            onPress={() => onTabPress(tab.id)}
+            onPress={() =>
+              onTabPress(tab.id)
+            }
           >
             <Ionicons
               name={tab.icon as any}
@@ -121,7 +147,9 @@ export function BottomNav({
             <Text
               style={[
                 styles.label,
-                isActive ? styles.activeLabel : undefined,
+                isActive
+                  ? styles.activeLabel
+                  : undefined,
               ]}
             >
               {tab.label}
@@ -135,12 +163,7 @@ export function BottomNav({
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-
-    height: 105,
+    height: 78,
 
     flexDirection: "row",
     alignItems: "flex-end",
@@ -149,16 +172,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingBottom: 12,
 
-    zIndex: 100,
-  },
+    backgroundColor: "#000000",
 
-  gradient: {
-    ...StyleSheet.absoluteFill,
+    zIndex: 100,
   },
 
   tab: {
     flex: 1,
-
     height: 58,
 
     alignItems: "center",
@@ -171,7 +191,8 @@ const styles = StyleSheet.create({
     color: colors.textOnOverlayMuted,
 
     fontSize: 10,
-    fontWeight: typography.caption.fontWeight,
+    fontWeight:
+      typography.caption.fontWeight,
   },
 
   activeLabel: {
@@ -185,11 +206,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
 
-    transform: [{ translateY: -3 }],
+    transform: [
+      {
+        translateY: -3,
+      },
+    ],
   },
 
   emitWrapperActive: {
-    transform: [{ translateY: -7 }],
+    transform: [
+      {
+        translateY: -7,
+      },
+    ],
   },
 
   emitButton: {
@@ -201,10 +230,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: colors.overlayRaised,
+    backgroundColor:
+      colors.overlayRaised,
 
     borderWidth: 2,
-    borderColor: colors.borderOnOverlay,
+    borderColor:
+      colors.borderOnOverlay,
   },
 
   emitButtonStart: {
@@ -243,7 +274,8 @@ const styles = StyleSheet.create({
 
     color: colors.text,
 
-    fontSize: typography.micro.fontSize,
+    fontSize:
+      typography.micro.fontSize,
     fontWeight: "800",
   },
 });

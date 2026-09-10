@@ -1,5 +1,9 @@
 // src/components/live/viewer/overlay/LiveViewerOverlay.tsx
 
+import {
+  LinearGradient,
+} from "expo-linear-gradient";
+
 import type {
   Room,
 } from "livekit-client";
@@ -51,14 +55,23 @@ import {
 
 type Props = {
   live: ActiveLive;
+
   room: Room | null;
+
   audience: LiveAudience;
-  viewerIdentity: ViewerIdentity | null;
+
+  viewerIdentity:
+    | ViewerIdentity
+    | null;
+
   authToken: string | null;
+
   currentIndex: number;
   totalLives: number;
-  onPreviousLive: () => void;
-  onNextLive: () => void;
+
+  onPrevious: () => void;
+  onNext: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -72,8 +85,8 @@ export function LiveViewerOverlay({
   authToken,
   currentIndex,
   totalLives,
-  onPreviousLive,
-  onNextLive,
+  onPrevious,
+  onNext,
   onOpenUser,
 }: Props) {
   const creatorId =
@@ -118,6 +131,25 @@ export function LiveViewerOverlay({
       style={styles.overlay}
       pointerEvents="box-none"
     >
+      <LinearGradient
+        colors={[
+          "rgba(0,0,0,0)",
+          "rgba(0,0,0,0.08)",
+          "rgba(0,0,0,0.22)",
+          "rgba(0,0,0,0.48)",
+        ]}
+        locations={[
+          0,
+          0.35,
+          0.7,
+          1,
+        ]}
+        style={
+          styles.bottomGradient
+        }
+        pointerEvents="none"
+      />
+
       <LiveViewerHeader
         live={live}
         audience={audience}
@@ -147,10 +179,6 @@ export function LiveViewerOverlay({
 
       <LiveTimedCommentsLayer
         comments={comments}
-        visible
-        onPressActor={
-          onOpenUser
-        }
       />
 
       <LiveViewerNavigation
@@ -159,10 +187,10 @@ export function LiveViewerOverlay({
         }
         total={totalLives}
         onPrevious={
-          onPreviousLive
+          onPrevious
         }
         onNext={
-          onNextLive
+          onNext
         }
       />
 
@@ -193,10 +221,20 @@ export function LiveViewerOverlay({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    overlay: {
-      ...StyleSheet.absoluteFill,
-      zIndex: 10,
-    },
-  });
+const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFill,
+
+    zIndex: 10,
+  },
+
+  bottomGradient: {
+    position: "absolute",
+
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    height: 190,
+  },
+});

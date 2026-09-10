@@ -5,17 +5,15 @@ import {
 } from "@expo/vector-icons";
 
 import {
-  colors,
-  layout,
-} from "../../../../styles";
-
-import {
-  Image,
   Pressable,
   StyleSheet,
   View,
 } from "react-native";
 
+import {
+  colors,
+  layout,
+} from "../../../../styles";
 
 import {
   LiveCommentComposer,
@@ -50,37 +48,36 @@ export function LiveViewerBottomBar({
       <View style={styles.composer}>
         <LiveCommentComposer
           value={commentValue}
-          disabled={
-            commentDisabled
-          }
-          onChangeText={
-            onCommentChange
-          }
-          onSend={
-            onCommentSend
-          }
+          disabled={commentDisabled}
+          onChangeText={onCommentChange}
+          onSend={onCommentSend}
         />
       </View>
 
-<Pressable
-  style={styles.likeButton}
-  disabled={likeDisabled}
-  onPress={onLikePress}
->
-  <Ionicons
-    name={
-      liked
-        ? "heart"
-        : "heart-outline"
-    }
-    size={32}
-    color={
-      liked
-        ? colors.accent
-        : "#FFFFFF"
-    }
-  />
-</Pressable>
+      <Pressable
+        style={[
+          styles.likeButton,
+          likeDisabled
+            ? styles.likeDisabled
+            : null,
+        ]}
+        disabled={likeDisabled}
+        onPress={onLikePress}
+      >
+        <Ionicons
+          name={
+            liked
+              ? "heart"
+              : "heart-outline"
+          }
+          size={32}
+          color={
+            liked
+              ? colors.accent
+              : "#FFFFFF"
+          }
+        />
+      </Pressable>
     </View>
   );
 }
@@ -93,8 +90,7 @@ const styles = StyleSheet.create({
       layout.screenHorizontalPadding,
     right:
       layout.screenHorizontalPadding,
-    bottom:
-      layout.liveContentBottom,
+    bottom: 18,
 
     flexDirection: "row",
     alignItems: "center",
@@ -114,11 +110,6 @@ const styles = StyleSheet.create({
 
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  activeHeart: {
-    width: 32,
-    height: 32,
   },
 
   likeDisabled: {
