@@ -2,65 +2,97 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
 type Props = {
   username: string;
   onPressSettings: () => void;
+  onPressNotifications?: () => void;
 };
 
 export function ProfileTopBar({
-  username,
   onPressSettings,
+  onPressNotifications,
 }: Props) {
   return (
     <View style={styles.container}>
-      <Text
-        style={styles.username}
-        numberOfLines={1}
-      >
-        {username}
-      </Text>
+      <Image
+        source={require("../../../public/logo/logo_allive.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
 
-      <Pressable
-        onPress={onPressSettings}
-        hitSlop={10}
-        style={styles.button}
-      >
-        <Ionicons
-          name="menu-outline"
-          size={28}
-          color="#111111"
-        />
-      </Pressable>
+      <View style={styles.actions}>
+        <Pressable
+          onPress={onPressNotifications}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.iconButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={23}
+            color="#FFFFFF"
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={onPressSettings}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.iconButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={24}
+            color="#FFFFFF"
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 48,
+    position: "relative",
+    zIndex: 20,
+
+    minHeight: 52,
+
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
 
-  username: {
-    flex: 1,
-    marginRight: 16,
-    color: "#111111",
-    fontSize: 22,
-    fontWeight: "800",
+  logo: {
+    width: 92,
+    height: 42,
   },
 
-  button: {
-    width: 42,
-    height: 42,
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  iconButton: {
+    width: 34,
+    height: 34,
+
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  pressed: {
+    opacity: 0.6,
   },
 });
