@@ -15,6 +15,7 @@ export type ActiveLive = {
   placeName?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  thumbnailUrl?: string | null;
   creator?: LiveCreator | null;
 };
 
