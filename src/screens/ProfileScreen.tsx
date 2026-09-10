@@ -1,431 +1,360 @@
 // src/screens/ProfileScreen.tsx
 
-import { Ionicons } from "@expo/vector-icons";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { getMyLives } from "../api/profileApi";
 import { useAuth } from "../auth/AuthContext";
 import {
-  colors,
-  controls,
-  spacing,
-  typography,
-} from "../styles";
+  LiveScoreCard,
+  ProfileEditPanel,
+  ProfileIdentity,
+  ProfileSettingsPanel,
+  ProfileStats,
+  ProfileTopBar,
+  ProfileVideoGallery,
+  type ProfileVideoItem,
+} from "../components/profile";
 
-const stats = [
-  {
-    id: "hours",
-    value: "18,4 h",
-    label: "En directo",
-  },
-  {
-    id: "viewers",
-    value: "12,8K",
-    label: "Espectadores",
-  },
-  {
-    id: "sessions",
-    value: "27",
-    label: "LIVE",
-  },
-];
+const MOCK_DESCRIPTION =
+  "Directos desde cualquier parte. Aquí para mostrar lo que está ocurriendo.";
 
-const recentLives = [
+const MOCK_LOCATION =
+  "Sevilla, España";
+
+const MOCK_VIDEOS: ProfileVideoItem[] = [
   {
-    id: "1",
-    title: "La Barrosa",
-    location: "Chiclana",
-    viewers: "1.284",
-    duration: "42 min",
-  },
-  {
-    id: "2",
+    id: "mock-1",
     title: "Centro de Sevilla",
-    location: "Sevilla",
-    viewers: "638",
-    duration: "28 min",
+    placeName: "Sevilla",
+    startedAt: new Date(
+      Date.now() - 2 * 60 * 60 * 1000,
+    ).toISOString(),
+    endedAt: new Date(
+      Date.now() - 90 * 60 * 1000,
+    ).toISOString(),
+    thumbnailUrl: null,
+    viewerCount: 1284,
+    isMock: true,
   },
   {
-    id: "3",
+    id: "mock-2",
+    title: "Atardecer en La Barrosa",
+    placeName: "Chiclana",
+    startedAt: new Date(
+      Date.now() - 26 * 60 * 60 * 1000,
+    ).toISOString(),
+    endedAt: new Date(
+      Date.now() - 25 * 60 * 60 * 1000,
+    ).toISOString(),
+    thumbnailUrl: null,
+    viewerCount: 638,
+    isMock: true,
+  },
+  {
+    id: "mock-3",
     title: "Concierto en directo",
-    location: "Sevilla",
-    viewers: "2.103",
-    duration: "1 h 12 min",
+    placeName: "Sevilla",
+    startedAt: new Date(
+      Date.now() - 3 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    endedAt: new Date(
+      Date.now() -
+        3 * 24 * 60 * 60 * 1000 +
+        70 * 60 * 1000,
+    ).toISOString(),
+    thumbnailUrl: null,
+    viewerCount: 2103,
+    isMock: true,
+  },
+  {
+    id: "mock-4",
+    title: "Noche en el centro",
+    placeName: "Sevilla",
+    startedAt: new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    endedAt: new Date(
+      Date.now() -
+        5 * 24 * 60 * 60 * 1000 +
+        42 * 60 * 1000,
+    ).toISOString(),
+    thumbnailUrl: null,
+    viewerCount: 914,
+    isMock: true,
   },
 ];
 
 export function ProfileScreen() {
   const {
     user,
+    token,
     isGuest,
     updateUsername,
     logout,
   } = useAuth();
 
-  const [username, setUsername] =
-    useState(user?.username ?? "");
+  const [realLives, setRealLives] =
+    useState<ProfileVideoItem[]>([]);
 
-  const [isEditing, setIsEditing] =
+  const [settingsVisible, setSettingsVisible] =
     useState(false);
 
-  const [isSaving, setIsSaving] =
+  const [editVisible, setEditVisible] =
+    useState(false);
+
+  const [isSavingUsername, setIsSavingUsername] =
     useState(false);
 
   const [error, setError] =
     useState<string | null>(null);
 
+  const [mockDisplayName, setMockDisplayName] =
+    useState(
+      user?.displayName ||
+        user?.username ||
+        "Invitado",
+    );
+
+  const [mockDescription, setMockDescription] =
+    useState(MOCK_DESCRIPTION);
+
+  const [mockLocation, setMockLocation] =
+    useState(MOCK_LOCATION);
+
+  const [mockAvatarUrl, setMockAvatarUrl] =
+    useState<string | null>(
+      user?.avatarUrl ?? null,
+    );
+
   useEffect(() => {
-    setUsername(user?.username ?? "");
-  }, [user?.username]);
+    setMockDisplayName(
+      user?.displayName ||
+        user?.username ||
+        "Invitado",
+    );
 
-  const profileName =
-    user?.displayName ||
-    user?.username ||
-    "Invitado";
+    setMockAvatarUrl(
+      user?.avatarUrl ?? null,
+    );
+  }, [
+    user?.displayName,
+    user?.username,
+    user?.avatarUrl,
+  ]);
 
-  const avatarLetter =
-    profileName
-      .trim()
-      .charAt(0)
-      .toUpperCase() || "?";
+  useEffect(() => {
+    if (!token) {
+      setRealLives([]);
+      return;
+    }
 
-  async function saveUsername() {
-    const nextUsername =
-      username.trim().toLowerCase();
+    const controller =
+      new AbortController();
+
+    async function loadLives() {
+      try {
+        const result = await getMyLives(
+          token!,
+          controller.signal,
+        );
+
+        setRealLives(
+          result.map((live) => ({
+            id: live.id,
+            title:
+              live.title ||
+              "LIVE sin título",
+            placeName:
+              live.placeName ||
+              "Sin ubicación",
+            startedAt: live.startedAt,
+            endedAt: live.endedAt,
+            thumbnailUrl:
+              live.thumbnailUrl,
+          })),
+        );
+      } catch (loadError) {
+        if (
+          loadError instanceof Error &&
+          loadError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setRealLives([]);
+      }
+    }
+
+    void loadLives();
+
+    return () => {
+      controller.abort();
+    };
+  }, [token]);
+
+  const videos = useMemo(() => {
+    if (realLives.length === 0) {
+      return MOCK_VIDEOS;
+    }
+
+    if (realLives.length >= 4) {
+      return realLives;
+    }
+
+    const missing =
+      4 - realLives.length;
+
+    return [
+      ...realLives,
+      ...MOCK_VIDEOS.slice(0, missing),
+    ];
+  }, [realLives]);
+
+  const username =
+    user?.username || "invitado";
+
+  const emissionCount =
+    realLives.length > 0
+      ? String(realLives.length)
+      : "27";
+
+  async function handleSaveUsername(
+    nextUsername: string,
+  ) {
+    if (!user) {
+      setEditVisible(false);
+      return;
+    }
+
+    const normalized =
+      nextUsername.trim().toLowerCase();
 
     if (
-      !nextUsername ||
-      nextUsername === user?.username
+      !normalized ||
+      normalized === user.username
     ) {
-      setUsername(user?.username ?? "");
-      setIsEditing(false);
+      setEditVisible(false);
       setError(null);
       return;
     }
 
     try {
-      setIsSaving(true);
+      setIsSavingUsername(true);
       setError(null);
 
-      await updateUsername(
-        nextUsername,
-      );
+      await updateUsername(normalized);
 
-      setIsEditing(false);
+      setEditVisible(false);
     } catch (saveError) {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "No se pudo cambiar el nombre de usuario",
+          : "No se pudo actualizar el perfil",
       );
     } finally {
-      setIsSaving(false);
+      setIsSavingUsername(false);
     }
   }
 
-  async function handleLogout() {
-    await logout();
+  function openEditProfile() {
+    setSettingsVisible(false);
+    setError(null);
+    setEditVisible(true);
   }
 
   return (
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={
-          styles.scrollContent
+          styles.content
         }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.pageTitle}>
-            Tú
-          </Text>
-
-          <Pressable
-            style={styles.settingsButton}
-          >
-            <Ionicons
-              name="settings-outline"
-              size={22}
-              color={colors.text}
-            />
-          </Pressable>
-        </View>
-
-        <View style={styles.profile}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {avatarLetter}
-            </Text>
-          </View>
-
-          <Text style={styles.name}>
-            {profileName}
-          </Text>
-
-          {user && !isEditing ? (
-            <Pressable
-              style={styles.usernameRow}
-              onPress={() => {
-                setError(null);
-                setIsEditing(true);
-              }}
-            >
-              <Text style={styles.username}>
-                @{user.username}
-              </Text>
-
-              <Ionicons
-                name="pencil-outline"
-                size={13}
-                color={colors.textSecondary}
-              />
-            </Pressable>
-          ) : null}
-
-          {user && isEditing ? (
-            <View style={styles.editor}>
-              <View style={styles.inputRow}>
-                <Text style={styles.atSign}>
-                  @
-                </Text>
-
-                <TextInput
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  maxLength={30}
-                  editable={!isSaving}
-                  style={styles.usernameInput}
-                  placeholder="usuario"
-                  placeholderTextColor={
-                    colors.textMuted
-                  }
-                  onSubmitEditing={() => {
-                    void saveUsername();
-                  }}
-                />
-              </View>
-
-              <View
-                style={
-                  styles.editorActions
-                }
-              >
-                <Pressable
-                  style={
-                    styles.cancelButton
-                  }
-                  disabled={isSaving}
-                  onPress={() => {
-                    setUsername(
-                      user.username,
-                    );
-                    setError(null);
-                    setIsEditing(false);
-                  }}
-                >
-                  <Text
-                    style={
-                      styles.cancelButtonText
-                    }
-                  >
-                    Cancelar
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={
-                    styles.saveButton
-                  }
-                  disabled={isSaving}
-                  onPress={() => {
-                    void saveUsername();
-                  }}
-                >
-                  <Text
-                    style={
-                      styles.saveButtonText
-                    }
-                  >
-                    {isSaving
-                      ? "Guardando..."
-                      : "Guardar"}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
-
-          {isGuest ? (
-            <Text style={styles.username}>
-              Sesión de invitado
-            </Text>
-          ) : null}
-
-          {error ? (
-            <Text style={styles.errorText}>
-              {error}
-            </Text>
-          ) : null}
-
-          <View style={styles.locationRow}>
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color={
-                colors.textSecondary
-              }
-            />
-
-            <Text style={styles.location}>
-              Sevilla, España
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.stats}>
-          {stats.map((stat) => (
-            <View
-              key={stat.id}
-              style={styles.stat}
-            >
-              <Text
-                style={styles.statValue}
-              >
-                {stat.value}
-              </Text>
-
-              <Text
-                style={styles.statLabel}
-              >
-                {stat.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.scoreCard}>
-          <View>
-            <Text style={styles.scoreLabel}>
-              LIVE SCORE
-            </Text>
-
-            <Text
-              style={
-                styles.scoreDescription
-              }
-            >
-              Rendimiento de tus directos
-            </Text>
-          </View>
-
-          <View style={styles.score}>
-            <Text style={styles.scoreValue}>
-              8.4
-            </Text>
-
-            <Text style={styles.scoreMax}>
-              /10
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Tus últimos LIVE
-          </Text>
-
-          <Text
-            style={styles.sectionAction}
-          >
-            Ver todos
-          </Text>
-        </View>
-
-        <View style={styles.liveList}>
-          {recentLives.map((live) => (
-            <Pressable
-              key={live.id}
-              style={styles.liveItem}
-            >
-              <View
-                style={styles.thumbnail}
-              >
-                <Ionicons
-                  name="videocam-outline"
-                  size={22}
-                  color={
-                    colors.textOnOverlaySubtle
-                  }
-                />
-              </View>
-
-              <View style={styles.liveInfo}>
-                <Text
-                  style={styles.liveTitle}
-                >
-                  {live.title}
-                </Text>
-
-                <Text
-                  style={
-                    styles.liveLocation
-                  }
-                >
-                  {live.location} ·{" "}
-                  {live.duration}
-                </Text>
-              </View>
-
-              <View
-                style={styles.viewerRow}
-              >
-                <Ionicons
-                  name="eye-outline"
-                  size={14}
-                  color={
-                    colors.textSecondary
-                  }
-                />
-
-                <Text
-                  style={styles.viewerText}
-                >
-                  {live.viewers}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-
-        <Pressable
-          style={styles.logoutButton}
-          onPress={() => {
-            void handleLogout();
+        <ProfileTopBar
+          username={username}
+          onPressSettings={() => {
+            setSettingsVisible(true);
           }}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={18}
-            color={colors.text}
-          />
+        />
 
-          <Text
-            style={styles.logoutButtonText}
-          >
-            Cerrar sesión
-          </Text>
-        </Pressable>
+        <ProfileIdentity
+          displayName={mockDisplayName}
+          username={username}
+          avatarUrl={mockAvatarUrl}
+          description={mockDescription}
+          location={mockLocation}
+          onPressAvatar={openEditProfile}
+          onPressEditProfile={openEditProfile}
+        />
+
+        <ProfileStats
+          liveScore="8.4"
+          emissions={emissionCount}
+          averageViewers="2,3K"
+        />
+
+        <LiveScoreCard score="8.4" />
+
+        <ProfileVideoGallery
+          videos={videos}
+        />
       </ScrollView>
+
+      <ProfileSettingsPanel
+        visible={settingsVisible}
+        onClose={() => {
+          setSettingsVisible(false);
+        }}
+        onEditProfile={openEditProfile}
+        onLogout={() => {
+          setSettingsVisible(false);
+          void logout();
+        }}
+      />
+
+      <ProfileEditPanel
+        visible={editVisible}
+        username={username}
+        displayName={mockDisplayName}
+        description={mockDescription}
+        location={mockLocation}
+        avatarUrl={mockAvatarUrl}
+        isSavingUsername={
+          isSavingUsername
+        }
+        error={error}
+        onClose={() => {
+          setEditVisible(false);
+          setError(null);
+        }}
+        onSaveUsername={
+          handleSaveUsername
+        }
+        onChangeMockProfile={(
+          value,
+        ) => {
+          setMockDisplayName(
+            value.displayName,
+          );
+          setMockDescription(
+            value.description,
+          );
+          setMockLocation(
+            value.location,
+          );
+          setMockAvatarUrl(
+            value.avatarUrl,
+          );
+        }}
+      />
+
+      {isGuest ? null : null}
     </View>
   );
 }
@@ -433,324 +362,13 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: "#FFFFFF",
   },
 
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: 22,
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
     paddingBottom: 130,
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  pageTitle: {
-    color: colors.text,
-    ...typography.screenTitle,
-  },
-
-  settingsButton: {
-    width: controls.circleButtonSize,
-    height: controls.circleButtonSize,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-
-  profile: {
-    marginTop: 24,
-    alignItems: "center",
-  },
-
-  avatar: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor:
-      colors.surfaceElevated,
-    borderWidth: 2,
-    borderColor:
-      colors.borderOnOverlay,
-  },
-
-  avatarText: {
-    color: colors.text,
-    fontSize: 30,
-    fontWeight: "900",
-  },
-
-  name: {
-    marginTop: 12,
-    color: colors.text,
-    fontSize: 21,
-    fontWeight: "900",
-  },
-
-  usernameRow: {
-    marginTop: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-
-  username: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  editor: {
-    width: "100%",
-    maxWidth: 320,
-    marginTop: 12,
-  },
-
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 44,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  atSign: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  usernameInput: {
-    flex: 1,
-    paddingHorizontal: 5,
-    paddingVertical: 10,
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  editorActions: {
-    marginTop: 8,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-
-  cancelButton: {
-    minHeight: 36,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-  },
-
-  cancelButtonText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  saveButton: {
-    minHeight: 36,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    backgroundColor: colors.text,
-  },
-
-  saveButtonText: {
-    color: colors.background,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-
-  errorText: {
-    marginTop: 8,
-    color: "#FF5A5F",
-    fontSize: 11,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-
-  locationRow: {
-    marginTop: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-
-  location: {
-    color: colors.textSecondary,
-    fontSize: 11,
-  },
-
-  stats: {
-    marginTop: 26,
-    flexDirection: "row",
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  stat: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-
-  statValue: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-  },
-
-  statLabel: {
-    marginTop: 4,
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "600",
-  },
-
-  scoreCard: {
-    marginTop: 12,
-    minHeight: 72,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  scoreLabel: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 0.8,
-  },
-
-  scoreDescription: {
-    marginTop: 4,
-    color: colors.textSecondary,
-    fontSize: 10,
-  },
-
-  score: {
-    flexDirection: "row",
-    alignItems: "baseline",
-  },
-
-  scoreValue: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: "900",
-  },
-
-  scoreMax: {
-    color: colors.textMuted,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-
-  sectionHeader: {
-    marginTop: 30,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  sectionTitle: {
-    color: colors.text,
-    ...typography.sectionTitle,
-  },
-
-  sectionAction: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-
-  liveList: {
-    marginTop: 10,
-    gap: 5,
-  },
-
-  liveItem: {
-    minHeight: 68,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 7,
-  },
-
-  thumbnail: {
-    width: 72,
-    height: 52,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor:
-      colors.surfaceElevated,
-  },
-
-  liveInfo: {
-    flex: 1,
-    marginLeft: 11,
-  },
-
-  liveTitle: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  liveLocation: {
-    marginTop: 4,
-    color: colors.textSecondary,
-    fontSize: 10,
-  },
-
-  viewerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-
-  viewerText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-
-  logoutButton: {
-    marginTop: 34,
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  logoutButtonText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "800",
+    backgroundColor: "#FFFFFF",
   },
 });
