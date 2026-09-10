@@ -57,6 +57,7 @@ type LiveViewerScreenProps = {
 export function LiveViewerScreen({
   requestedLiveId = null,
   onOpenUser,
+  onOpenReplays,
 }: LiveViewerScreenProps) {
   const {
     identity,
@@ -345,6 +346,7 @@ export function LiveViewerScreen({
             goToNextLive
           }
           onOpenUser={onOpenUser}
+          onOpenReplays={onOpenReplays}
         />
       ) : null}
     </View>
