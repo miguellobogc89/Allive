@@ -39,12 +39,24 @@ import {
 } from "./routes/lives";
 
 import {
+  registerNotificationRoutes,
+} from "./routes/notifications";
+
+import {
   registerSearchRoutes,
 } from "./routes/search";
 
 import {
   registerLiveThumbnailRoutes,
 } from "./liveThumbnail/liveThumbnailRoutes";
+
+import {
+  registerProfileRoutes,
+} from "./routes/profile";
+
+import {
+  registerUserProfileRoutes,
+} from "./routes/userProfiles";
 
 const app = express();
 const PORT = 3001;
@@ -65,7 +77,10 @@ registerLiveRoutes(app);
 registerLiveLikeRoutes(app);
 registerLiveCommentRoutes(app);
 registerLiveRealtimeRoutes(app);
+registerNotificationRoutes(app);
 registerSearchRoutes(app);
+registerProfileRoutes(app);
+registerUserProfileRoutes(app);
 
 app.listen(
   PORT,

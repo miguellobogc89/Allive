@@ -53,6 +53,9 @@ type SearchScreenProps = {
   onOpenLive: (
     liveId: string,
   ) => void;
+  onOpenUser: (
+    userId: string,
+  ) => void;
 };
 
 const EMPTY_RESPONSE: SearchResponse = {
@@ -147,6 +150,7 @@ return {
 
 export function SearchScreen({
   onOpenLive,
+  onOpenUser,
 }: SearchScreenProps) {
   const { width } =
     useWindowDimensions();
@@ -273,6 +277,15 @@ export function SearchScreen({
 
       if (
         activeTab ===
+        "live"
+      ) {
+        return liveItems(
+          response.lives,
+        );
+      }
+
+      if (
+        activeTab ===
         "nearby"
       ) {
         return liveItems(
@@ -286,11 +299,23 @@ export function SearchScreen({
         );
       }
 
-      return liveItems(
-        response.lives,
-      );
+      if (
+        query.trim().length > 0
+      ) {
+        return [
+          ...peopleItems(
+            response.users,
+          ),
+          ...liveItems(
+            response.lives,
+          ),
+        ];
+      }
+
+      return liveItems(response.lives);
     }, [
       activeTab,
+      query,
       response,
     ]);
 
@@ -327,6 +352,11 @@ export function SearchScreen({
           <SearchResultCard
             type="user"
             user={item.user}
+            onPress={() => {
+              onOpenUser(
+                item.user.id,
+              );
+            }}
           />
         )}
       </View>

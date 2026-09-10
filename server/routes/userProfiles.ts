@@ -8,6 +8,9 @@ import {
   type AuthenticatedRequest,
 } from "../auth";
 import { prisma } from "../db";
+import {
+  notifyNewFollower,
+} from "../services/notifications";
 
 function getParam(
   value: string | string[],
@@ -173,8 +176,8 @@ export function registerUserProfileRoutes(
         return;
       }
 
-      await prisma.user_follows.upsert(
-        {
+      const existingFollow =
+        await prisma.user_follows.findUnique({
           where: {
             follower_id_following_id:
               {
@@ -184,18 +187,29 @@ export function registerUserProfileRoutes(
                   followingId,
               },
           },
+        });
 
-          update: {},
-
-          create: {
+      if (!existingFollow) {
+        await prisma.user_follows.create({
+          data: {
             id: randomUUID(),
             follower_id:
               followerId,
             following_id:
               followingId,
           },
-        },
-      );
+        });
+
+        void notifyNewFollower(
+          followerId,
+          followingId,
+        ).catch((error) => {
+          console.warn(
+            "No se pudo notificar el nuevo follow:",
+            error,
+          );
+        });
+      }
 
       const followers =
         await prisma.user_follows.count(

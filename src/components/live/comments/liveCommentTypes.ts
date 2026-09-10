@@ -6,6 +6,7 @@ export type LiveCommentModel = {
   actorType: "user" | "guest";
   actorId: string;
   username: string;
+  avatarUrl: string | null;
   body: string;
   createdAt: string;
 };

@@ -17,6 +17,7 @@ type Props =
   | {
       type: "user";
       user: SearchUser;
+      onPress?: () => void;
     };
 
 export function SearchResultCard(
@@ -34,6 +35,7 @@ export function SearchResultCard(
   return (
     <PersonSearchCard
       user={props.user}
+      onPress={props.onPress}
     />
   );
 }

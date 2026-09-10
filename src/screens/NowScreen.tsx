@@ -13,10 +13,12 @@ import { colors, controls, spacing } from "../styles";
 
 type NowScreenProps = {
   requestedLiveId?: string | null;
+  onOpenUser?: (userId: string) => void;
 };
 
 export function NowScreen({
   requestedLiveId: _requestedLiveId,
+  onOpenUser: _onOpenUser,
 }: NowScreenProps) {
   return (
     <ImageBackground

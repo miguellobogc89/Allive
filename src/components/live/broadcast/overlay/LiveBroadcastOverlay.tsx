@@ -8,10 +8,13 @@ import {
   View,
 } from "react-native";
 
+import type { LiveCommentModel } from "../../comments/liveCommentTypes";
+import { LiveTimedCommentsLayer } from "../../comments/LiveTimedCommentsLayer";
+import { LiveBroadcastBottomNav } from "../bottom-nav";
 import { LiveBroadcastHeader } from "../header";
-import { LiveBroadcastBottomBar } from "./LiveBroadcastBottomBar";
-import { LiveBroadcastMetadataModal } from "./LiveBroadcastMetadataModal";
+import { LiveBroadcastMetadata } from "../metadata/LiveBroadcastMetadata";
 import { LiveBroadcastError } from "./LiveBroadcastError";
+import { LiveBroadcastMetadataModal } from "./LiveBroadcastMetadataModal";
 
 type LiveBroadcastOverlayProps = {
   isLive: boolean;
@@ -19,10 +22,12 @@ type LiveBroadcastOverlayProps = {
   cameraReady: boolean;
   viewers?: number;
   likes?: number;
+  comments?: LiveCommentModel[];
   error: string | null;
 
   title?: string;
   eventName?: string;
+  locationName?: string | null;
   microphoneEnabled?: boolean;
 
   onChangeTitle?: (value: string) => void;
@@ -42,9 +47,11 @@ export function LiveBroadcastOverlay({
   cameraReady,
   viewers = 0,
   likes = 0,
+  comments = [],
   error,
   title = "",
   eventName = "",
+  locationName = null,
   microphoneEnabled = true,
   onChangeTitle,
   onChangeEventName,
@@ -57,11 +64,13 @@ export function LiveBroadcastOverlay({
 }: LiveBroadcastOverlayProps) {
   const [controlsVisible, setControlsVisible] =
     useState(true);
+
   const [metadataVisible, setMetadataVisible] =
     useState(false);
 
   const opacity =
     useRef(new Animated.Value(1)).current;
+
   const translateY =
     useRef(new Animated.Value(0)).current;
 
@@ -148,6 +157,11 @@ export function LiveBroadcastOverlay({
 
       <LiveBroadcastError message={error} />
 
+      <LiveTimedCommentsLayer
+        comments={comments}
+        visible={isLive}
+      />
+
       {controlsVisible ? (
         <Animated.View
           pointerEvents="box-none"
@@ -166,24 +180,41 @@ export function LiveBroadcastOverlay({
             onFinishLive={onFinishLive}
           />
 
-          <LiveBroadcastBottomBar
-            isLive={isLive}
-            isConnecting={isConnecting}
-            cameraReady={cameraReady}
-            microphoneEnabled={microphoneEnabled}
-            onOpenMetadata={openMetadata}
-            onToggleMicrophone={
-              onToggleMicrophone ?? (() => {})
-            }
-            onOpenFilters={
-              onOpenFilters ?? (() => {})
-            }
-            onSwitchCamera={
-              onSwitchCamera ?? (() => {})
-            }
-            onStartLive={onStartLive}
-            onFinishLive={onFinishLive}
-          />
+          {isLive &&
+          (title.trim() || locationName) ? (
+            <View
+              pointerEvents="none"
+              style={styles.topMetadata}
+            >
+              <LiveBroadcastMetadata
+                title={title}
+                location={locationName}
+              />
+            </View>
+          ) : null}
+
+          {isLive ? (
+            <LiveBroadcastBottomNav
+              isLive={isLive}
+              isConnecting={isConnecting}
+              cameraReady={cameraReady}
+              microphoneEnabled={
+                microphoneEnabled
+              }
+              onOpenMetadata={openMetadata}
+              onToggleMicrophone={
+                onToggleMicrophone ?? (() => {})
+              }
+              onOpenFilters={
+                onOpenFilters ?? (() => {})
+              }
+              onSwitchCamera={
+                onSwitchCamera ?? (() => {})
+              }
+              onStartLive={onStartLive}
+              onFinishLive={onFinishLive}
+            />
+          ) : null}
         </Animated.View>
       ) : null}
 
@@ -209,8 +240,17 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 10,
   },
+
   controlsLayer: {
     ...StyleSheet.absoluteFill,
     justifyContent: "flex-end",
+  },
+
+  topMetadata: {
+    position: "absolute",
+    top: 70,
+    left: 18,
+    right: 96,
+    zIndex: 24,
   },
 });

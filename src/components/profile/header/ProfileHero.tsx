@@ -1,6 +1,7 @@
 // src/components/profile/header/ProfileHero.tsx
 
 import { LinearGradient } from "expo-linear-gradient";
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { ProfileBio } from "./ProfileBio";
@@ -16,7 +17,8 @@ type Props = {
   description: string;
   location: string;
   verified?: boolean;
-  onPressEditProfile: () => void;
+  action?: ReactNode;
+  onPressEditProfile?: () => void;
 };
 
 export function ProfileHero({
@@ -26,6 +28,7 @@ export function ProfileHero({
   description,
   location,
   verified = false,
+  action,
   onPressEditProfile,
 }: Props) {
   return (
@@ -114,9 +117,12 @@ export function ProfileHero({
           />
         </View>
 
-        <ProfileEditButton
-          onPress={onPressEditProfile}
-        />
+        {action ??
+          (onPressEditProfile ? (
+            <ProfileEditButton
+              onPress={onPressEditProfile}
+            />
+          ) : null)}
       </View>
     </View>
   );

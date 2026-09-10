@@ -1,16 +1,25 @@
 // src/components/profile/recent/ProfileLatestLiveSection.tsx
 
-import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import type { ProfileVideoItem } from "../profileTypes";
 import { LatestLiveCard } from "./LatestLiveCard";
 
 type Props = {
   video?: ProfileVideoItem;
+  title?: string;
 };
 
-export function ProfileLatestLiveSection({ video }: Props) {
+export function ProfileLatestLiveSection({
+  video,
+  title = "Tu ultimo directo",
+}: Props) {
   if (!video) {
     return null;
   }
@@ -18,11 +27,19 @@ export function ProfileLatestLiveSection({ video }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.heading}>Tu último directo</Text>
+        <Text style={styles.heading}>
+          {title}
+        </Text>
 
         <Pressable style={styles.action}>
-          <Text style={styles.actionText}>Ver todos</Text>
-          <Ionicons name="chevron-forward" size={13} color="#C7D4E2" />
+          <Text style={styles.actionText}>
+            Ver todos
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={13}
+            color="#C7D4E2"
+          />
         </Pressable>
       </View>
 

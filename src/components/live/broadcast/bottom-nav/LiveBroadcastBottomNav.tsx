@@ -7,7 +7,6 @@ import {
   View,
 } from "react-native";
 
-import { LiveBroadcastRecordButton } from "../overlay/LiveBroadcastRecordButton";
 import { CameraSwitchControl } from "./CameraSwitchControl";
 import { FiltersControl } from "./FiltersControl";
 import { MicrophoneControl } from "./MicrophoneControl";
@@ -32,31 +31,6 @@ export function LiveBroadcastBottomNav(
   const { width, height } = useWindowDimensions();
   const landscape = width > height;
 
-  const controls = (
-    <>
-      <MoreControl onPress={props.onOpenMetadata} />
-      <MicrophoneControl
-        enabled={props.microphoneEnabled}
-        onPress={props.onToggleMicrophone}
-      />
-
-      {!props.isLive ? (
-        <LiveBroadcastRecordButton
-          isLive={false}
-          isConnecting={props.isConnecting}
-          cameraReady={props.cameraReady}
-          onStartLive={props.onStartLive}
-          onFinishLive={props.onFinishLive}
-        />
-      ) : (
-        <View style={styles.recordPlaceholder} />
-      )}
-
-      <FiltersControl onPress={props.onOpenFilters} />
-      <CameraSwitchControl onPress={props.onSwitchCamera} />
-    </>
-  );
-
   return (
     <View
       pointerEvents="box-none"
@@ -67,24 +41,15 @@ export function LiveBroadcastBottomNav(
     >
       <LinearGradient
         pointerEvents="none"
-        colors={
-          landscape
-            ? [
-                "rgba(0,0,0,0)",
-                "rgba(0,0,0,0.20)",
-                "rgba(0,0,0,0.72)",
-                "rgba(0,0,0,0.96)",
-              ]
-            : [
-                "rgba(0,0,0,0)",
-                "rgba(0,0,0,0.18)",
-                "rgba(0,0,0,0.70)",
-                "rgba(0,0,0,0.96)",
-              ]
-        }
-        locations={[0, 0.32, 0.72, 1]}
-        start={landscape ? { x: 0, y: 0.5 } : { x: 0.5, y: 0 }}
-        end={landscape ? { x: 1, y: 0.5 } : { x: 0.5, y: 1 }}
+        colors={[
+          "rgba(0,0,0,0)",
+          "rgba(0,0,0,0.16)",
+          "rgba(0,0,0,0.62)",
+          "rgba(0,0,0,0.94)",
+        ]}
+        locations={[0, 0.30, 0.70, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
@@ -96,7 +61,16 @@ export function LiveBroadcastBottomNav(
             : styles.controlsPortrait,
         ]}
       >
-        {controls}
+        <MoreControl onPress={props.onOpenMetadata} />
+
+        <MicrophoneControl
+          enabled={props.microphoneEnabled}
+          onPress={props.onToggleMicrophone}
+        />
+
+        <FiltersControl onPress={props.onOpenFilters} />
+
+        <CameraSwitchControl onPress={props.onSwitchCamera} />
       </View>
     </View>
   );
@@ -105,49 +79,40 @@ export function LiveBroadcastBottomNav(
 const styles = StyleSheet.create({
   root: {
     position: "absolute",
-    zIndex: 20,
-  },
-
-  rootPortrait: {
     left: 0,
     right: 0,
     bottom: 0,
-    height: 150,
+    zIndex: 20,
     justifyContent: "flex-end",
   },
 
+  rootPortrait: {
+    height: 150,
+  },
+
   rootLandscape: {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: 150,
-    alignItems: "flex-end",
-    justifyContent: "center",
+    height: 118,
   },
 
   controls: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
   },
 
   controlsPortrait: {
     width: "100%",
-    height: 82,
+    minHeight: 82,
     paddingHorizontal: 20,
     paddingBottom: 18,
-    flexDirection: "row",
+    justifyContent: "space-around",
   },
 
   controlsLandscape: {
-    width: 82,
-    height: 330,
-    marginRight: 18,
-    paddingVertical: 8,
-    flexDirection: "column",
-  },
-
-  recordPlaceholder: {
-    width: 76,
-    height: 76,
+    width: "50%",
+    minHeight: 82,
+    marginLeft: "50%",
+    paddingHorizontal: 22,
+    paddingBottom: 14,
+    justifyContent: "space-around",
   },
 });

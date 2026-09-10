@@ -1,7 +1,8 @@
+// src/screens/UserProfileScreen.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,18 +22,68 @@ import {
   type OtherUserProfile,
 } from "../api/userProfileApi";
 import { useAuth } from "../auth/AuthContext";
-import { ProfilePublicActions } from "../components/profile/ProfilePublicActions";
+import {
+  ProfileHero,
+  ProfileHighlightsSection,
+  ProfileLatestLiveSection,
+  type ProfileVideoItem,
+} from "../components/profile";
 
 type Props = {
   userId: string;
   onBack: () => void;
 };
 
+function formatCount(value: number) {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(1)}K`;
+  }
+
+  return String(value);
+}
+
+function mapLive(
+  live: OtherUserProfile["lives"][number],
+): ProfileVideoItem {
+  return {
+    id: live.id,
+    title: live.title || "LIVE sin titulo",
+    placeName:
+      live.placeName || "Sin ubicacion",
+    startedAt: live.startedAt,
+    endedAt: live.endedAt,
+    thumbnailUrl: live.thumbnailUrl,
+  };
+}
+
+function PublicStat({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={styles.statValue}>
+        {value}
+      </Text>
+      <Text style={styles.statLabel}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 export function UserProfileScreen({
   userId,
   onBack,
 }: Props) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [
     profile,
@@ -46,6 +97,14 @@ export function UserProfileScreen({
     useState(true);
 
   const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
     followLoading,
     setFollowLoading,
   ] = useState(false);
@@ -53,6 +112,9 @@ export function UserProfileScreen({
   useEffect(() => {
     if (!token) {
       setLoading(false);
+      setError(
+        "Necesitas iniciar sesion para ver este perfil.",
+      );
       return;
     }
 
@@ -60,6 +122,7 @@ export function UserProfileScreen({
       new AbortController();
 
     setLoading(true);
+    setError(null);
 
     getUserProfile(
       userId,
@@ -67,7 +130,21 @@ export function UserProfileScreen({
       controller.signal,
     )
       .then(setProfile)
-      .catch(console.error)
+      .catch((caughtError) => {
+        if (
+          caughtError instanceof Error &&
+          caughtError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        console.error(caughtError);
+        setError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "No se pudo cargar el perfil.",
+        );
+      })
       .finally(() => {
         if (
           !controller.signal
@@ -87,7 +164,9 @@ export function UserProfileScreen({
 
   const videos =
     useMemo(
-      () => profile?.lives ?? [],
+      () =>
+        profile?.lives.map(mapLive) ??
+        [],
       [profile],
     );
 
@@ -95,24 +174,36 @@ export function UserProfileScreen({
     if (
       !token ||
       !profile ||
-      followLoading
+      followLoading ||
+      user?.id === profile.user.id
     ) {
       return;
     }
 
+    const previous =
+      profile.isFollowing;
+
     setFollowLoading(true);
 
+    setProfile((current) =>
+      current
+        ? {
+            ...current,
+            isFollowing: !previous,
+          }
+        : current,
+    );
+
     try {
-      const result =
-        profile.isFollowing
-          ? await unfollowUser(
-              userId,
-              token,
-            )
-          : await followUser(
-              userId,
-              token,
-            );
+      const result = previous
+        ? await unfollowUser(
+            userId,
+            token,
+          )
+        : await followUser(
+            userId,
+            token,
+          );
 
       setProfile((current) =>
         current
@@ -128,6 +219,17 @@ export function UserProfileScreen({
             }
           : current,
       );
+    } catch (caughtError) {
+      console.error(caughtError);
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              isFollowing: previous,
+            }
+          : current,
+      );
     } finally {
       setFollowLoading(false);
     }
@@ -136,16 +238,28 @@ export function UserProfileScreen({
   if (loading) {
     return (
       <View style={styles.state}>
-        <ActivityIndicator color="#111111" />
+        <ActivityIndicator color="#38AFFF" />
       </View>
     );
   }
 
-  if (!profile) {
+  if (!profile || error) {
     return (
       <View style={styles.state}>
-        <Text>
-          No se pudo cargar el perfil.
+        <Pressable
+          onPress={onBack}
+          hitSlop={10}
+          style={styles.backButton}
+        >
+          <Ionicons
+            name="chevron-back"
+            size={26}
+            color="#FFFFFF"
+          />
+        </Pressable>
+
+        <Text style={styles.stateText}>
+          {error || "No se pudo cargar el perfil."}
         </Text>
       </View>
     );
@@ -154,12 +268,8 @@ export function UserProfileScreen({
   const displayName =
     profile.user.displayName ||
     profile.user.username;
-
-  const avatarLetter =
-    displayName
-      .trim()
-      .charAt(0)
-      .toUpperCase() || "?";
+  const isOwnProfile =
+    user?.id === profile.user.id;
 
   return (
     <View style={styles.container}>
@@ -171,231 +281,218 @@ export function UserProfileScreen({
           false
         }
       >
-        <View style={styles.top}>
+        <View style={styles.topBar}>
           <Pressable
             onPress={onBack}
             hitSlop={10}
-            style={styles.icon}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.pressed,
+            ]}
           >
             <Ionicons
               name="chevron-back"
-              size={26}
-              color="#171717"
+              size={27}
+              color="#FFFFFF"
             />
           </Pressable>
-
-          <Text style={styles.username}>
-            {profile.user.username}
-          </Text>
-
-          <View style={styles.icon} />
         </View>
 
-        <View style={styles.identity}>
-          {profile.user.avatarUrl ? (
-            <Image
-              source={{
-                uri: profile.user.avatarUrl,
-              }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {avatarLetter}
-              </Text>
-            </View>
-          )}
-
-          <Text style={styles.displayName}>
-            {displayName}
-          </Text>
-
-          <Text style={styles.handle}>
-            @{profile.user.username}
-          </Text>
-        </View>
-
-        <ProfilePublicActions
-          isFollowing={
-            profile.isFollowing
+        <ProfileHero
+          displayName={displayName}
+          username={profile.user.username}
+          coverUrl={profile.user.avatarUrl}
+          description=""
+          location=""
+          action={
+            isOwnProfile ? null : (
+              <Pressable
+                disabled={followLoading}
+                onPress={() => {
+                  void toggleFollow();
+                }}
+                style={({ pressed }) => [
+                  styles.followButton,
+                  profile.isFollowing &&
+                    styles.followingButton,
+                  followLoading &&
+                    styles.followLoading,
+                  pressed &&
+                    styles.pressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.followText,
+                    profile.isFollowing &&
+                      styles.followingText,
+                  ]}
+                >
+                  {followLoading
+                    ? "..."
+                    : profile.isFollowing
+                      ? "Siguiendo"
+                      : "Seguir"}
+                </Text>
+              </Pressable>
+            )
           }
-          loading={followLoading}
-          onFollow={() => {
-            void toggleFollow();
-          }}
-          onSubscribe={() => {}}
         />
 
-        <View style={styles.stats}>
-          <Text style={styles.stat}>
-            {profile.stats.followers} seguidores
-          </Text>
-          <Text style={styles.stat}>
-            {profile.stats.following} siguiendo
-          </Text>
-          <Text style={styles.stat}>
-            {profile.stats.emissions} emisiones
-          </Text>
+        <View style={styles.statsRow}>
+          <PublicStat
+            value={formatCount(
+              profile.stats.followers,
+            )}
+            label="Seguidores"
+          />
+          <PublicStat
+            value={formatCount(
+              profile.stats.following,
+            )}
+            label="Siguiendo"
+          />
+          <PublicStat
+            value={formatCount(
+              profile.stats.emissions,
+            )}
+            label="Emisiones"
+          />
         </View>
 
-        <View style={styles.gallery}>
-          {videos.map((video) => (
-            <View
-              key={video.id}
-              style={styles.videoCard}
-            >
-              {video.thumbnailUrl ? (
-                <Image
-                  source={{
-                    uri: video.thumbnailUrl,
-                  }}
-                  style={styles.thumbnail}
-                />
-              ) : (
-                <View style={styles.thumbnail}>
-                  <Ionicons
-                    name="videocam"
-                    size={22}
-                    color="#888888"
-                  />
-                </View>
-              )}
+        <ProfileLatestLiveSection
+          video={videos[0]}
+          title="Ultimo directo"
+        />
 
-              <Text
-                style={styles.videoTitle}
-                numberOfLines={1}
-              >
-                {video.title ||
-                  "LIVE sin titulo"}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <ProfileHighlightsSection
+          videos={videos.slice(1)}
+        />
       </ScrollView>
     </View>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#FFFFFF",
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#06101A",
+  },
 
-    content: {
-      paddingHorizontal: 18,
-      paddingTop: 18,
-      paddingBottom: 130,
-    },
+  content: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 140,
+    backgroundColor: "#06101A",
+  },
 
-    top: {
-      minHeight: 46,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-    },
+  topBar: {
+    position: "relative",
+    zIndex: 20,
+    minHeight: 52,
+    justifyContent: "center",
+  },
 
-    icon: {
-      width: 42,
-      height: 42,
-      alignItems: "center",
-      justifyContent:
-        "center",
-    },
+  iconButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-    username: {
-      flex: 1,
-      textAlign: "center",
-      color: "#151515",
-      fontSize: 19,
-      fontWeight: "600",
-    },
+  followButton: {
+    minWidth: 108,
+    height: 36,
+    paddingHorizontal: 17,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
 
-    identity: {
-      marginTop: 12,
-      alignItems: "center",
-    },
+  followingButton: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.24)",
+    backgroundColor:
+      "rgba(4,14,24,0.46)",
+  },
 
-    avatar: {
-      width: 92,
-      height: 92,
-      borderRadius: 46,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      backgroundColor: "#EFEFEF",
-    },
+  followLoading: {
+    opacity: 0.62,
+  },
 
-    avatarText: {
-      color: "#262626",
-      fontSize: 32,
-      fontWeight: "800",
-    },
+  followText: {
+    color: "#06101A",
+    fontSize: 12,
+    fontWeight: "700",
+  },
 
-    displayName: {
-      marginTop: 12,
-      color: "#111111",
-      fontSize: 20,
-      fontWeight: "800",
-    },
+  followingText: {
+    color: "#FFFFFF",
+  },
 
-    handle: {
-      marginTop: 3,
-      color: "#737373",
-      fontSize: 14,
-      fontWeight: "500",
-    },
+  statsRow: {
+    flexDirection: "row",
+    gap: 7,
+    marginTop: 14,
+  },
 
-    stats: {
-      marginTop: 18,
-      flexDirection: "row",
-      justifyContent:
-        "space-between",
-    },
+  statCard: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    justifyContent: "center",
+    backgroundColor:
+      "rgba(255,255,255,0.07)",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+  },
 
-    stat: {
-      color: "#444444",
-      fontSize: 12,
-      fontWeight: "700",
-    },
+  statValue: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+  },
 
-    gallery: {
-      marginTop: 24,
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 10,
-    },
+  statLabel: {
+    marginTop: 3,
+    color: "#A8B5C5",
+    fontSize: 10,
+    fontWeight: "500",
+  },
 
-    videoCard: {
-      width: "31%",
-      minWidth: 96,
-    },
+  pressed: {
+    opacity: 0.72,
+  },
 
-    thumbnail: {
-      width: "100%",
-      aspectRatio: 9 / 12,
-      borderRadius: 8,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      backgroundColor: "#EFEFEF",
-    },
+  state: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#06101A",
+    paddingHorizontal: 24,
+  },
 
-    videoTitle: {
-      marginTop: 6,
-      color: "#171717",
-      fontSize: 12,
-      fontWeight: "700",
-    },
+  stateText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+  },
 
-    state: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent:
-        "center",
-      backgroundColor: "#FFFFFF",
-    },
-  });
+  backButton: {
+    position: "absolute",
+    top: 20,
+    left: 18,
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

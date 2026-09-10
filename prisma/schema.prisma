@@ -9,17 +9,22 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  username      String          @unique
-  displayName   String?
-  avatarUrl     String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  email         String          @unique
-  password_hash String
-  live_comments live_comments[]
-  live_likes    live_likes[]
-  liveSessions  LiveSession[]
+  id                                              String                       @id @default(cuid())
+  username                                        String                       @unique
+  displayName                                     String?
+  avatarUrl                                       String?
+  createdAt                                       DateTime                     @default(now())
+  updatedAt                                       DateTime                     @updatedAt
+  email                                           String                       @unique
+  password_hash                                   String
+  live_comments                                   live_comments[]
+  live_likes                                      live_likes[]
+  liveSessions                                    LiveSession[]
+  notification_device_tokens                      notification_device_tokens[]
+  notifications_notifications_actor_idTousers     notifications[]              @relation("notifications_actor_idTousers")
+  notifications_notifications_recipient_idTousers notifications[]              @relation("notifications_recipient_idTousers")
+  user_follows_user_follows_follower_idTousers    user_follows[]               @relation("user_follows_follower_idTousers")
+  user_follows_user_follows_following_idTousers   user_follows[]               @relation("user_follows_following_idTousers")
 
   @@map("users")
 }
@@ -84,7 +89,65 @@ model live_comments {
   @@index([user_id])
 }
 
+model user_follows {
+  id                                     String   @id
+  follower_id                            String
+  following_id                           String
+  created_at                             DateTime @default(now()) @db.Timestamptz(6)
+  users_user_follows_follower_idTousers  User     @relation("user_follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_follower_fk")
+  users_user_follows_following_idTousers User     @relation("user_follows_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_following_fk")
+
+  @@unique([follower_id, following_id], map: "user_follows_unique")
+  @@index([follower_id], map: "user_follows_follower_idx")
+  @@index([following_id], map: "user_follows_following_idx")
+}
+
+model notification_device_tokens {
+  id              String   @id @default(cuid())
+  user_id         String
+  expo_push_token String   @unique
+  platform        String?
+  device_id       String?
+  enabled         Boolean  @default(true)
+  last_seen_at    DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  users           User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id])
+}
+
+model notifications {
+  id                                      String                 @id @default(cuid())
+  recipient_id                            String
+  actor_id                                String?
+  type                                    NotificationType
+  text                                    String
+  action_label                            String?
+  target_type                             NotificationTargetType
+  target_id                               String
+  dedupe_key                              String                 @unique
+  read_at                                 DateTime?
+  created_at                              DateTime               @default(now())
+  users_notifications_actor_idTousers     User?                  @relation("notifications_actor_idTousers", fields: [actor_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  users_notifications_recipient_idTousers User                   @relation("notifications_recipient_idTousers", fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([recipient_id, read_at])
+  @@index([recipient_id, created_at])
+  @@index([actor_id])
+}
+
 enum LiveStatus {
   LIVE
   ENDED
+}
+
+enum NotificationType {
+  LIVE_STARTED
+  NEW_FOLLOWER
+}
+
+enum NotificationTargetType {
+  LIVE
+  USER
 }

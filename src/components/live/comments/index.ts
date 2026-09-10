@@ -5,8 +5,8 @@ export {
 } from "./LiveComment";
 
 export {
-  LiveCommentList,
-} from "./LiveCommentList";
+  LiveTimedCommentsLayer,
+} from "./LiveTimedCommentsLayer";
 
 export {
   LiveCommentComposer,

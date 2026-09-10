@@ -50,10 +50,12 @@ const REFRESH_INTERVAL_MS =
 
 type LiveViewerScreenProps = {
   requestedLiveId?: string | null;
+  onOpenUser?: (userId: string) => void;
 };
 
 export function LiveViewerScreen({
   requestedLiveId = null,
+  onOpenUser,
 }: LiveViewerScreenProps) {
   const {
     identity,
@@ -341,6 +343,7 @@ export function LiveViewerScreen({
           onNextLive={
             goToNextLive
           }
+          onOpenUser={onOpenUser}
         />
       ) : null}
     </View>

@@ -103,11 +103,21 @@ const MOCK_VIDEOS: ProfileVideoItem[] = [
   },
 ];
 
-export function ProfileScreen() {
+type Props = {
+  unreadNotifications?: number;
+  onOpenNotifications?: () => void;
+};
+
+export function ProfileScreen({
+  unreadNotifications = 0,
+  onOpenNotifications,
+}: Props) {
   const {
     user,
     token,
     updateUsername,
+    updateProfile,
+    uploadAvatar,
     logout,
   } = useAuth();
 
@@ -290,6 +300,22 @@ export function ProfileScreen() {
     }
   }
 
+  async function handleUploadAvatar(
+    image: Blob,
+  ) {
+    const updatedUser =
+      await uploadAvatar(image);
+
+    return updatedUser.avatarUrl;
+  }
+
+  async function handleSaveProfile(value: {
+    displayName: string;
+    avatarUrl: string | null;
+  }) {
+    await updateProfile(value);
+  }
+
   function openEditProfile() {
     setSettingsVisible(false);
     setError(null);
@@ -309,6 +335,12 @@ export function ProfileScreen() {
       >
         <ProfileTopBar
           username={username}
+          unreadNotifications={
+            unreadNotifications
+          }
+          onPressNotifications={
+            onOpenNotifications
+          }
           onPressSettings={() => {
             setSettingsVisible(true);
           }}
@@ -391,6 +423,12 @@ export function ProfileScreen() {
         }}
         onSaveUsername={
           handleSaveUsername
+        }
+        onUploadAvatar={
+          handleUploadAvatar
+        }
+        onSaveProfile={
+          handleSaveProfile
         }
         onChangeMockProfile={(
           value,

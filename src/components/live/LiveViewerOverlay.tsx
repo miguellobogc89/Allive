@@ -21,6 +21,12 @@ import type {
 } from "../../auth/types";
 
 import {
+  followUser,
+  getUserProfile,
+  unfollowUser,
+} from "../../api/userProfileApi";
+
+import {
   subscribeToLiveMetrics,
 } from "../../api/liveRealtimeApi";
 
@@ -30,7 +36,7 @@ import {
 
 import {
   LiveCommentComposer,
-  LiveCommentList,
+  LiveTimedCommentsLayer,
   createLiveComment,
   getLiveComments,
   type LiveCommentModel,
@@ -43,10 +49,6 @@ import {
 import {
   LiveViewerHeader,
 } from "./LiveViewerHeader";
-
-import {
-  LiveViewerMetadata,
-} from "./LiveViewerMetadata";
 
 import {
   LiveViewerNavigation,
@@ -80,6 +82,7 @@ type Props = {
   totalLives: number;
   onPreviousLive: () => void;
   onNextLive: () => void;
+  onOpenUser?: (userId: string) => void;
 };
 
 export function LiveViewerOverlay({
@@ -92,6 +95,7 @@ export function LiveViewerOverlay({
   totalLives,
   onPreviousLive,
   onNextLive,
+  onOpenUser,
 }: Props) {
   const [saved, setSaved] =
     useState(false);
@@ -132,6 +136,19 @@ export function LiveViewerOverlay({
     setLikeLoading,
   ] = useState(false);
 
+  const [
+    followingCreator,
+    setFollowingCreator,
+  ] = useState(false);
+
+  const [
+    followLoading,
+    setFollowLoading,
+  ] = useState(false);
+
+  const creatorId =
+    live.creator?.id;
+
   const loadLikeState =
     useCallback(async () => {
       try {
@@ -165,6 +182,8 @@ export function LiveViewerOverlay({
     setComments([]);
     setLiked(false);
     setLikeCount(0);
+    setFollowingCreator(false);
+    setFollowLoading(false);
 
     void loadLikeState();
 
@@ -191,6 +210,54 @@ export function LiveViewerOverlay({
   }, [
     live.id,
     loadLikeState,
+  ]);
+
+  useEffect(() => {
+    if (
+      !creatorId ||
+      !authToken ||
+      viewerIdentity?.type !== "user" ||
+      viewerIdentity.id === creatorId
+    ) {
+      setFollowingCreator(false);
+      setFollowLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    setFollowLoading(true);
+
+    void getUserProfile(
+      creatorId,
+      authToken,
+    )
+      .then((profile) => {
+        if (!cancelled) {
+          setFollowingCreator(
+            profile.isFollowing,
+          );
+        }
+      })
+      .catch((error) => {
+        console.error(
+          "No se pudo cargar el estado de follow:",
+          error,
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFollowLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authToken,
+    creatorId,
+    viewerIdentity,
   ]);
 
   useEffect(() => {
@@ -353,10 +420,47 @@ export function LiveViewerOverlay({
     }
   }
 
-  const creatorName =
-    live.creator?.username ??
-    live.creator?.displayName ??
-    null;
+  async function handleFollowPress() {
+    if (
+      !creatorId ||
+      !authToken ||
+      viewerIdentity?.type !== "user" ||
+      viewerIdentity.id === creatorId ||
+      followLoading
+    ) {
+      return;
+    }
+
+    const previous =
+      followingCreator;
+
+    setFollowLoading(true);
+    setFollowingCreator(!previous);
+
+    try {
+      const result = previous
+        ? await unfollowUser(
+            creatorId,
+            authToken,
+          )
+        : await followUser(
+            creatorId,
+            authToken,
+          );
+
+      setFollowingCreator(
+        result.isFollowing,
+      );
+    } catch (error) {
+      console.error(
+        "No se pudo actualizar follow:",
+        error,
+      );
+      setFollowingCreator(previous);
+    } finally {
+      setFollowLoading(false);
+    }
+  }
 
   return (
     <View
@@ -364,15 +468,43 @@ export function LiveViewerOverlay({
       pointerEvents="box-none"
     >
       <LiveViewerHeader
+        live={live}
         audience={audience}
         audienceOpen={
           audienceOpen
+        }
+        followLoading={followLoading}
+        isFollowing={followingCreator}
+        onFollowPress={
+          live.creator?.id &&
+          authToken &&
+          viewerIdentity?.type ===
+            "user" &&
+          viewerIdentity.id !==
+            live.creator.id
+            ? () => {
+                void handleFollowPress();
+              }
+            : undefined
+        }
+        onOpenCreator={
+          creatorId
+            ? () => {
+                onOpenUser?.(creatorId);
+              }
+            : undefined
         }
         onAudienceToggle={() =>
           setAudienceOpen(
             (value) => !value,
           )
         }
+      />
+
+      <LiveTimedCommentsLayer
+        comments={comments}
+        visible
+        onPressActor={onOpenUser}
       />
 
       <LiveViewerNavigation
@@ -408,23 +540,6 @@ export function LiveViewerOverlay({
         style={styles.bottomLeft}
         pointerEvents="box-none"
       >
-        <LiveViewerMetadata
-          title={live.title}
-          eventName={
-            live.eventName
-          }
-          placeName={
-            live.placeName
-          }
-          creatorName={
-            creatorName
-          }
-        />
-
-        <LiveCommentList
-          comments={comments}
-        />
-
         <LiveCommentComposer
           value={commentValue}
           disabled={

@@ -9,9 +9,18 @@ import { colors, controls, spacing, typography } from "../styles";
 type BottomNavProps = {
   activeTab: string;
   onTabPress: (tab: string) => void;
+  emitCanStart?: boolean;
+  emitIsConnecting?: boolean;
+  onEmitStart?: () => void;
 };
 
-export function BottomNav({ activeTab, onTabPress }: BottomNavProps) {
+export function BottomNav({
+  activeTab,
+  onTabPress,
+  emitCanStart = true,
+  emitIsConnecting = false,
+  onEmitStart,
+}: BottomNavProps) {
   const tabs = [
     { id: "now", label: "NOW", icon: "play-circle-outline" },
     { id: "map", label: "MAPA", icon: "map-outline" },
@@ -38,19 +47,57 @@ export function BottomNav({ activeTab, onTabPress }: BottomNavProps) {
         const isEmit = tab.id === "emit";
 
         if (isEmit) {
+          const emitStartMode =
+            activeTab === "emit" &&
+            Boolean(onEmitStart);
+
           return (
             <Pressable
               key={tab.id}
-              style={styles.emitWrapper}
-              onPress={() => onTabPress(tab.id)}
+              style={[
+                styles.emitWrapper,
+                emitStartMode &&
+                  styles.emitWrapperActive,
+              ]}
+              disabled={
+                emitStartMode &&
+                (!emitCanStart ||
+                  emitIsConnecting)
+              }
+              onPress={() => {
+                if (emitStartMode) {
+                  onEmitStart?.();
+                  return;
+                }
+
+                onTabPress(tab.id);
+              }}
             >
-              <View style={styles.emitButton}>
+              <View
+                style={[
+                  styles.emitButton,
+                  emitStartMode &&
+                    styles.emitButtonStart,
+                  emitStartMode &&
+                    (!emitCanStart ||
+                      emitIsConnecting) &&
+                    styles.emitButtonDisabled,
+                ]}
+              >
                 <View style={styles.emitInner}>
                   <View style={styles.emitDot} />
                 </View>
               </View>
 
-              <Text style={styles.emitLabel}>EMITIR</Text>
+              <Text style={styles.emitLabel}>
+                {emitStartMode
+                  ? emitIsConnecting
+                    ? "INICIANDO"
+                    : emitCanStart
+                      ? "INICIAR"
+                      : "PREPARANDO"
+                  : "EMITIR"}
+              </Text>
             </Pressable>
           );
         }
@@ -141,6 +188,10 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -3 }],
   },
 
+  emitWrapperActive: {
+    transform: [{ translateY: -7 }],
+  },
+
   emitButton: {
     width: 54,
     height: 54,
@@ -154,6 +205,15 @@ const styles = StyleSheet.create({
 
     borderWidth: 2,
     borderColor: colors.borderOnOverlay,
+  },
+
+  emitButtonStart: {
+    backgroundColor: colors.live,
+    borderColor: colors.text,
+  },
+
+  emitButtonDisabled: {
+    opacity: 0.48,
   },
 
   emitInner: {

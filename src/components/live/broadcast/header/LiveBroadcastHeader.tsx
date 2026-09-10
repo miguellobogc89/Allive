@@ -1,6 +1,10 @@
 // src/components/live/broadcast/header/LiveBroadcastHeader.tsx
 
-import { StyleSheet, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { FinishLiveButton } from "./FinishLiveButton";
 import { LivePulse } from "./LivePulse";
@@ -31,6 +35,9 @@ export function LiveBroadcastHeader({
     >
       <View style={styles.livePill}>
         <LivePulse />
+        <Text style={styles.liveLabel}>
+          LIVE
+        </Text>
         <LiveTimer />
       </View>
 
@@ -76,7 +83,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 9,
 
-    backgroundColor: "rgba(20,20,20,0.58)",
+    backgroundColor: "#FF3048",
+  },
+
+  liveLabel: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.4,
   },
 
   centerStats: {

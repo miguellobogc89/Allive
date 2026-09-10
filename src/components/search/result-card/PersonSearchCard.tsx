@@ -13,17 +13,23 @@ import { styles } from "./searchResultCard.styles";
 
 type Props = {
   user: SearchUser;
+  onPress?: () => void;
 };
 
 export function PersonSearchCard({
   user,
+  onPress,
 }: Props) {
   const displayName =
     user.displayName ??
     user.username;
 
   return (
-    <Pressable style={styles.personCard}>
+    <Pressable
+      style={styles.personCard}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       {user.avatarUrl ? (
         <Image
           source={{

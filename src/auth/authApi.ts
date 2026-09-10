@@ -142,3 +142,57 @@ export async function updateMe(
 
   return data.user;
 }
+
+export async function updateProfile(
+  token: string,
+  input: {
+    displayName?: string;
+    avatarUrl?: string | null;
+  },
+): Promise<AuthUser> {
+  const response = await fetch(
+    `${API_URL}/api/profile/me`,
+    {
+      method: "PATCH",
+
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(input),
+    },
+  );
+
+  const data = await parseResponse<{
+    user: AuthUser;
+  }>(response);
+
+  return data.user;
+}
+
+export async function uploadAvatar(
+  token: string,
+  image: Blob,
+): Promise<AuthUser> {
+  const response = await fetch(
+    `${API_URL}/api/profile/me/avatar`,
+    {
+      method: "PUT",
+
+      headers: {
+        "Content-Type":
+          image.type || "image/jpeg",
+        Authorization: `Bearer ${token}`,
+      },
+
+      body: image,
+    },
+  );
+
+  const data = await parseResponse<{
+    user: AuthUser;
+  }>(response);
+
+  return data.user;
+}

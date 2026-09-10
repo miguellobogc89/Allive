@@ -72,12 +72,12 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#FF3048",
+    backgroundColor: "#FFFFFF",
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#FF3048",
+    backgroundColor: "#FFFFFF",
   },
 });

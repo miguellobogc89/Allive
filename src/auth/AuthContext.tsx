@@ -53,6 +53,15 @@ type AuthContextValue = {
     username: string,
   ) => Promise<void>;
 
+  updateProfile: (input: {
+    displayName?: string;
+    avatarUrl?: string | null;
+  }) => Promise<void>;
+
+  uploadAvatar: (
+    image: Blob,
+  ) => Promise<AuthUser>;
+
   continueAsGuest: () => Promise<void>;
 
   logout: () => Promise<void>;
@@ -394,6 +403,67 @@ export function AuthProvider({
     }
   }
 
+  async function persistUpdatedUser(
+    updatedUser: AuthUser,
+  ) {
+    setUser(updatedUser);
+
+    const storedMode =
+      await AsyncStorage.getItem(
+        MODE_KEY,
+      );
+
+    if (storedMode === "user") {
+      await AsyncStorage.setItem(
+        USER_KEY,
+        JSON.stringify(updatedUser),
+      );
+    }
+  }
+
+  async function updateProfile(input: {
+    displayName?: string;
+    avatarUrl?: string | null;
+  }) {
+    if (!token) {
+      throw new Error(
+        "Debes iniciar sesion para actualizar tu perfil",
+      );
+    }
+
+    const updatedUser =
+      await authApi.updateProfile(
+        token,
+        input,
+      );
+
+    await persistUpdatedUser(
+      updatedUser,
+    );
+  }
+
+  async function uploadAvatar(
+    image: Blob,
+  ) {
+    if (!token) {
+      throw new Error(
+        "Debes iniciar sesion para subir tu foto",
+      );
+    }
+
+    const updatedUser =
+      await authApi.uploadAvatar(
+        token,
+        image,
+      );
+
+    await persistUpdatedUser(
+      updatedUser,
+    );
+
+    return updatedUser;
+  }
+
   async function continueAsGuest() {
     await clearPersistentSession();
 
@@ -432,6 +502,8 @@ export function AuthProvider({
         login,
         register,
         updateUsername,
+        updateProfile,
+        uploadAvatar,
 
         continueAsGuest,
         logout,

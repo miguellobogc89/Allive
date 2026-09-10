@@ -13,6 +13,7 @@ export type CommentActor =
       type: "user";
       id: string;
       username: string;
+      avatarUrl: string | null;
     }
   | {
       type: "guest";
@@ -57,6 +58,14 @@ export async function listLiveComments(
           liveSessionId,
       },
 
+      include: {
+        users: {
+          select: {
+            avatarUrl: true,
+          },
+        },
+      },
+
       orderBy: {
         created_at: "asc",
       },
@@ -82,6 +91,10 @@ export async function listLiveComments(
 
       username:
         comment.username,
+
+      avatarUrl:
+        comment.users?.avatarUrl ??
+        null,
 
       body: comment.body,
 
@@ -148,6 +161,11 @@ export async function createLiveComment(
 
     username:
       comment.username,
+
+    avatarUrl:
+      actor.type === "user"
+        ? actor.avatarUrl
+        : null,
 
     body:
       comment.body,

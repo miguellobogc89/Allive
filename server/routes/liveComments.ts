@@ -44,6 +44,7 @@ async function resolveActor(
         select: {
           id: true,
           username: true,
+          avatarUrl: true,
         },
       });
 
@@ -55,6 +56,7 @@ async function resolveActor(
       type: "user",
       id: user.id,
       username: user.username,
+      avatarUrl: user.avatarUrl,
     };
   }
 

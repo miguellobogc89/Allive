@@ -5,6 +5,9 @@ import {
   getParticipantRole,
   roomService,
 } from "../livekit";
+import {
+  notifyLiveStarted,
+} from "./notifications";
 
 export class ActiveLiveExistsError extends Error {
   liveId: string;
@@ -89,7 +92,14 @@ export async function reconcileActiveLives() {
       },
 
       include: {
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
       },
     });
 
@@ -249,7 +259,8 @@ export async function createLiveSession(
     placeName,
   } = body;
 
-  return prisma.liveSession.create({
+  const live =
+    await prisma.liveSession.create({
     data: {
       roomName: roomName as string,
 
@@ -289,9 +300,28 @@ export async function createLiveSession(
     },
 
     include: {
-      creator: true,
+      creator: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
     },
   });
+
+  void notifyLiveStarted(
+    live.id,
+    creatorId,
+  ).catch((error) => {
+    console.warn(
+      "No se pudieron notificar los seguidores del LIVE:",
+      error,
+    );
+  });
+
+  return live;
 }
 
 export async function updateLiveSession(
@@ -350,7 +380,14 @@ export async function updateLiveSession(
     },
 
     include: {
-      creator: true,
+      creator: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
     },
   });
 }

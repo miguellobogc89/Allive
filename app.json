@@ -47,6 +47,21 @@
           "recordAudioAndroid": true
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allive necesita acceso a tus fotos para elegir una imagen de perfil.",
+          "cameraPermission": "Allive necesita acceso a la cámara para hacer una foto de perfil.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FF3B30",
+          "defaultChannel": "allive"
+        }
+      ],
       "@livekit/react-native-expo-plugin",
       "@config-plugins/react-native-webrtc"
     ],
