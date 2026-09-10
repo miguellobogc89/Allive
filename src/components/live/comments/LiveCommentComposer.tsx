@@ -31,9 +31,11 @@ export function LiveCommentComposer({
   onChangeText,
   onSend,
 }: Props) {
-  const canSend =
-    !disabled &&
+  const hasText =
     value.trim().length > 0;
+
+  const canSend =
+    !disabled && hasText;
 
   return (
     <View style={styles.container}>
@@ -46,7 +48,11 @@ export function LiveCommentComposer({
         }
         editable={!disabled}
         maxLength={280}
-        returnKeyType="send"
+        returnKeyType={
+          hasText
+            ? "send"
+            : "default"
+        }
         onSubmitEditing={() => {
           if (canSend) {
             onSend();
@@ -55,22 +61,35 @@ export function LiveCommentComposer({
         style={styles.input}
       />
 
-      <Pressable
-        style={[
-          styles.sendButton,
-          !canSend
-            ? styles.sendButtonDisabled
-            : null,
-        ]}
-        disabled={!canSend}
-        onPress={onSend}
-      >
-        <Ionicons
-          name="arrow-up"
-          size={iconSizes.md}
-          color={colors.background}
-        />
-      </Pressable>
+      {hasText ? (
+        <Pressable
+          style={[
+            styles.sendButton,
+            disabled
+              ? styles.disabled
+              : null,
+          ]}
+          disabled={!canSend}
+          onPress={onSend}
+        >
+          <Ionicons
+            name="arrow-up"
+            size={iconSizes.md}
+            color="#FFFFFF"
+          />
+        </Pressable>
+      ) : (
+        <Pressable
+          style={styles.reactionButton}
+          disabled={disabled}
+        >
+          <Ionicons
+            name="happy-outline"
+            size={24}
+            color="#FFFFFF"
+          />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -78,33 +97,55 @@ export function LiveCommentComposer({
 const styles = StyleSheet.create({
   container: {
     height: 48,
+
     flexDirection: "row",
     alignItems: "center",
+
     gap: spacing.xs,
+
     paddingLeft: spacing.md,
     paddingRight: spacing.xs,
+
     borderRadius: radius.round,
-    backgroundColor: colors.overlayStrong,
-    borderWidth: 1,
-    borderColor: colors.borderOnOverlaySubtle,
+
+    backgroundColor:
+      colors.overlayStrong,
+
+    borderWidth: 0,
   },
 
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 13,
-  },
+input: {
+  flex: 1,
+
+  color: colors.text,
+  fontSize: 13,
+
+  borderWidth: 0,
+  outlineWidth: 0,
+},
 
   sendButton: {
     width: 36,
     height: 36,
+
     borderRadius: radius.round,
+
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.accent,
+
+    backgroundColor:
+      colors.accent,
   },
 
-  sendButtonDisabled: {
-    opacity: 0.38,
+  reactionButton: {
+    width: 36,
+    height: 36,
+
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  disabled: {
+    opacity: 0.45,
   },
 });
