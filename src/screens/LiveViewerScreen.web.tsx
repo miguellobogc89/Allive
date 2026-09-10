@@ -51,6 +51,7 @@ const REFRESH_INTERVAL_MS =
 type LiveViewerScreenProps = {
   requestedLiveId?: string | null;
   onOpenUser?: (userId: string) => void;
+  onOpenReplays?: () => void;
 };
 
 export function LiveViewerScreen({
@@ -337,10 +338,10 @@ export function LiveViewerScreen({
           totalLives={
             lives.length
           }
-          onPreviousLive={
+          onPrevious={
             goToPreviousLive
           }
-          onNextLive={
+          onNext={
             goToNextLive
           }
           onOpenUser={onOpenUser}

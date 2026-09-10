@@ -1,56 +1,46 @@
-// src/components/live/viewer/header/LiveViewerHeader.tsx
-
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+// src/components/live/replay/header/ReplayHeader.tsx
 
 import {
   Ionicons,
 } from "@expo/vector-icons";
 
 import {
-  colors,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import {
   spacing,
 } from "../../../../styles";
 
 import {
-  LiveViewerAudience,
-} from "./LiveViewerAudience";
+  LiveViewerIdentity,
+} from "../../viewer/header/LiveViewerIdentity";
+
+import type {
+  Replay,
+} from "../types";
 
 import {
-  LiveViewerIdentity,
-} from "./LiveViewerIdentity";
+  ReplayStatus,
+} from "./ReplayStatus";
 
-import type {
-  LiveAudience,
-} from "../../liveAudience";
-
-import type {
-  ActiveLive,
-} from "../../types";
-
-type Props = {
-  live: ActiveLive;
-  audience: LiveAudience;
+type ReplayHeaderProps = {
+  replay: Replay;
   followLoading?: boolean;
   isFollowing?: boolean;
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
-  onOpenReplays?: () => void;
 };
 
-export function LiveViewerHeader({
-  live,
-  audience,
+export function ReplayHeader({
+  replay,
   followLoading = false,
   isFollowing = false,
   onFollowPress,
   onOpenCreator,
-  onOpenReplays,
-}: Props) {
+}: ReplayHeaderProps) {
   return (
     <View
       style={styles.container}
@@ -60,44 +50,24 @@ export function LiveViewerHeader({
         style={styles.topBar}
         pointerEvents="box-none"
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ver replays"
-          hitSlop={6}
-          onPress={onOpenReplays}
-          style={({ pressed }) => [
-            styles.replaysBadge,
-            pressed
-              ? styles.replaysBadgePressed
-              : null,
-          ]}
-        >
+        <View style={styles.replaysBadge}>
           <Ionicons
             name="play-back"
             size={14}
             color="#FFFFFF"
           />
-
           <Text style={styles.replaysText}>
             Replays
           </Text>
-        </Pressable>
-
-        <View style={styles.liveBadge}>
-          <Text style={styles.liveText}>
-            LIVE
-          </Text>
         </View>
 
-        <View style={styles.audiencePosition}>
-          <LiveViewerAudience
-            audience={audience}
-          />
-        </View>
+        <ReplayStatus
+          endedAt={replay.endedAt}
+        />
       </View>
 
       <LiveViewerIdentity
-        live={live}
+        live={replay}
         followLoading={followLoading}
         isFollowing={isFollowing}
         onFollowPress={onFollowPress}
@@ -115,7 +85,6 @@ const styles = StyleSheet.create({
     right: spacing.md,
     zIndex: 30,
   },
-
   topBar: {
     position: "relative",
     width: "100%",
@@ -124,7 +93,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   replaysBadge: {
     position: "absolute",
     left: 0,
@@ -136,8 +104,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor:
-      "rgba(35, 39, 44, 0.92)",
+    backgroundColor: "rgba(35,39,44,0.92)",
     shadowColor: "#000000",
     shadowOffset: {
       width: 0,
@@ -147,41 +114,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-
-  replaysBadgePressed: {
-    opacity: 0.72,
-    transform: [
-      {
-        scale: 0.97,
-      },
-    ],
-  },
-
   replaysText: {
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "600",
-  },
-
-  liveBadge: {
-    height: 30,
-    paddingHorizontal: 13,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.live,
-  },
-
-  liveText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-
-  audiencePosition: {
-    position: "absolute",
-    right: 0,
-    top: 0,
   },
 });

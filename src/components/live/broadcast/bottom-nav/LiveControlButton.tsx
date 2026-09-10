@@ -1,15 +1,30 @@
 // src/components/live/broadcast/bottom-nav/LiveControlButton.tsx
 
-import { Ionicons } from "@expo/vector-icons";
-import { ComponentProps } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
 
-type IconName = ComponentProps<typeof Ionicons>["name"];
+import type {
+  ComponentProps,
+} from "react";
+
+import {
+  Pressable,
+  StyleSheet,
+} from "react-native";
+
+type IconName =
+  ComponentProps<
+    typeof Ionicons
+  >["name"];
 
 type LiveControlButtonProps = {
   icon: IconName;
+
   accessibilityLabel: string;
+
   onPress: () => void;
+
   danger?: boolean;
 };
 
@@ -21,16 +36,33 @@ export function LiveControlButton({
 }: LiveControlButtonProps) {
   return (
     <Pressable
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={
+        accessibilityLabel
+      }
       accessibilityRole="button"
+      hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        danger && styles.danger,
-        pressed && styles.pressed,
+
+        danger
+          ? styles.danger
+          : null,
+
+        pressed
+          ? styles.pressed
+          : null,
       ]}
     >
-      <Ionicons name={icon} size={20} color="#FFFFFF" />
+      <Ionicons
+        name={icon}
+        size={21}
+        color={
+          danger
+            ? "#FF5A6B"
+            : "#FFFFFF"
+        }
+      />
     </Pressable>
   );
 }
@@ -39,18 +71,35 @@ const styles = StyleSheet.create({
   button: {
     width: 46,
     height: 46,
+
     borderRadius: 23,
+
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(32,32,32,0.72)",
+
+    backgroundColor:
+      "rgba(0,0,0,0.38)",
+
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.055)",
+    borderColor:
+      "rgba(255,255,255,0.38)",
   },
+
   danger: {
-    backgroundColor: "rgba(105,22,29,0.72)",
+    backgroundColor:
+      "rgba(0,0,0,0.38)",
+
+    borderColor:
+      "rgba(255,90,107,0.65)",
   },
+
   pressed: {
     opacity: 0.72,
-    transform: [{ scale: 0.94 }],
+
+    transform: [
+      {
+        scale: 0.94,
+      },
+    ],
   },
-});
+}); 

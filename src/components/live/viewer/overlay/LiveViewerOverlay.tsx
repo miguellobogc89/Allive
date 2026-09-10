@@ -69,6 +69,8 @@ type Props = {
   currentIndex: number;
   totalLives: number;
 
+  onOpenReplays?: () => void;
+
   onPrevious: () => void;
   onNext: () => void;
 
@@ -85,6 +87,7 @@ export function LiveViewerOverlay({
   authToken,
   currentIndex,
   totalLives,
+  onOpenReplays,
   onPrevious,
   onNext,
   onOpenUser,
@@ -175,6 +178,7 @@ export function LiveViewerOverlay({
               }
             : undefined
         }
+        onOpenReplays={onOpenReplays}
       />
 
       <LiveTimedCommentsLayer

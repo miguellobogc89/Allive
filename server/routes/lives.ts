@@ -133,6 +133,30 @@ if (!id) {
     }
   });
 
+
+  // server/routes/lives.ts
+
+// Obtener LIVE activos
+app.get("/api/lives/active", async (_req, res) => {
+  // ...lo que ya tienes
+});
+
+
+// AQUÍ PEGAS TODO EL BLOQUE NUEVO
+app.get(
+  "/api/lives/replays",
+  async (_req, res) => {
+    // ...
+  },
+);
+
+
+// Finalizar LIVE
+app.patch(
+  "/api/lives/:id/end",
+  // ...
+);
+
   /*
    * Finalizar LIVE.
    */

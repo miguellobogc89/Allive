@@ -1,5 +1,6 @@
 // src/components/live/broadcast/overlay/LiveBroadcastOverlay.tsx
 
+import { LinearGradient } from "expo-linear-gradient";
 import { useRef, useState } from "react";
 import {
   Animated,
@@ -150,12 +151,33 @@ export function LiveBroadcastOverlay({
       pointerEvents="box-none"
       style={styles.overlay}
     >
+      {isLive ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[
+            "rgba(0,0,0,0)",
+            "rgba(0,0,0,0.08)",
+            "rgba(0,0,0,0.22)",
+            "rgba(0,0,0,0.48)",
+          ]}
+          locations={[
+            0,
+            0.35,
+            0.7,
+            1,
+          ]}
+          style={styles.bottomGradient}
+        />
+      ) : null}
+
       <Pressable
         style={StyleSheet.absoluteFill}
         onPress={handleBackgroundPress}
       />
 
-      <LiveBroadcastError message={error} />
+      <LiveBroadcastError
+        message={error}
+      />
 
       <LiveTimedCommentsLayer
         comments={comments}
@@ -169,7 +191,11 @@ export function LiveBroadcastOverlay({
             styles.controlsLayer,
             {
               opacity,
-              transform: [{ translateY }],
+              transform: [
+                {
+                  translateY,
+                },
+              ],
             },
           ]}
         >
@@ -177,16 +203,21 @@ export function LiveBroadcastOverlay({
             isLive={isLive}
             viewers={viewers}
             likes={likes}
-            onFinishLive={onFinishLive}
+            onFinishLive={
+              onFinishLive
+            }
           />
 
           {isLive &&
-          (title.trim() || locationName) ? (
+          (eventName.trim() ||
+            title.trim() ||
+            locationName) ? (
             <View
               pointerEvents="none"
               style={styles.topMetadata}
             >
               <LiveBroadcastMetadata
+                eventName={eventName}
                 title={title}
                 location={locationName}
               />
@@ -196,23 +227,36 @@ export function LiveBroadcastOverlay({
           {isLive ? (
             <LiveBroadcastBottomNav
               isLive={isLive}
-              isConnecting={isConnecting}
-              cameraReady={cameraReady}
+              isConnecting={
+                isConnecting
+              }
+              cameraReady={
+                cameraReady
+              }
               microphoneEnabled={
                 microphoneEnabled
               }
-              onOpenMetadata={openMetadata}
+              onOpenMetadata={
+                openMetadata
+              }
               onToggleMicrophone={
-                onToggleMicrophone ?? (() => {})
+                onToggleMicrophone ??
+                (() => {})
               }
               onOpenFilters={
-                onOpenFilters ?? (() => {})
+                onOpenFilters ??
+                (() => {})
               }
               onSwitchCamera={
-                onSwitchCamera ?? (() => {})
+                onSwitchCamera ??
+                (() => {})
               }
-              onStartLive={onStartLive}
-              onFinishLive={onFinishLive}
+              onStartLive={
+                onStartLive
+              }
+              onFinishLive={
+                onFinishLive
+              }
             />
           ) : null}
         </Animated.View>
@@ -223,13 +267,19 @@ export function LiveBroadcastOverlay({
         title={title}
         eventName={eventName}
         onChangeTitle={
-          onChangeTitle ?? (() => {})
+          onChangeTitle ??
+          (() => {})
         }
         onChangeEventName={
-          onChangeEventName ?? (() => {})
+          onChangeEventName ??
+          (() => {})
         }
-        onCancel={() => closeMetadata(false)}
-        onSave={() => closeMetadata(true)}
+        onCancel={() =>
+          closeMetadata(false)
+        }
+        onSave={() =>
+          closeMetadata(true)
+        }
       />
     </View>
   );
@@ -241,16 +291,29 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
+  bottomGradient: {
+    position: "absolute",
+
+    left: 0,
+    right: 0,
+    bottom: 0,
+
+    height: 190,
+  },
+
   controlsLayer: {
     ...StyleSheet.absoluteFill,
+
     justifyContent: "flex-end",
   },
 
   topMetadata: {
     position: "absolute",
+
     top: 70,
     left: 18,
     right: 96,
+
     zIndex: 24,
   },
 });

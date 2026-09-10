@@ -6,10 +6,17 @@ import {
   View,
 } from "react-native";
 
-import { FinishLiveButton } from "./FinishLiveButton";
-import { LivePulse } from "./LivePulse";
-import { LiveStats } from "./LiveStats";
-import { LiveTimer } from "./LiveTimer";
+import {
+  LivePulse,
+} from "./LivePulse";
+
+import {
+  LiveStats,
+} from "./LiveStats";
+
+import {
+  LiveTimer,
+} from "./LiveTimer";
 
 type LiveBroadcastHeaderProps = {
   isLive: boolean;
@@ -22,7 +29,6 @@ export function LiveBroadcastHeader({
   isLive,
   viewers,
   likes,
-  onFinishLive,
 }: LiveBroadcastHeaderProps) {
   if (!isLive) {
     return null;
@@ -33,29 +39,24 @@ export function LiveBroadcastHeader({
       pointerEvents="box-none"
       style={styles.container}
     >
-      <View style={styles.livePill}>
-        <LivePulse />
-        <Text style={styles.liveLabel}>
-          LIVE
-        </Text>
-        <LiveTimer />
+      <View style={styles.liveStatus}>
+        <View style={styles.liveSection}>
+          <LivePulse />
+
+          <Text style={styles.liveLabel}>
+            LIVE
+          </Text>
+        </View>
+
+        <View style={styles.timerSection}>
+          <LiveTimer />
+        </View>
       </View>
 
-      <View
-        pointerEvents="none"
-        style={styles.centerStats}
-      >
-        <LiveStats
-          viewers={viewers}
-          likes={likes}
-        />
-      </View>
-
-      <View style={styles.finish}>
-        <FinishLiveButton
-          onPress={onFinishLive}
-        />
-      </View>
+      <LiveStats
+        viewers={viewers}
+        likes={likes}
+      />
     </View>
   );
 }
@@ -63,47 +64,61 @@ export function LiveBroadcastHeader({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 16,
+
+    top: 14,
     left: 18,
     right: 18,
-    zIndex: 25,
 
-    height: 46,
+    height: 38,
 
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+
+    zIndex: 25,
   },
 
-  livePill: {
-    height: 38,
-    paddingHorizontal: 13,
-    borderRadius: 19,
+  liveStatus: {
+    height: 36,
+
+    flexDirection: "row",
+    alignItems: "stretch",
+
+    borderRadius: 10,
+    overflow: "hidden",
+
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.18)",
+  },
+
+  liveSection: {
+    paddingHorizontal: 11,
 
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
+
+    gap: 6,
 
     backgroundColor: "#FF3048",
   },
 
   liveLabel: {
     color: "#FFFFFF",
+
     fontSize: 12,
     fontWeight: "900",
+
     letterSpacing: 0.4,
   },
 
-  centerStats: {
-    position: "absolute",
-    left: 0,
-    right: 0,
+  timerSection: {
+    paddingHorizontal: 11,
 
     alignItems: "center",
     justifyContent: "center",
 
-  },
-
-  finish: {
-    marginLeft: "auto",
+    backgroundColor:
+      "rgba(30,30,30,0.68)",
   },
 });

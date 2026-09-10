@@ -1,22 +1,37 @@
 // src/components/live/broadcast/bottom-nav/LiveBroadcastBottomNav.tsx
 
-import { LinearGradient } from "expo-linear-gradient";
 import {
   StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
 
-import { CameraSwitchControl } from "./CameraSwitchControl";
-import { FiltersControl } from "./FiltersControl";
-import { MicrophoneControl } from "./MicrophoneControl";
-import { MoreControl } from "./MoreControl";
+import {
+  CameraSwitchControl,
+} from "./CameraSwitchControl";
+
+import {
+  FiltersControl,
+} from "./FiltersControl";
+
+import {
+  MicrophoneControl,
+} from "./MicrophoneControl";
+
+import {
+  MoreControl,
+} from "./MoreControl";
+
+import {
+  StopLiveControl,
+} from "./StopLiveControl";
 
 type LiveBroadcastBottomNavProps = {
   isLive: boolean;
   isConnecting: boolean;
   cameraReady: boolean;
   microphoneEnabled: boolean;
+
   onOpenMetadata: () => void;
   onToggleMicrophone: () => void;
   onOpenFilters: () => void;
@@ -28,49 +43,66 @@ type LiveBroadcastBottomNavProps = {
 export function LiveBroadcastBottomNav(
   props: LiveBroadcastBottomNavProps,
 ) {
-  const { width, height } = useWindowDimensions();
-  const landscape = width > height;
+  const {
+    width,
+    height,
+  } = useWindowDimensions();
+
+  const landscape =
+    width > height;
 
   return (
     <View
       pointerEvents="box-none"
       style={[
         styles.root,
-        landscape ? styles.rootLandscape : styles.rootPortrait,
+
+        landscape
+          ? styles.rootLandscape
+          : styles.rootPortrait,
       ]}
     >
-      <LinearGradient
-        pointerEvents="none"
-        colors={[
-          "rgba(0,0,0,0)",
-          "rgba(0,0,0,0.16)",
-          "rgba(0,0,0,0.62)",
-          "rgba(0,0,0,0.94)",
-        ]}
-        locations={[0, 0.30, 0.70, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
       <View
         style={[
           styles.controls,
+
           landscape
             ? styles.controlsLandscape
             : styles.controlsPortrait,
         ]}
       >
-        <MoreControl onPress={props.onOpenMetadata} />
-
-        <MicrophoneControl
-          enabled={props.microphoneEnabled}
-          onPress={props.onToggleMicrophone}
+        <MoreControl
+          onPress={
+            props.onOpenMetadata
+          }
         />
 
-        <FiltersControl onPress={props.onOpenFilters} />
+        <MicrophoneControl
+          enabled={
+            props.microphoneEnabled
+          }
+          onPress={
+            props.onToggleMicrophone
+          }
+        />
 
-        <CameraSwitchControl onPress={props.onSwitchCamera} />
+        <StopLiveControl
+          onPress={
+            props.onFinishLive
+          }
+        />
+
+        <FiltersControl
+          onPress={
+            props.onOpenFilters
+          }
+        />
+
+        <CameraSwitchControl
+          onPress={
+            props.onSwitchCamera
+          }
+        />
       </View>
     </View>
   );
@@ -79,19 +111,22 @@ export function LiveBroadcastBottomNav(
 const styles = StyleSheet.create({
   root: {
     position: "absolute",
+
     left: 0,
     right: 0,
     bottom: 0,
+
     zIndex: 20,
+
     justifyContent: "flex-end",
   },
 
   rootPortrait: {
-    height: 150,
+    height: 104,
   },
 
   rootLandscape: {
-    height: 118,
+    height: 94,
   },
 
   controls: {
@@ -101,18 +136,27 @@ const styles = StyleSheet.create({
 
   controlsPortrait: {
     width: "100%",
-    minHeight: 82,
-    paddingHorizontal: 20,
+
+    minHeight: 86,
+
+    paddingHorizontal: 18,
     paddingBottom: 18,
-    justifyContent: "space-around",
+
+    justifyContent:
+      "space-around",
   },
 
   controlsLandscape: {
-    width: "50%",
+    width: "55%",
+
     minHeight: 82,
-    marginLeft: "50%",
-    paddingHorizontal: 22,
+
+    marginLeft: "45%",
+
+    paddingHorizontal: 20,
     paddingBottom: 14,
-    justifyContent: "space-around",
+
+    justifyContent:
+      "space-around",
   },
 });
