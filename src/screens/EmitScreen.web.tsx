@@ -6,11 +6,10 @@ import { StyleSheet, View } from "react-native";
 import { Room, RoomEvent } from "livekit-client";
 import { useAuth } from "../auth/AuthContext";
 
-import { LiveBroadcastControls } from "../components/live/LiveBroadcastControls";
-import { LiveBroadcastError } from "../components/live/LiveBroadcastError";
-import { LiveBroadcastHeader } from "../components/live/LiveBroadcastHeader";
-import { LiveBroadcastMetadataPanel } from "../components/live/LiveBroadcastMetadataPanel";
-import { LiveBroadcastSurface } from "../components/live/LiveBroadcastSurface.web";
+import {
+  LiveBroadcastOverlay,
+  LiveBroadcastSurface,
+} from "../components/live/broadcast";
 import {
   startLiveThumbnailCapture,
   type LiveThumbnailCaptureController,
@@ -55,17 +54,13 @@ export function EmitScreen() {
   const [isLive, setIsLive] = useState(false);
   const [liveRoomName, setLiveRoomName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [eventName, setEventName] = useState("");
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(false);
+  const [title] = useState("");
+  const [eventName] = useState("");
 
-  const { location, locationStatus } = useBroadcastLocation();
+  const { location } = useBroadcastLocation();
 
   const {
     viewers,
-    viewerDelta,
-    viewerAnimations,
     resetViewerCounter,
     updateViewerCount,
   } = useViewerCounter();
@@ -107,10 +102,7 @@ export function EmitScreen() {
 
         setCameraReady(true);
       } catch (caughtError) {
-        console.error(
-          "Error preparando preview:",
-          caughtError,
-        );
+        console.error("Error preparando preview:", caughtError);
 
         setCameraError(
           "No se ha podido acceder a la cámara o al micrófono.",
@@ -299,10 +291,6 @@ export function EmitScreen() {
         authToken,
       );
 
-      /*
-       * Liberamos Camo/getUserMedia antes de
-       * pedir la cámara desde LiveKit.
-       */
       clearPreview();
       setCameraReady(false);
 
@@ -349,9 +337,6 @@ export function EmitScreen() {
         roomName,
       );
 
-      /*
-       * Publicamos cámara y micrófono.
-       */
       await room.localParticipant.setCameraEnabled(
         true,
       );
@@ -377,10 +362,6 @@ export function EmitScreen() {
           localVideoRef.current,
         );
 
-      /*
-       * Solo registramos en Neon cuando LiveKit
-       * ya está conectado y publicando.
-       */
       liveSessionIdRef.current =
         await registerLiveInBackend(
           roomName,
@@ -392,11 +373,6 @@ export function EmitScreen() {
           authToken,
         );
 
-      /*
-       * Iniciamos el sistema independiente de thumbnails
-       * cuando ya existen tanto el LIVE en Neon como
-       * el elemento de vídeo real del broadcaster.
-       */
       const liveSessionId =
         liveSessionIdRef.current;
 
@@ -430,6 +406,12 @@ export function EmitScreen() {
       setCameraReady(true);
       setIsLive(true);
 
+      /*
+       * Conservamos el flujo de metadatos del LIVE aunque
+       * la nueva UI todavía no exponga su edición.
+       */
+      void saveLiveMetadata(title, eventName);
+
       console.log(
         "Allive LIVE iniciado correctamente:",
         roomName,
@@ -446,16 +428,8 @@ export function EmitScreen() {
           : "No se ha podido iniciar el LIVE.",
       );
 
-      /*
-       * Detenemos primero cualquier captura pendiente
-       * antes de destruir el vídeo o cerrar el LIVE.
-       */
       stopThumbnailCapture();
 
-      /*
-       * Si llegamos a registrar en Neon antes
-       * de algún fallo posterior, lo limpiamos.
-       */
       try {
         await endRegisteredLive();
       } catch (backendError) {
@@ -501,10 +475,6 @@ export function EmitScreen() {
 
     setError(null);
 
-    /*
-     * Primero paramos el temporizador para impedir
-     * una nueva subida mientras cerramos el LIVE.
-     */
     stopThumbnailCapture();
 
     try {
@@ -548,33 +518,7 @@ export function EmitScreen() {
 
     resetViewerCounter();
 
-    /*
-     * Al terminar volvemos al estado LISTO:
-     * cámara visible, pero sin emitir.
-     */
     await restorePreview();
-  }
-
-  function saveTitle() {
-    setEditingTitle(false);
-
-    if (isLive) {
-      void saveLiveMetadata(
-        title,
-        eventName,
-      );
-    }
-  }
-
-  function saveEvent() {
-    setEditingEvent(false);
-
-    if (isLive) {
-      void saveLiveMetadata(
-        title,
-        eventName,
-      );
-    }
   }
 
   return (
@@ -585,49 +529,12 @@ export function EmitScreen() {
         cameraError={cameraError}
       />
 
-      <LiveBroadcastHeader
-        isLive={isLive}
-        viewers={viewers}
-        viewerDelta={viewerDelta}
-        badgeScale={
-          viewerAnimations.badgeScale
-        }
-        deltaOpacity={
-          viewerAnimations.deltaOpacity
-        }
-        deltaTranslateY={
-          viewerAnimations.deltaTranslateY
-        }
-      />
-
-      <LiveBroadcastMetadataPanel
-        title={title}
-        eventName={eventName}
-        editingTitle={editingTitle}
-        editingEvent={editingEvent}
-        location={location}
-        locationStatus={locationStatus}
-        onChangeTitle={setTitle}
-        onChangeEventName={setEventName}
-        onEditTitle={() =>
-          setEditingTitle(true)
-        }
-        onEditEvent={() =>
-          setEditingEvent(true)
-        }
-        onSaveTitle={saveTitle}
-        onSaveEvent={saveEvent}
-      />
-
-      <LiveBroadcastError
-        message={error}
-      />
-
-      <LiveBroadcastControls
+      <LiveBroadcastOverlay
         isLive={isLive}
         isConnecting={isConnecting}
         cameraReady={cameraReady}
-        liveRoomName={liveRoomName}
+        viewers={viewers}
+        error={error}
         onStartLive={startLive}
         onFinishLive={finishLive}
       />
@@ -638,6 +545,7 @@ export function EmitScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    position: "relative",
     backgroundColor:
       colors.cameraBackground,
   },
