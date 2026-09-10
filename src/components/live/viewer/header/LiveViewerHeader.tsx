@@ -31,15 +31,15 @@ import type {
   ActiveLive,
 } from "../../types";
 
+// src/components/live/viewer/header/LiveViewerHeader.tsx
+
 type Props = {
   live: ActiveLive;
   audience: LiveAudience;
-  audienceOpen: boolean;
   followLoading?: boolean;
   isFollowing?: boolean;
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
-  onAudienceToggle: () => void;
 };
 
 export function LiveViewerHeader({
