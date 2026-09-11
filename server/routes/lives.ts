@@ -14,6 +14,11 @@ import {
 } from "../db";
 
 import {
+  startLiveRecording,
+  stopLiveRecording,
+} from "../services/liveRecordingService";
+
+import {
   ActiveLiveExistsError,
   createLiveSession,
   endLiveSession,
@@ -341,6 +346,203 @@ export function registerLiveRoutes(
           .json({
             error:
               "No se pudieron obtener los replays",
+          });
+      }
+    },
+  );
+
+    /*
+   * Iniciar grabación de un LIVE.
+   */
+  app.post(
+    "/api/lives/:id/recording/start",
+    requireAuth,
+    async (
+      req: AuthenticatedRequest,
+      res,
+    ) => {
+      try {
+        const idParam =
+          req.params.id;
+
+        const id =
+          Array.isArray(
+            idParam,
+          )
+            ? idParam[0]
+            : idParam;
+
+        if (!id) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "ID de emisión inválido",
+            });
+        }
+
+        const live =
+          await prisma.liveSession.findUnique(
+            {
+              where: {
+                id,
+              },
+            },
+          );
+
+        if (!live) {
+          return res
+            .status(404)
+            .json({
+              error:
+                "Emisión no encontrada",
+            });
+        }
+
+        if (
+          live.creatorId !==
+          req.authUser!.id
+        ) {
+          return res
+            .status(403)
+            .json({
+              error:
+                "No puedes grabar esta emisión",
+            });
+        }
+
+        if (
+          live.status !==
+          "LIVE"
+        ) {
+          return res
+            .status(409)
+            .json({
+              error:
+                "La emisión ya ha terminado",
+            });
+        }
+
+        const recording =
+          await startLiveRecording(
+            live.roomName,
+            live.id,
+          );
+
+        return res
+          .status(201)
+          .json(recording);
+      } catch (error) {
+        console.error(
+          "Error iniciando grabación:",
+          error,
+        );
+
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudo iniciar la grabación",
+          });
+      }
+    },
+  );
+
+  /*
+   * Detener grabación de un LIVE.
+   */
+  app.post(
+    "/api/lives/:id/recording/stop",
+    requireAuth,
+    async (
+      req: AuthenticatedRequest,
+      res,
+    ) => {
+      try {
+        const idParam =
+          req.params.id;
+
+        const id =
+          Array.isArray(
+            idParam,
+          )
+            ? idParam[0]
+            : idParam;
+
+        const {
+          egressId,
+        } = req.body;
+
+        if (!id) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "ID de emisión inválido",
+            });
+        }
+
+        if (
+          !egressId ||
+          typeof egressId !==
+            "string"
+        ) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "egressId es obligatorio",
+            });
+        }
+
+        const live =
+          await prisma.liveSession.findUnique(
+            {
+              where: {
+                id,
+              },
+            },
+          );
+
+        if (!live) {
+          return res
+            .status(404)
+            .json({
+              error:
+                "Emisión no encontrada",
+            });
+        }
+
+        if (
+          live.creatorId !==
+          req.authUser!.id
+        ) {
+          return res
+            .status(403)
+            .json({
+              error:
+                "No puedes detener esta grabación",
+            });
+        }
+
+        await stopLiveRecording(
+          egressId,
+        );
+
+        return res.json({
+          ok: true,
+        });
+      } catch (error) {
+        console.error(
+          "Error deteniendo grabación:",
+          error,
+        );
+
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudo detener la grabación",
           });
       }
     },

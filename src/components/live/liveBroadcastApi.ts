@@ -139,3 +139,88 @@ export async function markLiveAsEnded(
     );
   }
 }
+
+export type LiveRecordingResponse = {
+  egressId: string;
+  key: string;
+  url: string;
+};
+
+export async function startLiveRecording(
+  liveSessionId: string,
+  authToken: string,
+): Promise<LiveRecordingResponse> {
+  const response = await fetch(
+    `${API_URL}/api/lives/${liveSessionId}/recording/start`,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bearer ${authToken}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const responseBody =
+      await response
+        .json()
+        .catch(() => null);
+
+    throw new Error(
+      responseBody?.error ??
+        `No se pudo iniciar la grabación (${response.status})`,
+    );
+  }
+
+  const recording =
+    await response.json();
+
+  if (
+    !recording?.egressId ||
+    !recording?.url
+  ) {
+    throw new Error(
+      "La API devolvió una grabación inválida.",
+    );
+  }
+
+  return recording as LiveRecordingResponse;
+}
+
+export async function stopLiveRecording(
+  liveSessionId: string,
+  egressId: string,
+  authToken: string,
+) {
+  const response = await fetch(
+    `${API_URL}/api/lives/${liveSessionId}/recording/stop`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        Authorization:
+          `Bearer ${authToken}`,
+      },
+
+      body: JSON.stringify({
+        egressId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const responseBody =
+      await response
+        .json()
+        .catch(() => null);
+
+    throw new Error(
+      responseBody?.error ??
+        `No se pudo detener la grabación (${response.status})`,
+    );
+  }
+}

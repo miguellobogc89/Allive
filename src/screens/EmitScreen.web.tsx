@@ -49,6 +49,8 @@ import {
   getBroadcasterToken,
   markLiveAsEnded,
   registerLiveInBackend,
+  startLiveRecording,
+  stopLiveRecording,
   updateLiveMetadata,
 } from "../components/live/liveBroadcastApi";
 
@@ -108,6 +110,9 @@ export function EmitScreen({
 
   const liveSessionIdRef =
     useRef<string | null>(null);
+
+    const recordingEgressIdRef =
+  useRef<string | null>(null);
 
   const thumbnailCaptureRef =
     useRef<LiveThumbnailCaptureController | null>(
@@ -591,6 +596,20 @@ export function EmitScreen({
         registeredLiveSessionId,
       );
 
+      const recording =
+  await startLiveRecording(
+    registeredLiveSessionId,
+    authToken,
+  );
+
+recordingEgressIdRef.current =
+  recording.egressId;
+
+console.log(
+  "Grabación LIVE iniciada:",
+  recording,
+);
+
       const liveSessionId =
         liveSessionIdRef.current;
 
@@ -610,6 +629,39 @@ export function EmitScreen({
           );
 
         stopThumbnailCapture();
+
+        const currentLiveSessionId =
+  liveSessionIdRef.current;
+
+const recordingEgressId =
+  recordingEgressIdRef.current;
+
+if (
+  currentLiveSessionId &&
+  recordingEgressId &&
+  token
+) {
+  try {
+    await stopLiveRecording(
+      currentLiveSessionId,
+      recordingEgressId,
+      token,
+    );
+
+    console.log(
+      "Grabación LIVE detenida:",
+      recordingEgressId,
+    );
+  } catch (caughtError) {
+    console.error(
+      "No se pudo detener la grabación:",
+      caughtError,
+    );
+  }
+}
+
+recordingEgressIdRef.current =
+  null;
 
         thumbnailCaptureRef.current =
           startLiveThumbnailCapture({
