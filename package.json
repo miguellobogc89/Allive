@@ -35,6 +35,7 @@
     "expo-linear-gradient": "~57.0.1",
     "expo-notifications": "~57.0.17",
     "expo-status-bar": "~57.0.1",
+    "expo-video": "~57.0.3",
     "express": "^5.2.1",
     "jose": "^6.2.12",
     "livekit-client": "^2.22.3",
