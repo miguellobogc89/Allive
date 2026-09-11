@@ -16,10 +16,6 @@ import {
 } from "livekit-client";
 
 import {
-  LiveFinishModal,
-} from "../components/live/broadcast/finish";
-
-import {
   subscribeToLiveMetrics,
 } from "../api/liveRealtimeApi";
 
@@ -32,18 +28,13 @@ import {
   LiveBroadcastSurface,
 } from "../components/live/broadcast";
 
+import {
+  LiveFinishModal,
+} from "../components/live/broadcast/finish";
+
 import type {
   LiveCommentModel,
 } from "../components/live/comments/liveCommentTypes";
-
-import {
-  parseLiveRealtimeMessage,
-} from "../components/live/liveRealtime";
-
-import {
-  startLiveThumbnailCapture,
-  type LiveThumbnailCaptureController,
-} from "../components/live/thumbnail";
 
 import {
   getBroadcasterToken,
@@ -55,12 +46,21 @@ import {
 } from "../components/live/liveBroadcastApi";
 
 import {
+  parseLiveRealtimeMessage,
+} from "../components/live/liveRealtime";
+
+import {
   attachLiveCamera,
   attachPreviewStream,
   detachLiveVideo,
   getAttachedVideoTrack,
   stopPreviewStream,
 } from "../components/live/liveBroadcastVideo.web";
+
+import {
+  startLiveThumbnailCapture,
+  type LiveThumbnailCaptureController,
+} from "../components/live/thumbnail";
 
 import {
   useBroadcastLocation,
@@ -84,6 +84,7 @@ type EmitScreenProps = {
     isConnecting: boolean;
     cameraReady: boolean;
   }) => void;
+
   onStartLiveReady?: (
     startLive: (() => void) | null,
   ) => void;
@@ -111,8 +112,8 @@ export function EmitScreen({
   const liveSessionIdRef =
     useRef<string | null>(null);
 
-    const recordingEgressIdRef =
-  useRef<string | null>(null);
+  const recordingEgressIdRef =
+    useRef<string | null>(null);
 
   const thumbnailCaptureRef =
     useRef<LiveThumbnailCaptureController | null>(
@@ -142,9 +143,9 @@ export function EmitScreen({
   ] = useState(false);
 
   const [
-  finishModalVisible,
-  setFinishModalVisible,
-] = useState(false);
+    finishModalVisible,
+    setFinishModalVisible,
+  ] = useState(false);
 
   const [
     liveRoomName,
@@ -165,6 +166,7 @@ export function EmitScreen({
     title,
     setTitle,
   ] = useState("");
+
   const [
     eventName,
     setEventName,
@@ -175,8 +177,10 @@ export function EmitScreen({
     setComments,
   ] = useState<LiveCommentModel[]>([]);
 
-  const [likes, setLikes] =
-    useState(0);
+  const [
+    likes,
+    setLikes,
+  ] = useState(0);
 
   const { location } =
     useBroadcastLocation();
@@ -250,7 +254,8 @@ export function EmitScreen({
 
         if (
           !navigator.mediaDevices ||
-          !navigator.mediaDevices.getUserMedia
+          !navigator.mediaDevices
+            .getUserMedia
         ) {
           throw new Error(
             "El navegador no permite acceder a la cámara.",
@@ -258,20 +263,24 @@ export function EmitScreen({
         }
 
         const stream =
-          await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
+          await navigator.mediaDevices
+            .getUserMedia({
+              video: true,
+              audio: true,
+            });
 
         if (cancelled) {
           stream
             .getTracks()
-            .forEach((track) => track.stop());
+            .forEach((track) => {
+              track.stop();
+            });
 
           return;
         }
 
-        previewStreamRef.current = stream;
+        previewStreamRef.current =
+          stream;
 
         if (localVideoRef.current) {
           previewVideoElementRef.current =
@@ -294,7 +303,7 @@ export function EmitScreen({
       }
     }
 
-    preparePreview();
+    void preparePreview();
 
     return () => {
       cancelled = true;
@@ -315,7 +324,8 @@ export function EmitScreen({
     );
 
     previewStreamRef.current = null;
-    previewVideoElementRef.current = null;
+    previewVideoElementRef.current =
+      null;
   }
 
   function clearLiveVideo() {
@@ -323,18 +333,22 @@ export function EmitScreen({
       liveVideoElementRef.current,
     );
 
-    liveVideoElementRef.current = null;
+    liveVideoElementRef.current =
+      null;
   }
 
   function stopThumbnailCapture() {
     thumbnailCaptureRef.current?.stop();
-    thumbnailCaptureRef.current = null;
+
+    thumbnailCaptureRef.current =
+      null;
   }
 
   async function restorePreview() {
     if (
       !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
+      !navigator.mediaDevices
+        .getUserMedia
     ) {
       setCameraReady(false);
       return;
@@ -342,12 +356,14 @@ export function EmitScreen({
 
     try {
       const stream =
-        await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
+        await navigator.mediaDevices
+          .getUserMedia({
+            video: true,
+            audio: true,
+          });
 
-      previewStreamRef.current = stream;
+      previewStreamRef.current =
+        stream;
 
       if (localVideoRef.current) {
         previewVideoElementRef.current =
@@ -374,12 +390,12 @@ export function EmitScreen({
   }
 
   async function endRegisteredLive() {
-    const liveSessionId =
+    const currentLiveSessionId =
       liveSessionIdRef.current;
 
     const authToken = token;
 
-    if (!liveSessionId) {
+    if (!currentLiveSessionId) {
       return;
     }
 
@@ -390,23 +406,63 @@ export function EmitScreen({
     }
 
     await markLiveAsEnded(
-      liveSessionId,
+      currentLiveSessionId,
       authToken,
     );
 
-    liveSessionIdRef.current = null;
+    liveSessionIdRef.current =
+      null;
+  }
+
+  async function stopCurrentRecording() {
+    const currentLiveSessionId =
+      liveSessionIdRef.current;
+
+    const recordingEgressId =
+      recordingEgressIdRef.current;
+
+    const authToken = token;
+
+    if (
+      !currentLiveSessionId ||
+      !recordingEgressId ||
+      !authToken
+    ) {
+      return;
+    }
+
+    try {
+      await stopLiveRecording(
+        currentLiveSessionId,
+        recordingEgressId,
+        authToken,
+      );
+
+      console.log(
+        "Grabación LIVE detenida:",
+        recordingEgressId,
+      );
+    } catch (caughtError) {
+      console.error(
+        "No se pudo detener la grabación:",
+        caughtError,
+      );
+    } finally {
+      recordingEgressIdRef.current =
+        null;
+    }
   }
 
   async function saveLiveMetadata(
     nextTitle: string,
     nextEventName: string,
   ) {
-    const liveSessionId =
+    const currentLiveSessionId =
       liveSessionIdRef.current;
 
     const authToken = token;
 
-    if (!liveSessionId) {
+    if (!currentLiveSessionId) {
       return;
     }
 
@@ -420,7 +476,7 @@ export function EmitScreen({
 
     try {
       await updateLiveMetadata(
-        liveSessionId,
+        currentLiveSessionId,
         {
           title: nextTitle,
           eventName: nextEventName,
@@ -440,7 +496,10 @@ export function EmitScreen({
   }
 
   async function startLive() {
-    if (isConnecting || isLive) {
+    if (
+      isConnecting ||
+      isLive
+    ) {
       return;
     }
 
@@ -504,11 +563,14 @@ export function EmitScreen({
         payload: Uint8Array,
       ) => {
         const message =
-          parseLiveRealtimeMessage(payload);
+          parseLiveRealtimeMessage(
+            payload,
+          );
 
         if (
           !message ||
-          message.type !== "live-comment"
+          message.type !==
+            "live-comment"
         ) {
           return;
         }
@@ -542,12 +604,14 @@ export function EmitScreen({
       );
 
       room.on(
-        RoomEvent.ParticipantAttributesChanged,
+        RoomEvent
+          .ParticipantAttributesChanged,
         updateCount,
       );
 
       room.on(
-        RoomEvent.ParticipantMetadataChanged,
+        RoomEvent
+          .ParticipantMetadataChanged,
         updateCount,
       );
 
@@ -592,28 +656,43 @@ export function EmitScreen({
 
       liveSessionIdRef.current =
         registeredLiveSessionId;
+
       setLiveSessionId(
         registeredLiveSessionId,
       );
 
-      const recording =
-  await startLiveRecording(
-    registeredLiveSessionId,
-    authToken,
-  );
+      /*
+       * La grabación no debe impedir
+       * que el LIVE arranque.
+       */
+      try {
+        const recording =
+          await startLiveRecording(
+            registeredLiveSessionId,
+            authToken,
+          );
 
-recordingEgressIdRef.current =
-  recording.egressId;
+        recordingEgressIdRef.current =
+          recording.egressId;
 
-console.log(
-  "Grabación LIVE iniciada:",
-  recording,
-);
+        console.log(
+          "Grabación LIVE iniciada:",
+          recording,
+        );
+      } catch (recordingError) {
+        recordingEgressIdRef.current =
+          null;
 
-      const liveSessionId =
+        console.error(
+          "No se pudo iniciar la grabación del LIVE:",
+          recordingError,
+        );
+      }
+
+      const currentLiveSessionId =
         liveSessionIdRef.current;
 
-      if (liveSessionId) {
+      if (currentLiveSessionId) {
         const liveVideoElement =
           liveVideoElementRef.current;
 
@@ -630,11 +709,10 @@ console.log(
 
         stopThumbnailCapture();
 
-
-
         thumbnailCaptureRef.current =
           startLiveThumbnailCapture({
-            liveSessionId,
+            liveSessionId:
+              currentLiveSessionId,
             mediaStreamTrack,
             authToken,
           });
@@ -663,38 +741,12 @@ console.log(
 
       stopThumbnailCapture();
 
-          const currentLiveSessionId =
-      liveSessionIdRef.current;
-
-    const recordingEgressId =
-      recordingEgressIdRef.current;
-
-    if (
-      currentLiveSessionId &&
-      recordingEgressId &&
-      token
-    ) {
-      try {
-        await stopLiveRecording(
-          currentLiveSessionId,
-          recordingEgressId,
-          token,
-        );
-
-        console.log(
-          "Grabación LIVE detenida:",
-          recordingEgressId,
-        );
-      } catch (caughtError) {
-        console.error(
-          "No se pudo detener la grabación:",
-          caughtError,
-        );
-      }
-    }
-
-    recordingEgressIdRef.current =
-      null;
+      /*
+       * Si el LIVE falla después
+       * de iniciar Egress, cerramos
+       * también esa grabación.
+       */
+      await stopCurrentRecording();
 
       try {
         await endRegisteredLive();
@@ -738,10 +790,7 @@ console.log(
   }
 
   async function finishLive() {
-
-    setFinishModalVisible(
-  true,
-);
+    setFinishModalVisible(true);
 
     const room =
       roomRef.current;
@@ -750,6 +799,17 @@ console.log(
 
     stopThumbnailCapture();
 
+    /*
+     * Primero finalizamos Egress
+     * mientras la sala y sus pistas
+     * siguen disponibles.
+     */
+    await stopCurrentRecording();
+
+    /*
+     * Después cerramos la sesión
+     * en nuestro backend.
+     */
     try {
       await endRegisteredLive();
     } catch (caughtError) {
@@ -762,6 +822,10 @@ console.log(
       );
     }
 
+    /*
+     * Por último apagamos las pistas
+     * y desconectamos LiveKit.
+     */
     if (room) {
       try {
         await room.localParticipant
@@ -781,6 +845,8 @@ console.log(
 
     roomRef.current = null;
     liveSessionIdRef.current = null;
+    recordingEgressIdRef.current =
+      null;
 
     clearLiveVideo();
 
@@ -829,10 +895,9 @@ console.log(
         onStartLive={startLive}
         onFinishLive={finishLive}
       />
-          <LiveFinishModal
-        visible={
-          finishModalVisible
-        }
+
+      <LiveFinishModal
+        visible={finishModalVisible}
         onSave={() => {
           setFinishModalVisible(
             false,
