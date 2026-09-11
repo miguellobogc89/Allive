@@ -24,14 +24,15 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.INTERNET",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.WAKE_LOCK",
-        "android.permission.BLUETOOTH"
-      ]
+        "android.permission.BLUETOOTH",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.miguel.lobogc.x89.allive"
     },
     "web": {
       "favicon": "./assets/favicon.png"

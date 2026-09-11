@@ -16,6 +16,10 @@ import {
 } from "livekit-client";
 
 import {
+  LiveFinishModal,
+} from "../components/live/broadcast/finish";
+
+import {
   subscribeToLiveMetrics,
 } from "../api/liveRealtimeApi";
 
@@ -131,6 +135,11 @@ export function EmitScreen({
     isLive,
     setIsLive,
   ] = useState(false);
+
+  const [
+  finishModalVisible,
+  setFinishModalVisible,
+] = useState(false);
 
   const [
     liveRoomName,
@@ -675,6 +684,11 @@ export function EmitScreen({
   }
 
   async function finishLive() {
+
+    setFinishModalVisible(
+  true,
+);
+
     const room =
       roomRef.current;
 
@@ -760,6 +774,21 @@ export function EmitScreen({
         }}
         onStartLive={startLive}
         onFinishLive={finishLive}
+      />
+          <LiveFinishModal
+        visible={
+          finishModalVisible
+        }
+        onSave={() => {
+          setFinishModalVisible(
+            false,
+          );
+        }}
+        onDiscard={() => {
+          setFinishModalVisible(
+            false,
+          );
+        }}
       />
     </View>
   );

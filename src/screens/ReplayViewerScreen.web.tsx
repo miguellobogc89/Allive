@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ImageBackground,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -42,13 +43,10 @@ type ReplayViewerScreenProps = {
   onOpenUser?: (
     userId: string,
   ) => void;
-
-  onOpenLives?: () => void;
 };
 
 export function ReplayViewerScreen({
   onOpenUser,
-  onOpenLives,
 }: ReplayViewerScreenProps) {
   const {
     identity,
@@ -115,7 +113,9 @@ export function ReplayViewerScreen({
             controller.signal,
           );
 
-        setReplays(result);
+        setReplays(
+          result,
+        );
 
         setCurrentIndex(
           0,
@@ -135,7 +135,9 @@ export function ReplayViewerScreen({
           !controller.signal
             .aborted
         ) {
-          setLoading(false);
+          setLoading(
+            false,
+          );
         }
       }
     }
@@ -172,7 +174,29 @@ export function ReplayViewerScreen({
         style={
           styles.container
         }
-      />
+      >
+        <View
+          style={
+            styles.emptyState
+          }
+        >
+          <Text
+            style={
+              styles.emptyTitle
+            }
+          >
+            No hay replays disponibles
+          </Text>
+
+          <Text
+            style={
+              styles.emptySubtitle
+            }
+          >
+            Los directos recientes aparecerán aquí.
+          </Text>
+        </View>
+      </View>
     );
   }
 
@@ -202,9 +226,6 @@ export function ReplayViewerScreen({
       onOpenUser={
         onOpenUser
       }
-      onOpenLives={
-        onOpenLives
-      }
     />
   );
 }
@@ -229,8 +250,6 @@ type ReplayContentProps = {
   onOpenUser?: (
     userId: string,
   ) => void;
-
-  onOpenLives?: () => void;
 };
 
 function ReplayContent({
@@ -246,7 +265,6 @@ function ReplayContent({
   onNext,
 
   onOpenUser,
-  onOpenLives,
 }: ReplayContentProps) {
   const {
     liked,
@@ -322,9 +340,6 @@ function ReplayContent({
                 }
               : undefined
           }
-          onOpenLives={
-            onOpenLives
-          }
         />
       </ImageBackground>
     </View>
@@ -364,5 +379,40 @@ const styles =
 
       backgroundColor:
         colors.background,
+    },
+
+    emptyState: {
+      flex: 1,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 32,
+    },
+
+    emptyTitle: {
+      color: "#FFFFFF",
+
+      fontSize: 17,
+      fontWeight: "600",
+
+      textAlign:
+        "center",
+    },
+
+    emptySubtitle: {
+      marginTop: 6,
+
+      color:
+        "rgba(255,255,255,0.58)",
+
+      fontSize: 14,
+      fontWeight: "400",
+
+      textAlign:
+        "center",
     },
   });
