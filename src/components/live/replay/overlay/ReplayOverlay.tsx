@@ -29,6 +29,10 @@ import {
 } from "../../viewer/navigation/LiveViewerNavigation";
 
 import {
+  ReplayLikeButton,
+} from "../controls";
+
+import {
   ReplayHeader,
 } from "../header/ReplayHeader";
 
@@ -43,6 +47,10 @@ type ReplayOverlayProps = {
   totalReplays: number;
 
   likes: number;
+
+  liked: boolean;
+  likeLoading?: boolean;
+  onLikePress: () => void;
 
   followLoading?: boolean;
   isFollowing?: boolean;
@@ -62,6 +70,10 @@ export function ReplayOverlay({
   totalReplays,
 
   likes,
+
+  liked,
+  likeLoading = false,
+  onLikePress,
 
   followLoading = false,
   isFollowing = false,
@@ -88,18 +100,32 @@ export function ReplayOverlay({
       new Animated.Value(0),
     ).current;
 
+  const bottomOpacity =
+    useRef(
+      new Animated.Value(1),
+    ).current;
+
+  const bottomTranslateY =
+    useRef(
+      new Animated.Value(0),
+    ).current;
+
   function toggleContent() {
     const nextVisible =
       !contentVisible;
 
-    setContentVisible(nextVisible);
+    setContentVisible(
+      nextVisible,
+    );
 
     Animated.parallel([
       Animated.timing(
         topOpacity,
         {
           toValue:
-            nextVisible ? 1 : 0,
+            nextVisible
+              ? 1
+              : 0,
           duration: 180,
           useNativeDriver: true,
         },
@@ -109,7 +135,33 @@ export function ReplayOverlay({
         topTranslateY,
         {
           toValue:
-            nextVisible ? 0 : -14,
+            nextVisible
+              ? 0
+              : -14,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        bottomOpacity,
+        {
+          toValue:
+            nextVisible
+              ? 1
+              : 0,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        bottomTranslateY,
+        {
+          toValue:
+            nextVisible
+              ? 0
+              : 14,
           duration: 180,
           useNativeDriver: true,
         },
@@ -146,12 +198,9 @@ export function ReplayOverlay({
         onPress={toggleContent}
       />
 
-      <ReplayHeader
-        likes={likes}
-        onOpenLives={
-          onOpenLives
-        }
-      />
+<ReplayHeader
+  likes={likes}
+/>
 
       <Animated.View
         pointerEvents={
@@ -187,6 +236,38 @@ export function ReplayOverlay({
           }
           onOpenCreator={
             onOpenCreator
+          }
+        />
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents={
+          contentVisible
+            ? "auto"
+            : "none"
+        }
+        style={[
+          styles.likeLayer,
+          {
+            opacity:
+              bottomOpacity,
+
+            transform: [
+              {
+                translateY:
+                  bottomTranslateY,
+              },
+            ],
+          },
+        ]}
+      >
+        <ReplayLikeButton
+          liked={liked}
+          loading={
+            likeLoading
+          }
+          onPress={
+            onLikePress
           }
         />
       </Animated.View>
@@ -237,5 +318,13 @@ const styles =
       right: spacing.md,
 
       zIndex: 20,
+    },
+
+    likeLayer: {
+      position: "absolute",
+      right: spacing.md,
+      bottom: 28,
+
+      zIndex: 30,
     },
   });

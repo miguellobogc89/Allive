@@ -76,7 +76,6 @@ type Props = {
   currentIndex: number;
   totalLives: number;
 
-  onOpenReplays?: () => void;
 
   onPrevious: () => void;
   onNext: () => void;
@@ -94,7 +93,6 @@ export function LiveViewerOverlay({
   authToken,
   currentIndex,
   totalLives,
-  onOpenReplays,
   onPrevious,
   onNext,
   onOpenUser,
@@ -312,38 +310,12 @@ const {
           pointerEvents="box-none"
           style={styles.permanentHeader}
         >
-          <LiveViewerHeader
-            live={live}
-            viewers={
-              audience.total
-            }
-            likes={likeCount}
-            followLoading={
-              followLoading
-            }
-            isFollowing={
-              followingCreator
-            }
-            onFollowPress={
-              canFollow
-                ? () => {
-                    void toggleFollow();
-                  }
-                : undefined
-            }
-            onOpenCreator={
-              creatorId
-                ? () => {
-                    onOpenUser?.(
-                      creatorId,
-                    );
-                  }
-                : undefined
-            }
-            onOpenReplays={
-              onOpenReplays
-            }
-          />
+<LiveViewerHeader
+  viewers={
+    audience.total
+  }
+  likes={likeCount}
+/>
         </View>
       </View>
 

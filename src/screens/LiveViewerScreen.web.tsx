@@ -13,33 +13,34 @@ import {
 import {
   ActivityIndicator,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
-
-import {
-  useAuth,
-} from "../auth/AuthContext";
 
 import {
   API_URL,
 } from "../api/apiConfig";
 
 import {
-  LiveVideoSurface,
-} from "../components/live/LiveVideoSurface.web";
-
-import {
-  LiveViewerOverlay,
-} from "../components/live/viewer/overlay/LiveViewerOverlay";
+  useAuth,
+} from "../auth/AuthContext";
 
 import {
   emptyLiveAudience,
   type LiveAudience,
 } from "../components/live/liveAudience";
 
+import {
+  LiveVideoSurface,
+} from "../components/live/LiveVideoSurface.web";
+
 import type {
   ActiveLive,
 } from "../components/live/types";
+
+import {
+  LiveViewerOverlay,
+} from "../components/live/viewer/overlay/LiveViewerOverlay";
 
 import {
   colors,
@@ -49,15 +50,18 @@ const REFRESH_INTERVAL_MS =
   5000;
 
 type LiveViewerScreenProps = {
-  requestedLiveId?: string | null;
-  onOpenUser?: (userId: string) => void;
-  onOpenReplays?: () => void;
+  requestedLiveId?:
+    | string
+    | null;
+
+  onOpenUser?: (
+    userId: string,
+  ) => void;
 };
 
 export function LiveViewerScreen({
   requestedLiveId = null,
   onOpenUser,
-  onOpenReplays,
 }: LiveViewerScreenProps) {
   const {
     identity,
@@ -65,8 +69,12 @@ export function LiveViewerScreen({
     token,
   } = useAuth();
 
-  const [lives, setLives] =
-    useState<ActiveLive[]>([]);
+  const [
+    lives,
+    setLives,
+  ] = useState<
+    ActiveLive[]
+  >([]);
 
   const [
     currentIndex,
@@ -96,28 +104,31 @@ export function LiveViewerScreen({
     lives[currentIndex] ??
     null;
 
-    useEffect(() => {
-  if (!requestedLiveId) {
-    return;
-  }
+  useEffect(() => {
+    if (!requestedLiveId) {
+      return;
+    }
 
-  const requestedIndex =
-    lives.findIndex(
-      (live) =>
-        live.id === requestedLiveId,
+    const requestedIndex =
+      lives.findIndex(
+        (live) =>
+          live.id ===
+          requestedLiveId,
+      );
+
+    if (
+      requestedIndex < 0
+    ) {
+      return;
+    }
+
+    setCurrentIndex(
+      requestedIndex,
     );
-
-  if (requestedIndex < 0) {
-    return;
-  }
-
-  setCurrentIndex(
-    requestedIndex,
-  );
-}, [
-  requestedLiveId,
-  lives,
-]);
+  }, [
+    requestedLiveId,
+    lives,
+  ]);
 
   const loadActiveLives =
     useCallback(
@@ -234,7 +245,9 @@ export function LiveViewerScreen({
             error,
           );
         } finally {
-          setLoadingLives(false);
+          setLoadingLives(
+            false,
+          );
         }
       },
       [currentIndex],
@@ -249,10 +262,11 @@ export function LiveViewerScreen({
         REFRESH_INTERVAL_MS,
       );
 
-    return () =>
+    return () => {
       window.clearInterval(
         interval,
       );
+    };
   }, [loadActiveLives]);
 
   useEffect(() => {
@@ -304,10 +318,12 @@ export function LiveViewerScreen({
           }
         >
           <ActivityIndicator
-            color={colors.accent}
+            color={
+              colors.accent
+            }
           />
         </View>
-      ) : (
+      ) : activeLive ? (
         <LiveVideoSurface
           live={activeLive}
           viewerIdentity={
@@ -322,13 +338,37 @@ export function LiveViewerScreen({
             setViewerRoom
           }
         />
+      ) : (
+        <View
+          style={
+            styles.emptyState
+          }
+        >
+          <Text
+            style={
+              styles.emptyTitle
+            }
+          >
+            No hay directos actualmente
+          </Text>
+
+          <Text
+            style={
+              styles.emptySubtitle
+            }
+          >
+            Puedes ver los replays mientras tanto.
+          </Text>
+        </View>
       )}
 
       {activeLive ? (
         <LiveViewerOverlay
           live={activeLive}
           room={viewerRoom}
-          audience={audience}
+          audience={
+            audience
+          }
           viewerIdentity={
             identity
           }
@@ -345,8 +385,9 @@ export function LiveViewerScreen({
           onNext={
             goToNextLive
           }
-          onOpenUser={onOpenUser}
-          onOpenReplays={onOpenReplays}
+          onOpenUser={
+            onOpenUser
+          }
         />
       ) : null}
     </View>
@@ -357,18 +398,59 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       position:
         "relative",
+
       backgroundColor:
         colors.background,
     },
 
     loading: {
       ...StyleSheet.absoluteFill,
-      alignItems: "center",
+
+      alignItems:
+        "center",
+
       justifyContent:
         "center",
+
       backgroundColor:
         colors.background,
+    },
+
+    emptyState: {
+      flex: 1,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      paddingHorizontal: 32,
+    },
+
+    emptyTitle: {
+      color: "#FFFFFF",
+
+      fontSize: 17,
+      fontWeight: "600",
+
+      textAlign:
+        "center",
+    },
+
+    emptySubtitle: {
+      marginTop: 6,
+
+      color:
+        "rgba(255,255,255,0.58)",
+
+      fontSize: 14,
+      fontWeight: "400",
+
+      textAlign:
+        "center",
     },
   });

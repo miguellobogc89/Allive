@@ -5,6 +5,15 @@ import {
 } from "react";
 
 import {
+  StyleSheet,
+  View,
+} from "react-native";
+
+import {
+  LiveModeSwitch,
+} from "../components/live/shared";
+
+import {
   LiveViewerScreen,
 } from "./LiveViewerScreen.web";
 
@@ -18,6 +27,7 @@ type NowMode =
 
 type NowScreenProps = {
   requestedLiveId?: string | null;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -34,26 +44,56 @@ export function NowScreen({
     "live",
   );
 
-  if (mode === "replay") {
-    return (
-      <ReplayViewerScreen
-        onOpenUser={onOpenUser}
-        onOpenLives={() => {
-          setMode("live");
-        }}
-      />
-    );
-  }
-
   return (
-    <LiveViewerScreen
-      requestedLiveId={
-        requestedLiveId
-      }
-      onOpenUser={onOpenUser}
-      onOpenReplays={() => {
-        setMode("replay");
-      }}
-    />
+    <View style={styles.container}>
+      {mode === "live" ? (
+        <LiveViewerScreen
+          requestedLiveId={
+            requestedLiveId
+          }
+          onOpenUser={
+            onOpenUser
+          }
+        />
+      ) : (
+        <ReplayViewerScreen
+          onOpenUser={
+            onOpenUser
+          }
+        />
+      )}
+
+      <View
+        style={styles.modeSwitch}
+        pointerEvents="box-none"
+      >
+        <LiveModeSwitch
+          mode={mode}
+          onLivePress={() => {
+            setMode("live");
+          }}
+          onReplayPress={() => {
+            setMode("replay");
+          }}
+        />
+      </View>
+    </View>
   );
 }
+
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      position: "relative",
+    },
+
+    modeSwitch: {
+      position: "absolute",
+
+      top: 18,
+      left: 16,
+
+      zIndex: 100,
+    },
+  });

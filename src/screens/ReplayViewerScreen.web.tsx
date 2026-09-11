@@ -19,12 +19,20 @@ import {
 } from "../api/replayApi";
 
 import {
+  useAuth,
+} from "../auth/AuthContext";
+
+import {
   ReplayOverlay,
 } from "../components/live/replay";
 
 import type {
   Replay,
 } from "../components/live/replay/types";
+
+import {
+  useLiveViewerLikes,
+} from "../components/live/viewer/hooks/useLiveViewerLikes";
 
 import {
   colors,
@@ -42,10 +50,17 @@ export function ReplayViewerScreen({
   onOpenUser,
   onOpenLives,
 }: ReplayViewerScreenProps) {
+  const {
+    identity,
+    token,
+  } = useAuth();
+
   const [
     replays,
     setReplays,
-  ] = useState<ReplayItem[]>([]);
+  ] = useState<
+    ReplayItem[]
+  >([]);
 
   const [
     currentIndex,
@@ -57,18 +72,37 @@ export function ReplayViewerScreen({
     setLoading,
   ] = useState(true);
 
-  const [
-    commentValue,
-    setCommentValue,
-  ] = useState("");
-
-  const [
-    liked,
-    setLiked,
-  ] = useState(false);
-
   const activeReplay =
-    replays[currentIndex] ?? null;
+    replays[
+      currentIndex
+    ] ?? null;
+
+  const goToPreviousReplay =
+    useCallback(() => {
+      setCurrentIndex(
+        (index) =>
+          replays.length <= 1
+            ? index
+            : index <= 0
+              ? replays.length -
+                1
+              : index - 1,
+      );
+    }, [replays.length]);
+
+  const goToNextReplay =
+    useCallback(() => {
+      setCurrentIndex(
+        (index) =>
+          replays.length <= 1
+            ? index
+            : index >=
+                replays.length -
+                  1
+              ? 0
+              : index + 1,
+      );
+    }, [replays.length]);
 
   useEffect(() => {
     const controller =
@@ -82,10 +116,14 @@ export function ReplayViewerScreen({
           );
 
         setReplays(result);
-        setCurrentIndex(0);
+
+        setCurrentIndex(
+          0,
+        );
       } catch (error) {
         if (
-          !controller.signal.aborted
+          !controller.signal
+            .aborted
         ) {
           console.error(
             "Allive replays error:",
@@ -94,7 +132,8 @@ export function ReplayViewerScreen({
         }
       } finally {
         if (
-          !controller.signal.aborted
+          !controller.signal
+            .aborted
         ) {
           setLoading(false);
         }
@@ -108,45 +147,20 @@ export function ReplayViewerScreen({
     };
   }, []);
 
-  const goToPreviousReplay =
-    useCallback(() => {
-      setCurrentIndex(
-        (index) =>
-          replays.length <= 1
-            ? index
-            : index <= 0
-              ? replays.length - 1
-              : index - 1,
-      );
-
-      setLiked(false);
-      setCommentValue("");
-    }, [replays.length]);
-
-  const goToNextReplay =
-    useCallback(() => {
-      setCurrentIndex(
-        (index) =>
-          replays.length <= 1
-            ? index
-            : index >=
-                replays.length - 1
-              ? 0
-              : index + 1,
-      );
-
-      setLiked(false);
-      setCommentValue("");
-    }, [replays.length]);
-
   if (
     loading &&
     !activeReplay
   ) {
     return (
-      <View style={styles.loading}>
+      <View
+        style={
+          styles.loading
+        }
+      >
         <ActivityIndicator
-          color={colors.accent}
+          color={
+            colors.accent
+          }
         />
       </View>
     );
@@ -155,16 +169,108 @@ export function ReplayViewerScreen({
   if (!activeReplay) {
     return (
       <View
-        style={styles.container}
+        style={
+          styles.container
+        }
       />
     );
   }
 
-  const replay: Replay =
-    activeReplay;
+  return (
+    <ReplayContent
+      replay={
+        activeReplay
+      }
+      currentIndex={
+        currentIndex
+      }
+      totalReplays={
+        replays.length
+      }
+      viewerIdentity={
+        identity
+      }
+      authToken={
+        token
+      }
+      onPrevious={
+        goToPreviousReplay
+      }
+      onNext={
+        goToNextReplay
+      }
+      onOpenUser={
+        onOpenUser
+      }
+      onOpenLives={
+        onOpenLives
+      }
+    />
+  );
+}
+
+type ReplayContentProps = {
+  replay: Replay;
+
+  currentIndex: number;
+  totalReplays: number;
+
+  viewerIdentity:
+    ReturnType<
+      typeof useAuth
+    >["identity"];
+
+  authToken:
+    string | null;
+
+  onPrevious: () => void;
+  onNext: () => void;
+
+  onOpenUser?: (
+    userId: string,
+  ) => void;
+
+  onOpenLives?: () => void;
+};
+
+function ReplayContent({
+  replay,
+
+  currentIndex,
+  totalReplays,
+
+  viewerIdentity,
+  authToken,
+
+  onPrevious,
+  onNext,
+
+  onOpenUser,
+  onOpenLives,
+}: ReplayContentProps) {
+  const {
+    liked,
+    likeCount,
+    likeLoading,
+    toggleLike,
+  } = useLiveViewerLikes({
+    liveId:
+      replay.id,
+
+    viewerIdentity,
+
+    authToken,
+  });
+
+  const creatorId =
+    replay.creator?.id;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={
+        styles.container
+      }
+    >
       <ImageBackground
         source={
           replay.thumbnailUrl
@@ -175,47 +281,50 @@ export function ReplayViewerScreen({
             : undefined
         }
         resizeMode="cover"
-        style={styles.media}
+        style={
+          styles.media
+        }
       >
         <ReplayOverlay
-          replay={replay}
+          replay={
+            replay
+          }
           currentIndex={
             currentIndex
           }
           totalReplays={
-            replays.length
+            totalReplays
           }
-          commentValue={
-            commentValue
+          likes={
+            likeCount
           }
-          liked={liked}
+          liked={
+            liked
+          }
+          likeLoading={
+            likeLoading
+          }
+          onLikePress={
+            toggleLike
+          }
           onPrevious={
-            goToPreviousReplay
+            onPrevious
           }
           onNext={
-            goToNextReplay
+            onNext
           }
-          onCommentChange={
-            setCommentValue
-          }
-          onCommentSend={() => {
-            setCommentValue("");
-          }}
-          onLikePress={() => {
-            setLiked(
-              (value) => !value,
-            );
-          }}
           onOpenCreator={
-            replay.creator?.id
+            creatorId
               ? () => {
                   onOpenUser?.(
-                    replay.creator!.id!,
+                    creatorId,
                   );
                 }
               : undefined
           }
-          onOpenLives={onOpenLives}
+          onOpenLives={
+            onOpenLives
+          }
         />
       </ImageBackground>
     </View>
@@ -226,23 +335,33 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-      position: "relative",
+
+      position:
+        "relative",
+
       backgroundColor:
         colors.background,
     },
 
     media: {
       flex: 1,
-      position: "relative",
+
+      position:
+        "relative",
+
       backgroundColor:
         colors.background,
     },
 
     loading: {
       flex: 1,
-      alignItems: "center",
+
+      alignItems:
+        "center",
+
       justifyContent:
         "center",
+
       backgroundColor:
         colors.background,
     },

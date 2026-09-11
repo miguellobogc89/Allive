@@ -13,29 +13,18 @@ import {
   LiveStats,
 } from "../../broadcast/header/LiveStats";
 
-import {
-  LiveModeSwitch,
-} from "../../shared";
-
 type ReplayHeaderProps = {
   likes: number;
-  onOpenLives?: () => void;
 };
 
 export function ReplayHeader({
   likes,
-  onOpenLives,
 }: ReplayHeaderProps) {
   return (
     <View
       style={styles.container}
       pointerEvents="box-none"
     >
-      <LiveModeSwitch
-        mode="replay"
-        onLivePress={onOpenLives}
-      />
-
       <LiveStats
         likes={likes}
       />
@@ -56,6 +45,6 @@ const styles =
       flexDirection: "row",
       alignItems: "center",
       justifyContent:
-        "space-between",
+        "flex-end",
     },
   });
