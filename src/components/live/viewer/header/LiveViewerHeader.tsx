@@ -1,42 +1,39 @@
 // src/components/live/viewer/header/LiveViewerHeader.tsx
 
 import {
-  Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
 import {
-  Ionicons,
-} from "@expo/vector-icons";
-
-import {
-  colors,
   spacing,
 } from "../../../../styles";
 
 import {
-  LiveViewerAudience,
-} from "./LiveViewerAudience";
+  LiveStats,
+} from "../../broadcast/header/LiveStats";
 
 import {
-  LiveViewerIdentity,
-} from "./LiveViewerIdentity";
-
-import type {
-  LiveAudience,
-} from "../../liveAudience";
+  LiveModeSwitch,
+} from "../../shared";
 
 import type {
   ActiveLive,
 } from "../../types";
 
+import {
+  LiveViewerIdentity,
+} from "./LiveViewerIdentity";
+
 type Props = {
   live: ActiveLive;
-  audience: LiveAudience;
+
+  viewers: number;
+  likes: number;
+
   followLoading?: boolean;
   isFollowing?: boolean;
+
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
   onOpenReplays?: () => void;
@@ -44,7 +41,8 @@ type Props = {
 
 export function LiveViewerHeader({
   live,
-  audience,
+  viewers,
+  likes,
   followLoading = false,
   isFollowing = false,
   onFollowPress,
@@ -60,128 +58,41 @@ export function LiveViewerHeader({
         style={styles.topBar}
         pointerEvents="box-none"
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ver replays"
-          hitSlop={6}
-          onPress={onOpenReplays}
-          style={({ pressed }) => [
-            styles.replaysBadge,
-            pressed
-              ? styles.replaysBadgePressed
-              : null,
-          ]}
-        >
-          <Ionicons
-            name="play-back"
-            size={14}
-            color="#FFFFFF"
-          />
+        <LiveModeSwitch
+          mode="live"
+          onReplayPress={
+            onOpenReplays
+          }
+        />
 
-          <Text style={styles.replaysText}>
-            Replays
-          </Text>
-        </Pressable>
-
-        <View style={styles.liveBadge}>
-          <Text style={styles.liveText}>
-            LIVE
-          </Text>
-        </View>
-
-        <View style={styles.audiencePosition}>
-          <LiveViewerAudience
-            audience={audience}
-          />
-        </View>
+        <LiveStats
+          viewers={viewers}
+          likes={likes}
+        />
       </View>
 
-      <LiveViewerIdentity
-        live={live}
-        followLoading={followLoading}
-        isFollowing={isFollowing}
-        onFollowPress={onFollowPress}
-        onOpenCreator={onOpenCreator}
-      />
+
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 18,
-    left: spacing.md,
-    right: spacing.md,
-    zIndex: 30,
-  },
-
-  topBar: {
-    position: "relative",
-    width: "100%",
-    height: 34,
-    marginBottom: 28,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  replaysBadge: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    height: 34,
-    paddingHorizontal: 12,
-    borderRadius: 17,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor:
-      "rgba(35, 39, 44, 0.92)",
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
+const styles =
+  StyleSheet.create({
+    container: {
+      width: "100%",
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 4,
-  },
 
-  replaysBadgePressed: {
-    opacity: 0.72,
-    transform: [
-      {
-        scale: 0.97,
-      },
-    ],
-  },
+    topBar: {
+      width: "100%",
 
-  replaysText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
+      marginBottom: 28,
 
-  liveBadge: {
-    height: 30,
-    paddingHorizontal: 13,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.live,
-  },
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
 
-  liveText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-
-  audiencePosition: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-});
+      paddingHorizontal:
+        spacing.md,
+    },
+  });

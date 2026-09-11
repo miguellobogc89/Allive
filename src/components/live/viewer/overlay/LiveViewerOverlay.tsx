@@ -9,6 +9,13 @@ import type {
 } from "livekit-client";
 
 import {
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Animated,
+  Pressable,
   StyleSheet,
   View,
 } from "react-native";
@@ -95,6 +102,31 @@ export function LiveViewerOverlay({
   const creatorId =
     live.creator?.id;
 
+  const [
+    contentVisible,
+    setContentVisible,
+  ] = useState(true);
+
+  const topOpacity =
+    useRef(
+      new Animated.Value(1),
+    ).current;
+
+  const topTranslateY =
+    useRef(
+      new Animated.Value(0),
+    ).current;
+
+  const bottomOpacity =
+    useRef(
+      new Animated.Value(1),
+    ).current;
+
+  const bottomTranslateY =
+    useRef(
+      new Animated.Value(0),
+    ).current;
+
   const {
     comments,
     commentValue,
@@ -129,6 +161,115 @@ export function LiveViewerOverlay({
     authToken,
   });
 
+  function hideContent() {
+    if (!contentVisible) {
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(
+        topOpacity,
+        {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        topTranslateY,
+        {
+          toValue: -14,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        bottomOpacity,
+        {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        bottomTranslateY,
+        {
+          toValue: 14,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+    ]).start(() => {
+      setContentVisible(false);
+    });
+  }
+
+  function showContent() {
+    if (contentVisible) {
+      return;
+    }
+
+    setContentVisible(true);
+
+    topOpacity.setValue(0);
+    topTranslateY.setValue(-14);
+
+    bottomOpacity.setValue(0);
+    bottomTranslateY.setValue(14);
+
+    requestAnimationFrame(() => {
+      Animated.parallel([
+        Animated.timing(
+          topOpacity,
+          {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          topTranslateY,
+          {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          bottomOpacity,
+          {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          bottomTranslateY,
+          {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+      ]).start();
+    });
+  }
+
+  function handleBackgroundPress() {
+    if (contentVisible) {
+      hideContent();
+      return;
+    }
+
+    showContent();
+  }
+
   return (
     <View
       style={styles.overlay}
@@ -153,37 +294,152 @@ export function LiveViewerOverlay({
         pointerEvents="none"
       />
 
-      <LiveViewerHeader
-        live={live}
-        audience={audience}
-        followLoading={
-          followLoading
+      <Pressable
+        style={
+          StyleSheet.absoluteFill
         }
-        isFollowing={
-          followingCreator
+        onPress={
+          handleBackgroundPress
         }
-        onFollowPress={
-          canFollow
-            ? () => {
-                void toggleFollow();
-              }
-            : undefined
-        }
-        onOpenCreator={
-          creatorId
-            ? () => {
-                onOpenUser?.(
-                  creatorId,
-                );
-              }
-            : undefined
-        }
-        onOpenReplays={onOpenReplays}
       />
 
-      <LiveTimedCommentsLayer
-        comments={comments}
-      />
+      <View
+        pointerEvents="box-none"
+        style={styles.header}
+      >
+        <View
+          pointerEvents="box-none"
+          style={styles.permanentHeader}
+        >
+          <LiveViewerHeader
+            live={live}
+            viewers={
+              audience.total
+            }
+            likes={
+              live.likeCount ?? 0
+            }
+            followLoading={
+              followLoading
+            }
+            isFollowing={
+              followingCreator
+            }
+            onFollowPress={
+              canFollow
+                ? () => {
+                    void toggleFollow();
+                  }
+                : undefined
+            }
+            onOpenCreator={
+              creatorId
+                ? () => {
+                    onOpenUser?.(
+                      creatorId,
+                    );
+                  }
+                : undefined
+            }
+            onOpenReplays={
+              onOpenReplays
+            }
+          />
+        </View>
+      </View>
+
+      {contentVisible ? (
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.identityLayer,
+            {
+              opacity:
+                topOpacity,
+
+              transform: [
+                {
+                  translateY:
+                    topTranslateY,
+                },
+              ],
+            },
+          ]}
+        >
+          <LiveViewerIdentityLayer
+            live={live}
+            followLoading={
+              followLoading
+            }
+            isFollowing={
+              followingCreator
+            }
+            canFollow={
+              canFollow
+            }
+            onFollow={() => {
+              void toggleFollow();
+            }}
+            onOpenCreator={
+              creatorId
+                ? () => {
+                    onOpenUser?.(
+                      creatorId,
+                    );
+                  }
+                : undefined
+            }
+          />
+        </Animated.View>
+      ) : null}
+
+      {contentVisible ? (
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.bottomContent,
+            {
+              opacity:
+                bottomOpacity,
+
+              transform: [
+                {
+                  translateY:
+                    bottomTranslateY,
+                },
+              ],
+            },
+          ]}
+        >
+          <LiveTimedCommentsLayer
+            comments={comments}
+          />
+
+          <LiveViewerBottomBar
+            commentValue={
+              commentValue
+            }
+            commentDisabled={
+              !viewerIdentity ||
+              commentSending
+            }
+            liked={liked}
+            likeDisabled={
+              !viewerIdentity ||
+              likeLoading
+            }
+            onCommentChange={
+              setCommentValue
+            }
+            onCommentSend={() => {
+              void sendComment();
+            }}
+            onLikePress={() => {
+              void toggleLike();
+            }}
+          />
+        </Animated.View>
+      ) : null}
 
       <LiveViewerNavigation
         currentIndex={
@@ -197,48 +453,97 @@ export function LiveViewerOverlay({
           onNext
         }
       />
-
-      <LiveViewerBottomBar
-        commentValue={
-          commentValue
-        }
-        commentDisabled={
-          !viewerIdentity ||
-          commentSending
-        }
-        liked={liked}
-        likeDisabled={
-          !viewerIdentity ||
-          likeLoading
-        }
-        onCommentChange={
-          setCommentValue
-        }
-        onCommentSend={() => {
-          void sendComment();
-        }}
-        onLikePress={() => {
-          void toggleLike();
-        }}
-      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
+type IdentityLayerProps = {
+  live: ActiveLive;
+  followLoading: boolean;
+  isFollowing: boolean;
+  canFollow: boolean;
+  onFollow: () => void;
+  onOpenCreator?: () => void;
+};
 
-    zIndex: 10,
-  },
+function LiveViewerIdentityLayer({
+  live,
+  followLoading,
+  isFollowing,
+  canFollow,
+  onFollow,
+  onOpenCreator,
+}: IdentityLayerProps) {
+  return (
+    <LiveViewerHeaderIdentity
+      live={live}
+      followLoading={
+        followLoading
+      }
+      isFollowing={
+        isFollowing
+      }
+      onFollowPress={
+        canFollow
+          ? onFollow
+          : undefined
+      }
+      onOpenCreator={
+        onOpenCreator
+      }
+    />
+  );
+}
 
-  bottomGradient: {
-    position: "absolute",
+import {
+  LiveViewerIdentity as LiveViewerHeaderIdentity,
+} from "../header/LiveViewerIdentity";
 
-    left: 0,
-    right: 0,
-    bottom: 0,
+const styles =
+  StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFill,
 
-    height: 190,
-  },
-});
+      zIndex: 10,
+    },
+
+    bottomGradient: {
+      position: "absolute",
+
+      left: 0,
+      right: 0,
+      bottom: 0,
+
+      height: 190,
+    },
+
+    header: {
+      position: "absolute",
+
+      top: 18,
+      left: 0,
+      right: 0,
+
+      zIndex: 30,
+    },
+
+    permanentHeader: {
+      width: "100%",
+    },
+
+    identityLayer: {
+      position: "absolute",
+
+      top: 78,
+      left: 16,
+      right: 16,
+
+      zIndex: 29,
+    },
+
+    bottomContent: {
+      ...StyleSheet.absoluteFill,
+
+      zIndex: 20,
+    },
+  });
