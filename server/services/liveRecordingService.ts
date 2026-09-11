@@ -148,7 +148,37 @@ export async function startLiveRecording(
 export async function stopLiveRecording(
   egressId: string,
 ) {
-  await egressClient.stopEgress(
-    egressId,
+  const stopped =
+    await egressClient.stopEgress(
+      egressId,
+    );
+
+  console.log(
+    "LiveKit Egress tras stop:",
+    JSON.stringify(
+      stopped,
+      null,
+      2,
+    ),
   );
+
+  await new Promise((resolve) => {
+    setTimeout(resolve, 3000);
+  });
+
+  const egresses =
+    await egressClient.listEgress({
+      egressId,
+    });
+
+  console.log(
+    "LiveKit Egress estado final:",
+    JSON.stringify(
+      egresses,
+      null,
+      2,
+    ),
+  );
+
+  return stopped;
 }

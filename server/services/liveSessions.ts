@@ -123,10 +123,7 @@ export async function reconcileActiveLives() {
     if (broadcasterActive === null) {
       continue;
     }
-
-    console.log(
-      `LIVE sin broadcaster activo: ${live.roomName}`,
-    );
+    
   }
 
   return activeLives;

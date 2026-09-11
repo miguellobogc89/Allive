@@ -125,7 +125,26 @@ export async function publishViewerCountForRoom(
       liveId: live.id,
       viewerCount,
     });
-  } catch (error) {
+} catch (error) {
+    const livekitError =
+      error as {
+        status?: number;
+        code?: string;
+      };
+
+    if (
+      livekitError.status === 404 ||
+      livekitError.code === "not_found"
+    ) {
+      publishLiveMetricUpdate({
+        type: "live-metrics",
+        liveId: live.id,
+        viewerCount: 0,
+      });
+
+      return;
+    }
+
     console.error(
       "Error calculando viewers realtime:",
       error,
