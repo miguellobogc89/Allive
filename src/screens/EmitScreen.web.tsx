@@ -798,57 +798,48 @@ export function EmitScreen({
     }
   }
 
-    async function handleSaveReplay() {
-    const currentLiveSessionId =
-      liveSessionId;
+async function handleSaveReplay() {
+  const currentLiveSessionId =
+    liveSessionId;
 
-    const authToken = token;
+  const authToken = token;
 
-    if (
-      !currentLiveSessionId ||
-      !authToken ||
-      isSavingReplay
-    ) {
-      return;
-    }
-
-    try {
-      setIsSavingReplay(true);
-
-            if (finishLivePromiseRef.current) {
-        await finishLivePromiseRef.current;
-      }
-
-      if (finishLivePromiseRef.current) {
-  await finishLivePromiseRef.current;
-}
-
-await saveLiveReplay(
-  currentLiveSessionId,
-  authToken,
-);
-
-      await saveLiveReplay(
-        currentLiveSessionId,
-        authToken,
-      );
-
-      setFinishModalVisible(false);
-    } catch (caughtError) {
-      console.error(
-        "No se pudo guardar el REPLAY:",
-        caughtError,
-      );
-
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "No se pudo guardar el vídeo.",
-      );
-    } finally {
-      setIsSavingReplay(false);
-    }
+  if (
+    !currentLiveSessionId ||
+    !authToken ||
+    isSavingReplay
+  ) {
+    return;
   }
+
+  try {
+    setIsSavingReplay(true);
+
+    if (finishLivePromiseRef.current) {
+      await finishLivePromiseRef.current;
+    }
+
+    await saveLiveReplay(
+      currentLiveSessionId,
+      authToken,
+    );
+
+    setFinishModalVisible(false);
+  } catch (caughtError) {
+    console.error(
+      "No se pudo guardar el REPLAY:",
+      caughtError,
+    );
+
+    setError(
+      caughtError instanceof Error
+        ? caughtError.message
+        : "No se pudo guardar el vídeo.",
+    );
+  } finally {
+    setIsSavingReplay(false);
+  }
+}
 
   async function finishLive() {
     setFinishModalVisible(true);
