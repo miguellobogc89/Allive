@@ -239,6 +239,15 @@ export function registerLiveRoutes(
                 endedAt: {
                   not: null,
                 },
+                recording_url: {
+                  not: null,
+                },
+                replay_saved_at: {
+                  not: null,
+                },
+                replay_visible_until: {
+                  gt: new Date(),
+                },
               },
 
               orderBy: {
@@ -261,6 +270,12 @@ export function registerLiveRoutes(
                 startedAt: true,
                 endedAt: true,
                 thumbnailUrl:
+                  true,
+                recording_url:
+                  true,
+                replay_saved_at:
+                  true,
+                replay_visible_until:
                   true,
 
                 creator: {
@@ -319,12 +334,21 @@ export function registerLiveRoutes(
               endedAt:
                 replay.endedAt,
 
-              thumbnailUrl:
-                replay.thumbnailUrl,
+thumbnailUrl:
+  replay.thumbnailUrl,
 
-              likeCount:
-                replay._count
-                  .live_likes,
+recordingUrl:
+  replay.recording_url,
+
+replaySavedAt:
+  replay.replay_saved_at,
+
+replayVisibleUntil:
+  replay.replay_visible_until,
+
+likeCount:
+  replay._count
+    .live_likes,
 
               commentCount:
                 replay._count

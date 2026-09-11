@@ -26,9 +26,13 @@ export type ReplayItem = {
   startedAt: string;
   endedAt: string;
 
-  thumbnailUrl: string | null;
+thumbnailUrl: string | null;
 
-  likeCount: number;
+recordingUrl: string;
+replaySavedAt: string;
+replayVisibleUntil: string;
+
+likeCount: number;
   commentCount: number;
 
   creator: ReplayCreator;
