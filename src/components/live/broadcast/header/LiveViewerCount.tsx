@@ -1,21 +1,34 @@
 // src/components/live/broadcast/header/LiveViewerCount.tsx
 
-import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Feather,
+} from "@expo/vector-icons";
+
+import {
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 type LiveViewerCountProps = {
   viewers: number;
 };
 
-function formatCount(value: number) {
+function formatCount(
+  value: number,
+) {
   if (value >= 1_000_000) {
-    return `${(value / 1_000_000)
+    return `${(
+      value / 1_000_000
+    )
       .toFixed(1)
       .replace(".0", "")}M`;
   }
 
   if (value >= 1_000) {
-    return `${(value / 1_000)
+    return `${(
+      value / 1_000
+    )
       .toFixed(1)
       .replace(".0", "")}K`;
   }
@@ -28,11 +41,12 @@ export function LiveViewerCount({
 }: LiveViewerCountProps) {
   return (
     <View style={styles.container}>
-      <Ionicons
-        name="person"
-        size={14}
+      <Feather
+        name="users"
+        size={16}
         color="#FFFFFF"
       />
+
       <Text style={styles.text}>
         {formatCount(viewers)}
       </Text>
@@ -40,15 +54,17 @@ export function LiveViewerCount({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  text: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-});
+const styles =
+  StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+
+    text: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontWeight: "600",
+    },
+  });

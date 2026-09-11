@@ -44,7 +44,7 @@ export function LiveViewerAudience({
   return (
     <View style={styles.viewerBadge}>
       <Ionicons
-        name="person"
+        name="people-outline"
         size={18}
         color="#FFFFFF"
       />

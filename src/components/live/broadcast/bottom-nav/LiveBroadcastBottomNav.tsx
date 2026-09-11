@@ -32,7 +32,7 @@ type LiveBroadcastBottomNavProps = {
   cameraReady: boolean;
   microphoneEnabled: boolean;
 
-  onOpenMetadata: () => void;
+  onOpenMore: () => void;
   onToggleMicrophone: () => void;
   onOpenFilters: () => void;
   onSwitchCamera: () => void;
@@ -73,7 +73,7 @@ export function LiveBroadcastBottomNav(
       >
         <MoreControl
           onPress={
-            props.onOpenMetadata
+            props.onOpenMore
           }
         />
 

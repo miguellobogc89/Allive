@@ -6,6 +6,10 @@ import {
 } from "react-native";
 
 import {
+  OverlayPill,
+} from "../../../ui";
+
+import {
   LiveLikeCount,
 } from "./LiveLikeCount";
 
@@ -23,7 +27,9 @@ export function LiveStats({
   likes,
 }: LiveStatsProps) {
   return (
-    <View style={styles.pill}>
+    <OverlayPill
+      style={styles.stats}
+    >
       <LiveViewerCount
         viewers={viewers}
       />
@@ -35,37 +41,21 @@ export function LiveStats({
       <LiveLikeCount
         likes={likes}
       />
-    </View>
+    </OverlayPill>
   );
 }
 
-const styles = StyleSheet.create({
-  pill: {
-    height: 34,
+const styles =
+  StyleSheet.create({
+    stats: {
+      gap: 9,
+    },
 
-    paddingHorizontal: 11,
+    divider: {
+      width: 1,
+      height: 14,
 
-    borderRadius: 8,
-
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-
-    gap: 9,
-
-    backgroundColor:
-      "rgba(0,0,0,0.38)",
-
-    borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.22)",
-  },
-
-  divider: {
-    width: 1,
-    height: 16,
-
-    backgroundColor:
-      "rgba(255,255,255,0.28)",
-  },
-});
+      backgroundColor:
+        "rgba(255,255,255,0.22)",
+    },
+  });

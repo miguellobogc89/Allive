@@ -7,6 +7,10 @@ import {
 } from "react-native";
 
 import {
+  OverlayPill,
+} from "../../../ui";
+
+import {
   LivePulse,
 } from "./LivePulse";
 
@@ -39,19 +43,23 @@ export function LiveBroadcastHeader({
       pointerEvents="box-none"
       style={styles.container}
     >
-      <View style={styles.liveStatus}>
-        <View style={styles.liveSection}>
+      <OverlayPill
+        style={styles.liveStatus}
+      >
+        <View
+          style={styles.liveBadge}
+        >
           <LivePulse />
 
-          <Text style={styles.liveLabel}>
+          <Text
+            style={styles.liveLabel}
+          >
             LIVE
           </Text>
         </View>
 
-        <View style={styles.timerSection}>
-          <LiveTimer />
-        </View>
-      </View>
+        <LiveTimer />
+      </OverlayPill>
 
       <LiveStats
         viewers={viewers}
@@ -61,64 +69,64 @@ export function LiveBroadcastHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
+const styles =
+  StyleSheet.create({
+    container: {
+      position: "absolute",
 
-    top: 14,
-    left: 18,
-    right: 18,
+      top: 14,
+      left: 18,
+      right: 18,
 
-    height: 38,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
 
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+      zIndex: 25,
+    },
 
-    zIndex: 25,
+liveStatus: {
+  gap: 8,
+
+  paddingLeft: 0,
+  paddingVertical: 0,
+
+  overflow: "hidden",
+},
+
+liveBadge: {
+  alignSelf: "stretch",
+
+  paddingHorizontal: 8,
+
+  flexDirection: "row",
+  alignItems: "center",
+
+  gap: 5,
+
+  borderRadius: 10,
+
+  backgroundColor:
+    "#FF3048",
+
+  shadowColor: "#000000",
+  shadowOffset: {
+    width: 5,
+    height: 0,
   },
+  shadowOpacity: 0.32,
+  shadowRadius: 5,
 
-  liveStatus: {
-    height: 36,
+  zIndex: 2,
+},
 
-    flexDirection: "row",
-    alignItems: "stretch",
+    liveLabel: {
+      color: "#FFFFFF",
 
-    borderRadius: 10,
-    overflow: "hidden",
+      fontSize: 11,
+      fontWeight: "700",
 
-    borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.18)",
-  },
-
-  liveSection: {
-    paddingHorizontal: 11,
-
-    flexDirection: "row",
-    alignItems: "center",
-
-    gap: 6,
-
-    backgroundColor: "#FF3048",
-  },
-
-  liveLabel: {
-    color: "#FFFFFF",
-
-    fontSize: 12,
-    fontWeight: "900",
-
-    letterSpacing: 0.4,
-  },
-
-  timerSection: {
-    paddingHorizontal: 11,
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    backgroundColor:
-      "rgba(30,30,30,0.68)",
-  },
-});
+      letterSpacing: 0.2,
+    },
+  });

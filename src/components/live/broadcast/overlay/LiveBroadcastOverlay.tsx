@@ -1,7 +1,10 @@
 // src/components/live/broadcast/overlay/LiveBroadcastOverlay.tsx
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useRef, useState } from "react";
+import {
+  useRef,
+  useState,
+} from "react";
 import {
   Animated,
   Pressable,
@@ -14,16 +17,20 @@ import { LiveTimedCommentsLayer } from "../../comments/LiveTimedCommentsLayer";
 import { LiveBroadcastBottomNav } from "../bottom-nav";
 import { LiveBroadcastHeader } from "../header";
 import { LiveBroadcastMetadata } from "../metadata/LiveBroadcastMetadata";
+import { LiveStartMetadataModal } from "../metadata/LiveStartMetadataModal";
+import { LiveBroadcastMoreMenu } from "../more-menu";
 import { LiveBroadcastError } from "./LiveBroadcastError";
-import { LiveBroadcastMetadataModal } from "./LiveBroadcastMetadataModal";
+import { LiveNotice } from "../../shared";
 
 type LiveBroadcastOverlayProps = {
   isLive: boolean;
   isConnecting: boolean;
   cameraReady: boolean;
+
   viewers?: number;
   likes?: number;
   comments?: LiveCommentModel[];
+
   error: string | null;
 
   title?: string;
@@ -31,9 +38,16 @@ type LiveBroadcastOverlayProps = {
   locationName?: string | null;
   microphoneEnabled?: boolean;
 
-  onChangeTitle?: (value: string) => void;
-  onChangeEventName?: (value: string) => void;
+  onChangeTitle?: (
+    value: string,
+  ) => void;
+
+  onChangeEventName?: (
+    value: string,
+  ) => void;
+
   onSaveMetadata?: () => void;
+
   onToggleMicrophone?: () => void;
   onOpenFilters?: () => void;
   onSwitchCamera?: () => void;
@@ -46,105 +60,224 @@ export function LiveBroadcastOverlay({
   isLive,
   isConnecting,
   cameraReady,
+
   viewers = 0,
   likes = 0,
   comments = [],
+
   error,
+
   title = "",
   eventName = "",
   locationName = null,
+
   microphoneEnabled = true,
+
   onChangeTitle,
   onChangeEventName,
   onSaveMetadata,
+
   onToggleMicrophone,
   onOpenFilters,
   onSwitchCamera,
+
   onStartLive,
   onFinishLive,
 }: LiveBroadcastOverlayProps) {
-  const [controlsVisible, setControlsVisible] =
-    useState(true);
 
-  const [metadataVisible, setMetadataVisible] =
-    useState(false);
+  const [
+  contentVisible,
+  setContentVisible,
+] = useState(true);
+
+  const [
+    startMetadataVisible,
+    setStartMetadataVisible,
+  ] = useState(true);
+
+  const [
+    moreMenuVisible,
+    setMoreMenuVisible,
+  ] = useState(false);
+
+  const [
+    locationVisible,
+    setLocationVisible,
+  ] = useState(true);
+
+  const [
+    audienceMode,
+    setAudienceMode,
+  ] = useState<
+    "public" | "followers"
+  >("public");
+
+  const [
+    commentsEnabled,
+    setCommentsEnabled,
+  ] = useState(true);
+
+  const [
+  noticeMessage,
+  setNoticeMessage,
+] = useState<string | null>(
+  null,
+);
 
   const opacity =
-    useRef(new Animated.Value(1)).current;
+    useRef(
+      new Animated.Value(1),
+    ).current;
 
   const translateY =
-    useRef(new Animated.Value(0)).current;
+    useRef(
+      new Animated.Value(0),
+    ).current;
 
-  function hideControls() {
-    if (!controlsVisible || metadataVisible) {
-      return;
-    }
+function hideContent() {
+  if (
+    !contentVisible ||
+    startMetadataVisible
+  ) {
+    return;
+  }
 
-    Animated.parallel([
-      Animated.timing(opacity, {
+  setMoreMenuVisible(false);
+
+  Animated.parallel([
+    Animated.timing(
+      opacity,
+      {
         toValue: 0,
         duration: 160,
         useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 32,
+      },
+    ),
+
+    Animated.timing(
+      translateY,
+      {
+        toValue: -12,
         duration: 180,
         useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setControlsVisible(false);
-    });
+      },
+    ),
+  ]).start(() => {
+    setContentVisible(false);
+  });
+}
+
+function showContent() {
+  if (contentVisible) {
+    return;
   }
 
-  function showControls() {
-    if (controlsVisible) {
-      return;
-    }
+  setContentVisible(true);
 
-    setControlsVisible(true);
-    opacity.setValue(0);
-    translateY.setValue(42);
+  opacity.setValue(0);
+  translateY.setValue(-12);
 
-    requestAnimationFrame(() => {
-      Animated.parallel([
-        Animated.timing(opacity, {
+  requestAnimationFrame(() => {
+    Animated.parallel([
+      Animated.timing(
+        opacity,
+        {
           toValue: 1,
-          duration: 220,
+          duration: 200,
           useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
+        },
+      ),
+
+      Animated.timing(
+        translateY,
+        {
           toValue: 0,
-          duration: 240,
+          duration: 200,
           useNativeDriver: true,
-        }),
-      ]).start();
-    });
+        },
+      ),
+    ]).start();
+  });
+}
+
+function handleBackgroundPress() {
+  if (startMetadataVisible) {
+    return;
   }
 
-  function handleBackgroundPress() {
-    if (metadataVisible) {
-      return;
-    }
-
-    if (controlsVisible) {
-      hideControls();
-      return;
-    }
-
-    showControls();
+  if (moreMenuVisible) {
+    setMoreMenuVisible(false);
   }
 
-  function openMetadata() {
-    setMetadataVisible(true);
+  if (contentVisible) {
+    hideContent();
+    return;
   }
 
-  function closeMetadata(save: boolean) {
-    setMetadataVisible(false);
+  showContent();
+}
 
-    if (save) {
-      onSaveMetadata?.();
-    }
+  function toggleMoreMenu() {
+    setMoreMenuVisible(
+      (current) => !current,
+    );
   }
+
+  function openStartMetadata() {
+    setMoreMenuVisible(false);
+    setStartMetadataVisible(true);
+  }
+
+  function closeStartMetadata() {
+    setStartMetadataVisible(false);
+  }
+
+function acceptStartMetadata() {
+  if (isLive) {
+    onSaveMetadata?.();
+
+    setNoticeMessage(
+      "Información del directo actualizada",
+    );
+  }
+
+  setStartMetadataVisible(false);
+}
+
+function toggleAudience() {
+  setAudienceMode(
+    (current) => {
+      const next =
+        current === "public"
+          ? "followers"
+          : "public";
+
+      setNoticeMessage(
+        next === "followers"
+          ? "Directo visible solo para seguidores"
+          : "El directo ahora es público",
+      );
+
+      return next;
+    },
+  );
+}
+
+function toggleComments() {
+  setCommentsEnabled(
+    (current) => {
+      const next = !current;
+
+      setNoticeMessage(
+        next
+          ? "Los comentarios se han activado"
+          : "Los comentarios se han ocultado",
+      );
+
+      return next;
+    },
+  );
+}
 
   return (
     <View
@@ -166,106 +299,150 @@ export function LiveBroadcastOverlay({
             0.7,
             1,
           ]}
-          style={styles.bottomGradient}
+          style={
+            styles.bottomGradient
+          }
         />
       ) : null}
 
       <Pressable
-        style={StyleSheet.absoluteFill}
-        onPress={handleBackgroundPress}
+        style={
+          StyleSheet.absoluteFill
+        }
+        onPress={
+          handleBackgroundPress
+        }
       />
 
       <LiveBroadcastError
         message={error}
       />
 
-      <LiveTimedCommentsLayer
-        comments={comments}
-        visible={isLive}
+      <LiveNotice
+        message={noticeMessage}
+        onHidden={() => {
+          setNoticeMessage(null);
+        }}
       />
 
-      {controlsVisible ? (
-        <Animated.View
-          pointerEvents="box-none"
-          style={[
-            styles.controlsLayer,
-            {
-              opacity,
-              transform: [
-                {
-                  translateY,
-                },
-              ],
-            },
-          ]}
-        >
-          <LiveBroadcastHeader
-            isLive={isLive}
-            viewers={viewers}
-            likes={likes}
-            onFinishLive={
-              onFinishLive
-            }
-          />
+<LiveBroadcastHeader
+  isLive={isLive}
+  viewers={viewers}
+  likes={likes}
+  onFinishLive={onFinishLive}
+/>
 
-          {isLive &&
-          (eventName.trim() ||
-            title.trim() ||
-            locationName) ? (
-            <View
-              pointerEvents="none"
-              style={styles.topMetadata}
-            >
-              <LiveBroadcastMetadata
-                eventName={eventName}
-                title={title}
-                location={locationName}
-              />
-            </View>
-          ) : null}
+{contentVisible ? (
+  <Animated.View
+    pointerEvents="box-none"
+    style={[
+      styles.contentLayer,
+      {
+        opacity,
+        transform: [
+          {
+            translateY,
+          },
+        ],
+      },
+    ]}
+  >
+    {isLive &&
+    (eventName.trim() ||
+      title.trim() ||
+      (
+        locationVisible &&
+        locationName
+      )) ? (
+      <Pressable
+        onPress={openStartMetadata}
+        style={styles.topMetadata}
+      >
+        <LiveBroadcastMetadata
+          eventName={eventName}
+          title={title}
+          location={
+            locationVisible
+              ? locationName
+              : null
+          }
+        />
+      </Pressable>
+    ) : null}
 
-          {isLive ? (
-            <LiveBroadcastBottomNav
-              isLive={isLive}
-              isConnecting={
-                isConnecting
-              }
-              cameraReady={
-                cameraReady
-              }
-              microphoneEnabled={
-                microphoneEnabled
-              }
-              onOpenMetadata={
-                openMetadata
-              }
-              onToggleMicrophone={
-                onToggleMicrophone ??
-                (() => {})
-              }
-              onOpenFilters={
-                onOpenFilters ??
-                (() => {})
-              }
-              onSwitchCamera={
-                onSwitchCamera ??
-                (() => {})
-              }
-              onStartLive={
-                onStartLive
-              }
-              onFinishLive={
-                onFinishLive
-              }
-            />
-          ) : null}
-        </Animated.View>
+    <LiveTimedCommentsLayer
+      comments={comments}
+      visible={
+        isLive &&
+        commentsEnabled
+      }
+    />
+  </Animated.View>
+) : null}
+
+{isLive ? (
+  <LiveBroadcastBottomNav
+    isLive={isLive}
+    isConnecting={isConnecting}
+    cameraReady={cameraReady}
+    microphoneEnabled={
+      microphoneEnabled
+    }
+    onOpenMore={
+      toggleMoreMenu
+    }
+    onToggleMicrophone={
+      onToggleMicrophone ??
+      (() => {})
+    }
+    onOpenFilters={
+      onOpenFilters ??
+      (() => {})
+    }
+    onSwitchCamera={
+      onSwitchCamera ??
+      (() => {})
+    }
+    onStartLive={onStartLive}
+    onFinishLive={onFinishLive}
+  />
+) : null}
+
+      {isLive ? (
+        <LiveBroadcastMoreMenu
+          visible={
+            moreMenuVisible
+          }
+          audienceMode={
+            audienceMode
+          }
+          commentsEnabled={
+            commentsEnabled
+          }
+          onEdit={
+            openStartMetadata
+          }
+          onToggleAudience={
+            toggleAudience
+          }
+          onToggleComments={
+            toggleComments
+          }
+        />
       ) : null}
 
-      <LiveBroadcastMetadataModal
-        visible={metadataVisible}
+      <LiveStartMetadataModal
+        visible={
+          startMetadataVisible
+        }
         title={title}
         eventName={eventName}
+        locationName={
+          locationName ?? ""
+        }
+        locationVisible={
+          locationVisible
+        }
         onChangeTitle={
           onChangeTitle ??
           (() => {})
@@ -274,46 +451,44 @@ export function LiveBroadcastOverlay({
           onChangeEventName ??
           (() => {})
         }
-        onCancel={() =>
-          closeMetadata(false)
+        onChangeLocationVisible={
+          setLocationVisible
         }
-        onSave={() =>
-          closeMetadata(true)
+        onAccept={
+          acceptStartMetadata
+        }
+        onClose={
+          closeStartMetadata
         }
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 10,
-  },
+const styles =
+  StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFill,
+      zIndex: 10,
+    },
 
-  bottomGradient: {
-    position: "absolute",
+    bottomGradient: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 190,
+    },
 
-    left: 0,
-    right: 0,
-    bottom: 0,
+contentLayer: {
+  ...StyleSheet.absoluteFill,
+},
 
-    height: 190,
-  },
-
-  controlsLayer: {
-    ...StyleSheet.absoluteFill,
-
-    justifyContent: "flex-end",
-  },
-
-  topMetadata: {
-    position: "absolute",
-
-    top: 70,
-    left: 18,
-    right: 96,
-
-    zIndex: 24,
-  },
-});
+    topMetadata: {
+      position: "absolute",
+      top: 70,
+      left: 18,
+      right: 96,
+      zIndex: 24,
+    },
+  });
