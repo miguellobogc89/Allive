@@ -630,38 +630,7 @@ console.log(
 
         stopThumbnailCapture();
 
-        const currentLiveSessionId =
-  liveSessionIdRef.current;
 
-const recordingEgressId =
-  recordingEgressIdRef.current;
-
-if (
-  currentLiveSessionId &&
-  recordingEgressId &&
-  token
-) {
-  try {
-    await stopLiveRecording(
-      currentLiveSessionId,
-      recordingEgressId,
-      token,
-    );
-
-    console.log(
-      "Grabación LIVE detenida:",
-      recordingEgressId,
-    );
-  } catch (caughtError) {
-    console.error(
-      "No se pudo detener la grabación:",
-      caughtError,
-    );
-  }
-}
-
-recordingEgressIdRef.current =
-  null;
 
         thumbnailCaptureRef.current =
           startLiveThumbnailCapture({
@@ -693,6 +662,39 @@ recordingEgressIdRef.current =
       );
 
       stopThumbnailCapture();
+
+          const currentLiveSessionId =
+      liveSessionIdRef.current;
+
+    const recordingEgressId =
+      recordingEgressIdRef.current;
+
+    if (
+      currentLiveSessionId &&
+      recordingEgressId &&
+      token
+    ) {
+      try {
+        await stopLiveRecording(
+          currentLiveSessionId,
+          recordingEgressId,
+          token,
+        );
+
+        console.log(
+          "Grabación LIVE detenida:",
+          recordingEgressId,
+        );
+      } catch (caughtError) {
+        console.error(
+          "No se pudo detener la grabación:",
+          caughtError,
+        );
+      }
+    }
+
+    recordingEgressIdRef.current =
+      null;
 
       try {
         await endRegisteredLive();
