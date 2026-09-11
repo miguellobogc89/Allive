@@ -8,7 +8,6 @@ import {
 
 import {
   ActivityIndicator,
-  ImageBackground,
   StyleSheet,
   Text,
   View,
@@ -289,59 +288,43 @@ function ReplayContent({
         styles.container
       }
     >
-      <ImageBackground
-        source={
-          replay.thumbnailUrl
-            ? {
-                uri:
-                  replay.thumbnailUrl,
-              }
-            : undefined
-        }
-        resizeMode="cover"
-        style={
-          styles.media
-        }
-      >
-        <ReplayOverlay
-          replay={
-            replay
+<View style={styles.media}>
+  <video
+    key={replay.id}
+    src={replay.recordingUrl}
+    autoPlay
+    playsInline
+    controls
+    style={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+    }}
+  />
+
+  <ReplayOverlay
+    replay={replay}
+    currentIndex={currentIndex}
+    totalReplays={totalReplays}
+    likes={likeCount}
+    liked={liked}
+    likeLoading={likeLoading}
+    onLikePress={toggleLike}
+    onPrevious={onPrevious}
+    onNext={onNext}
+    onOpenCreator={
+      creatorId
+        ? () => {
+            onOpenUser?.(
+              creatorId,
+            );
           }
-          currentIndex={
-            currentIndex
-          }
-          totalReplays={
-            totalReplays
-          }
-          likes={
-            likeCount
-          }
-          liked={
-            liked
-          }
-          likeLoading={
-            likeLoading
-          }
-          onLikePress={
-            toggleLike
-          }
-          onPrevious={
-            onPrevious
-          }
-          onNext={
-            onNext
-          }
-          onOpenCreator={
-            creatorId
-              ? () => {
-                  onOpenUser?.(
-                    creatorId,
-                  );
-                }
-              : undefined
-          }
-        />
-      </ImageBackground>
+        : undefined
+    }
+  />
+</View>
     </View>
   );
 }

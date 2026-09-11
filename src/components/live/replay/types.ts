@@ -6,4 +6,7 @@ import type {
 
 export type Replay = ActiveLive & {
   endedAt: string;
+  recordingUrl: string;
+  replaySavedAt: string;
+  replayVisibleUntil: string;
 };
