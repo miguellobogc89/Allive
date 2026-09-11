@@ -1,17 +1,28 @@
 // src/components/live/replay/overlay/ReplayOverlay.tsx
 
 import {
+  useRef,
+  useState,
+} from "react";
+
+import {
   LinearGradient,
 } from "expo-linear-gradient";
 
 import {
+  Animated,
+  Pressable,
   StyleSheet,
   View,
 } from "react-native";
 
 import {
-  LiveViewerBottomBar,
-} from "../../viewer/bottom-bar/LiveViewerBottomBar";
+  spacing,
+} from "../../../../styles";
+
+import {
+  LiveViewerIdentity,
+} from "../../viewer/header/LiveViewerIdentity";
 
 import {
   LiveViewerNavigation,
@@ -31,12 +42,7 @@ type ReplayOverlayProps = {
   currentIndex: number;
   totalReplays: number;
 
-  commentValue: string;
-
-  liked: boolean;
-
-  likeDisabled?: boolean;
-  commentDisabled?: boolean;
+  likes: number;
 
   followLoading?: boolean;
   isFollowing?: boolean;
@@ -44,18 +50,8 @@ type ReplayOverlayProps = {
   onPrevious: () => void;
   onNext: () => void;
 
-  onCommentChange: (
-    value: string,
-  ) => void;
-
-  onCommentSend: () => void;
-
-  onLikePress: () => void;
-
   onFollowPress?: () => void;
-
   onOpenCreator?: () => void;
-
   onOpenLives?: () => void;
 };
 
@@ -65,12 +61,7 @@ export function ReplayOverlay({
   currentIndex,
   totalReplays,
 
-  commentValue,
-
-  liked,
-
-  likeDisabled = false,
-  commentDisabled = false,
+  likes,
 
   followLoading = false,
   isFollowing = false,
@@ -78,17 +69,54 @@ export function ReplayOverlay({
   onPrevious,
   onNext,
 
-  onCommentChange,
-  onCommentSend,
-
-  onLikePress,
-
   onFollowPress,
-
   onOpenCreator,
-
   onOpenLives,
 }: ReplayOverlayProps) {
+  const [
+    contentVisible,
+    setContentVisible,
+  ] = useState(true);
+
+  const topOpacity =
+    useRef(
+      new Animated.Value(1),
+    ).current;
+
+  const topTranslateY =
+    useRef(
+      new Animated.Value(0),
+    ).current;
+
+  function toggleContent() {
+    const nextVisible =
+      !contentVisible;
+
+    setContentVisible(nextVisible);
+
+    Animated.parallel([
+      Animated.timing(
+        topOpacity,
+        {
+          toValue:
+            nextVisible ? 1 : 0,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        topTranslateY,
+        {
+          toValue:
+            nextVisible ? 0 : -14,
+          duration: 180,
+          useNativeDriver: true,
+        },
+      ),
+    ]).start();
+  }
+
   return (
     <View
       style={styles.overlay}
@@ -113,24 +141,55 @@ export function ReplayOverlay({
         pointerEvents="none"
       />
 
+      <Pressable
+        style={styles.tapSurface}
+        onPress={toggleContent}
+      />
+
       <ReplayHeader
-        replay={replay}
-        followLoading={
-          followLoading
-        }
-        isFollowing={
-          isFollowing
-        }
-        onFollowPress={
-          onFollowPress
-        }
-        onOpenCreator={
-          onOpenCreator
-        }
+        likes={likes}
         onOpenLives={
           onOpenLives
         }
       />
+
+      <Animated.View
+        pointerEvents={
+          contentVisible
+            ? "box-none"
+            : "none"
+        }
+        style={[
+          styles.identityLayer,
+          {
+            opacity:
+              topOpacity,
+
+            transform: [
+              {
+                translateY:
+                  topTranslateY,
+              },
+            ],
+          },
+        ]}
+      >
+        <LiveViewerIdentity
+          live={replay}
+          followLoading={
+            followLoading
+          }
+          isFollowing={
+            isFollowing
+          }
+          onFollowPress={
+            onFollowPress
+          }
+          onOpenCreator={
+            onOpenCreator
+          }
+        />
+      </Animated.View>
 
       <LiveViewerNavigation
         currentIndex={
@@ -146,28 +205,6 @@ export function ReplayOverlay({
           onNext
         }
       />
-
-      <LiveViewerBottomBar
-        commentValue={
-          commentValue
-        }
-        commentDisabled={
-          commentDisabled
-        }
-        liked={liked}
-        likeDisabled={
-          likeDisabled
-        }
-        onCommentChange={
-          onCommentChange
-        }
-        onCommentSend={
-          onCommentSend
-        }
-        onLikePress={
-          onLikePress
-        }
-      />
     </View>
   );
 }
@@ -179,11 +216,26 @@ const styles =
       zIndex: 10,
     },
 
+    tapSurface: {
+      ...StyleSheet.absoluteFill,
+      zIndex: 1,
+    },
+
     bottomGradient: {
       position: "absolute",
       left: 0,
       right: 0,
       bottom: 0,
+
       height: 190,
+    },
+
+    identityLayer: {
+      position: "absolute",
+      top: 80,
+      left: spacing.md,
+      right: spacing.md,
+
+      zIndex: 20,
     },
   });

@@ -140,15 +140,16 @@ export function LiveViewerOverlay({
     authToken,
   });
 
-  const {
-    liked,
-    likeLoading,
-    toggleLike,
-  } = useLiveViewerLikes({
-    liveId: live.id,
-    viewerIdentity,
-    authToken,
-  });
+const {
+  liked,
+  likeCount,
+  likeLoading,
+  toggleLike,
+} = useLiveViewerLikes({
+  liveId: live.id,
+  viewerIdentity,
+  authToken,
+});
 
   const {
     followingCreator,
@@ -316,9 +317,7 @@ export function LiveViewerOverlay({
             viewers={
               audience.total
             }
-            likes={
-              live.likeCount ?? 0
-            }
+            likes={likeCount}
             followLoading={
               followLoading
             }
