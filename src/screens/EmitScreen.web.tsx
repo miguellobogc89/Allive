@@ -40,6 +40,7 @@ import {
   getBroadcasterToken,
   markLiveAsEnded,
   registerLiveInBackend,
+  saveLiveReplay,
   startLiveRecording,
   stopLiveRecording,
   updateLiveMetadata,
@@ -103,6 +104,9 @@ export function EmitScreen({
   const previewStreamRef =
     useRef<MediaStream | null>(null);
 
+      const finishLivePromiseRef =
+    useRef<Promise<void> | null>(null);
+
   const previewVideoElementRef =
     useRef<HTMLVideoElement | null>(null);
 
@@ -145,6 +149,11 @@ export function EmitScreen({
   const [
     finishModalVisible,
     setFinishModalVisible,
+  ] = useState(false);
+
+    const [
+    isSavingReplay,
+    setIsSavingReplay,
   ] = useState(false);
 
   const [
@@ -789,6 +798,58 @@ export function EmitScreen({
     }
   }
 
+    async function handleSaveReplay() {
+    const currentLiveSessionId =
+      liveSessionId;
+
+    const authToken = token;
+
+    if (
+      !currentLiveSessionId ||
+      !authToken ||
+      isSavingReplay
+    ) {
+      return;
+    }
+
+    try {
+      setIsSavingReplay(true);
+
+            if (finishLivePromiseRef.current) {
+        await finishLivePromiseRef.current;
+      }
+
+      if (finishLivePromiseRef.current) {
+  await finishLivePromiseRef.current;
+}
+
+await saveLiveReplay(
+  currentLiveSessionId,
+  authToken,
+);
+
+      await saveLiveReplay(
+        currentLiveSessionId,
+        authToken,
+      );
+
+      setFinishModalVisible(false);
+    } catch (caughtError) {
+      console.error(
+        "No se pudo guardar el REPLAY:",
+        caughtError,
+      );
+
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "No se pudo guardar el vídeo.",
+      );
+    } finally {
+      setIsSavingReplay(false);
+    }
+  }
+
   async function finishLive() {
     setFinishModalVisible(true);
 
@@ -893,20 +954,34 @@ export function EmitScreen({
           );
         }}
         onStartLive={startLive}
-        onFinishLive={finishLive}
+        onFinishLive={() => {
+  const finishPromise =
+    finishLive();
+
+  finishLivePromiseRef.current =
+    finishPromise;
+
+  void finishPromise.finally(() => {
+    if (
+      finishLivePromiseRef.current ===
+      finishPromise
+    ) {
+      finishLivePromiseRef.current =
+        null;
+    }
+  });
+}}
       />
 
       <LiveFinishModal
         visible={finishModalVisible}
+        saving={isSavingReplay}
+        discarding={false}
         onSave={() => {
-          setFinishModalVisible(
-            false,
-          );
+          void handleSaveReplay();
         }}
         onDiscard={() => {
-          setFinishModalVisible(
-            false,
-          );
+          setFinishModalVisible(false);
         }}
       />
     </View>

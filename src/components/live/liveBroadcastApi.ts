@@ -224,3 +224,39 @@ export async function stopLiveRecording(
     );
   }
 }
+
+export type SaveLiveReplayResponse = {
+  ok: true;
+  replaySavedAt: string;
+  replayVisibleUntil: string;
+};
+
+export async function saveLiveReplay(
+  liveSessionId: string,
+  authToken: string,
+): Promise<SaveLiveReplayResponse> {
+  const response = await fetch(
+    `${API_URL}/api/lives/${liveSessionId}/replay/save`,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bearer ${authToken}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const responseBody =
+      await response
+        .json()
+        .catch(() => null);
+
+    throw new Error(
+      responseBody?.error ??
+        `No se pudo guardar el vídeo (${response.status})`,
+    );
+  }
+
+  return response.json() as Promise<SaveLiveReplayResponse>;
+}
