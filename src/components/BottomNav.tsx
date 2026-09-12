@@ -1,12 +1,19 @@
 // src/components/BottomNav.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
 import {
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import {
   colors,
@@ -16,9 +23,15 @@ import {
 
 type BottomNavProps = {
   activeTab: string;
-  onTabPress: (tab: string) => void;
+
+  onTabPress: (
+    tab: string,
+  ) => void;
+
   emitCanStart?: boolean;
+
   emitIsConnecting?: boolean;
+
   onEmitStart?: () => void;
 };
 
@@ -29,11 +42,15 @@ export function BottomNav({
   emitIsConnecting = false,
   onEmitStart,
 }: BottomNavProps) {
+  const insets =
+    useSafeAreaInsets();
+
   const tabs = [
     {
       id: "now",
       label: "NOW",
-      icon: "play-circle-outline",
+      icon:
+        "play-circle-outline",
     },
     {
       id: "map",
@@ -58,224 +75,304 @@ export function BottomNav({
   ];
 
   return (
-    <View style={styles.container}>
-      {tabs.map((tab) => {
-        const isActive =
-          activeTab === tab.id;
+    <View
+      style={[
+        styles.container,
+        {
+          height:
+            66 +
+            insets.bottom,
 
-        const isEmit =
-          tab.id === "emit";
+          paddingBottom:
+            Math.max(
+              insets.bottom,
+              8,
+            ),
+        },
+      ]}
+    >
+      {tabs.map(
+        (tab) => {
+          const isActive =
+            activeTab ===
+            tab.id;
 
-        if (isEmit) {
-          const emitStartMode =
-            activeTab === "emit" &&
-            Boolean(onEmitStart);
+          const isEmit =
+            tab.id ===
+            "emit";
+
+          if (isEmit) {
+            const emitStartMode =
+              activeTab ===
+                "emit" &&
+              Boolean(
+                onEmitStart,
+              );
+
+            return (
+              <Pressable
+                key={tab.id}
+                style={[
+                  styles.emitWrapper,
+
+                  emitStartMode &&
+                    styles.emitWrapperActive,
+                ]}
+                disabled={
+                  emitStartMode &&
+                  (!emitCanStart ||
+                    emitIsConnecting)
+                }
+                onPress={() => {
+                  if (
+                    emitStartMode
+                  ) {
+                    onEmitStart?.();
+
+                    return;
+                  }
+
+                  onTabPress(
+                    tab.id,
+                  );
+                }}
+              >
+                <View
+                  style={[
+                    styles.emitButton,
+
+                    emitStartMode &&
+                      styles.emitButtonStart,
+
+                    emitStartMode &&
+                      (!emitCanStart ||
+                        emitIsConnecting) &&
+                      styles.emitButtonDisabled,
+                  ]}
+                >
+                  <View
+                    style={
+                      styles.emitInner
+                    }
+                  >
+                    <View
+                      style={
+                        styles.emitDot
+                      }
+                    />
+                  </View>
+                </View>
+
+                <Text
+                  style={
+                    styles.emitLabel
+                  }
+                >
+                  {emitStartMode
+                    ? emitIsConnecting
+                      ? "INICIANDO"
+                      : emitCanStart
+                        ? "INICIAR"
+                        : "PREPARANDO"
+                    : "EMITIR"}
+                </Text>
+              </Pressable>
+            );
+          }
 
           return (
             <Pressable
               key={tab.id}
-              style={[
-                styles.emitWrapper,
-                emitStartMode &&
-                  styles.emitWrapperActive,
-              ]}
-              disabled={
-                emitStartMode &&
-                (
-                  !emitCanStart ||
-                  emitIsConnecting
-                )
+              style={
+                styles.tab
               }
               onPress={() => {
-                if (emitStartMode) {
-                  onEmitStart?.();
-                  return;
-                }
-
-                onTabPress(tab.id);
+                onTabPress(
+                  tab.id,
+                );
               }}
             >
-              <View
+              <Ionicons
+                name={
+                  tab.icon as any
+                }
+                size={26}
+                color={
+                  isActive
+                    ? colors.text
+                    : colors.textOnOverlayMuted
+                }
+              />
+
+              <Text
                 style={[
-                  styles.emitButton,
-                  emitStartMode &&
-                    styles.emitButtonStart,
-                  emitStartMode &&
-                    (
-                      !emitCanStart ||
-                      emitIsConnecting
-                    ) &&
-                    styles.emitButtonDisabled,
+                  styles.label,
+
+                  isActive
+                    ? styles.activeLabel
+                    : undefined,
                 ]}
               >
-                <View style={styles.emitInner}>
-                  <View style={styles.emitDot} />
-                </View>
-              </View>
-
-              <Text style={styles.emitLabel}>
-                {emitStartMode
-                  ? emitIsConnecting
-                    ? "INICIANDO"
-                    : emitCanStart
-                      ? "INICIAR"
-                      : "PREPARANDO"
-                  : "EMITIR"}
+                {tab.label}
               </Text>
             </Pressable>
           );
-        }
-
-        return (
-          <Pressable
-            key={tab.id}
-            style={styles.tab}
-            onPress={() =>
-              onTabPress(tab.id)
-            }
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={26}
-              color={
-                isActive
-                  ? colors.text
-                  : colors.textOnOverlayMuted
-              }
-            />
-
-            <Text
-              style={[
-                styles.label,
-                isActive
-                  ? styles.activeLabel
-                  : undefined,
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+        },
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    height: 78,
+const styles =
+  StyleSheet.create({
+    container: {
+      flexDirection:
+        "row",
 
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
+      alignItems:
+        "flex-end",
 
-    paddingHorizontal: spacing.xs,
-    paddingBottom: 12,
+      justifyContent:
+        "space-around",
 
-    backgroundColor: "#000000",
+      paddingHorizontal:
+        spacing.xs,
 
-    zIndex: 100,
-  },
+      backgroundColor:
+        "#000000",
 
-  tab: {
-    flex: 1,
-    height: 58,
+      zIndex: 100,
+    },
 
-    alignItems: "center",
-    justifyContent: "center",
+    tab: {
+      flex: 1,
 
-    gap: spacing.xxs,
-  },
+      height: 58,
 
-  label: {
-    color: colors.textOnOverlayMuted,
+      alignItems:
+        "center",
 
-    fontSize: 10,
-    fontWeight:
-      typography.caption.fontWeight,
-  },
+      justifyContent:
+        "center",
 
-  activeLabel: {
-    color: colors.text,
-    fontWeight: "800",
-  },
+      gap: spacing.xxs,
+    },
 
-  emitWrapper: {
-    flex: 1,
+    label: {
+      color:
+        colors.textOnOverlayMuted,
 
-    alignItems: "center",
-    justifyContent: "flex-end",
+      fontSize: 10,
 
-    transform: [
-      {
-        translateY: -3,
-      },
-    ],
-  },
+      fontWeight:
+        typography.caption
+          .fontWeight,
+    },
 
-  emitWrapperActive: {
-    transform: [
-      {
-        translateY: -7,
-      },
-    ],
-  },
+    activeLabel: {
+      color:
+        colors.text,
 
-  emitButton: {
-    width: 54,
-    height: 54,
+      fontWeight:
+        "800",
+    },
 
-    borderRadius: 20,
+    emitWrapper: {
+      flex: 1,
 
-    alignItems: "center",
-    justifyContent: "center",
+      alignItems:
+        "center",
 
-    backgroundColor:
-      colors.overlayRaised,
+      justifyContent:
+        "flex-end",
 
-    borderWidth: 2,
-    borderColor:
-      colors.borderOnOverlay,
-  },
+      transform: [
+        {
+          translateY: -3,
+        },
+      ],
+    },
 
-  emitButtonStart: {
-    backgroundColor: colors.live,
-    borderColor: colors.text,
-  },
+    emitWrapperActive: {
+      transform: [
+        {
+          translateY: -7,
+        },
+      ],
+    },
 
-  emitButtonDisabled: {
-    opacity: 0.48,
-  },
+    emitButton: {
+      width: 54,
+      height: 54,
 
-  emitInner: {
-    width: 30,
-    height: 30,
+      borderRadius: 20,
 
-    borderRadius: 15,
+      alignItems:
+        "center",
 
-    alignItems: "center",
-    justifyContent: "center",
+      justifyContent:
+        "center",
 
-    borderWidth: 2,
-    borderColor: colors.live,
-  },
+      backgroundColor:
+        colors.overlayRaised,
 
-  emitDot: {
-    width: 14,
-    height: 14,
+      borderWidth: 2,
 
-    borderRadius: 7,
+      borderColor:
+        colors.borderOnOverlay,
+    },
 
-    backgroundColor: colors.live,
-  },
+    emitButtonStart: {
+      backgroundColor:
+        colors.live,
 
-  emitLabel: {
-    marginTop: 3,
+      borderColor:
+        colors.text,
+    },
 
-    color: colors.text,
+    emitButtonDisabled: {
+      opacity: 0.48,
+    },
 
-    fontSize:
-      typography.micro.fontSize,
-    fontWeight: "800",
-  },
-});
+    emitInner: {
+      width: 30,
+      height: 30,
+
+      borderRadius: 15,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      borderWidth: 2,
+
+      borderColor:
+        colors.live,
+    },
+
+    emitDot: {
+      width: 14,
+      height: 14,
+
+      borderRadius: 7,
+
+      backgroundColor:
+        colors.live,
+    },
+
+    emitLabel: {
+      marginTop: 3,
+
+      color:
+        colors.text,
+
+      fontSize:
+        typography.micro
+          .fontSize,
+
+      fontWeight:
+        "800",
+    },
+  });

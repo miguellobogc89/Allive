@@ -11,12 +11,16 @@ import {
   ActivityIndicator,
   AppState,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import {
   AuthProvider,
@@ -391,7 +395,10 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={["top"]}
+    >
       <View style={styles.content}>
         {renderScreen()}
       </View>
@@ -458,9 +465,11 @@ configureDefaultTypography();
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

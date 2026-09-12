@@ -9,6 +9,8 @@ import {
 import {
   ActivityIndicator,
   FlatList,
+  Image,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -29,6 +31,10 @@ import {
 } from "../api/liveRealtimeApi";
 
 import {
+  useAuth,
+} from "../auth/AuthContext";
+
+import {
   SearchResultCard,
 } from "../components/search/result-card/SearchResultCard";
 
@@ -37,32 +43,27 @@ import {
   type SearchTab,
 } from "../components/search/SearchTabs";
 
-type GridItem =
-  | {
-      id: string;
-      type: "live";
-      live: SearchLive;
-    }
-  | {
-      id: string;
-      type: "user";
-      user: SearchUser;
-    };
+type LiveItem = {
+  id: string;
+  live: SearchLive;
+};
 
 type SearchScreenProps = {
   onOpenLive: (
     liveId: string,
   ) => void;
+
   onOpenUser: (
     userId: string,
   ) => void;
 };
 
-const EMPTY_RESPONSE: SearchResponse = {
-  query: "",
-  lives: [],
-  users: [],
-};
+const EMPTY_RESPONSE:
+  SearchResponse = {
+    query: "",
+    lives: [],
+    users: [],
+  };
 
 function getColumnCount(
   width: number,
@@ -78,33 +79,11 @@ function getColumnCount(
   return 2;
 }
 
-function liveItems(
-  lives: SearchLive[],
-): GridItem[] {
-  return lives.map(
-    (live) => ({
-      id: `live-${live.id}`,
-      type: "live",
-      live,
-    }),
-  );
-}
-
-function peopleItems(
-  users: SearchUser[],
-): GridItem[] {
-  return users.map(
-    (user) => ({
-      id: `user-${user.id}`,
-      type: "user",
-      user,
-    }),
-  );
-}
-
 function applyMetricUpdate(
-  response: SearchResponse,
-  update: LiveMetricUpdate,
+  response:
+    SearchResponse,
+  update:
+    LiveMetricUpdate,
 ): SearchResponse {
   let changed = false;
 
@@ -120,21 +99,21 @@ function applyMetricUpdate(
 
         changed = true;
 
-return {
-  ...live,
+        return {
+          ...live,
 
-  likeCount:
-    update.likeCount ??
-    live.likeCount,
+          likeCount:
+            update.likeCount ??
+            live.likeCount,
 
-  viewerCount:
-    update.viewerCount ??
-    live.viewerCount,
+          viewerCount:
+            update.viewerCount ??
+            live.viewerCount,
 
-  thumbnailUrl:
-    update.thumbnailUrl ??
-    live.thumbnailUrl,
-};
+          thumbnailUrl:
+            update.thumbnailUrl ??
+            live.thumbnailUrl,
+        };
       },
     );
 
@@ -152,8 +131,15 @@ export function SearchScreen({
   onOpenLive,
   onOpenUser,
 }: SearchScreenProps) {
-  const { width } =
+  const {
+    width,
+  } =
     useWindowDimensions();
+
+  const {
+    user,
+    token,
+  } = useAuth();
 
   const [
     query,
@@ -185,14 +171,24 @@ export function SearchScreen({
     error,
     setError,
   ] =
-    useState<string | null>(
-      null,
-    );
+    useState<
+      string | null
+    >(null);
 
   const columns =
     getColumnCount(width);
 
   useEffect(() => {
+    if (!token) {
+      setResponse(
+        EMPTY_RESPONSE,
+      );
+
+      setLoading(false);
+
+      return;
+    }
+
     const controller =
       new AbortController();
 
@@ -206,10 +202,22 @@ export function SearchScreen({
             const result =
               await searchAll(
                 query,
+                token,
                 controller.signal,
               );
 
-            setResponse(result);
+            setResponse({
+              ...result,
+
+              users:
+                result.users.filter(
+                  (
+                    resultUser,
+                  ) =>
+                    resultUser.id !==
+                    user?.id,
+                ),
+            });
           } catch (
             caughtError
           ) {
@@ -245,10 +253,17 @@ export function SearchScreen({
       );
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(
+        timer,
+      );
+
       controller.abort();
     };
-  }, [query]);
+  }, [
+    query,
+    token,
+    user?.id,
+  ]);
 
   useEffect(() => {
     return subscribeToLiveMetrics(
@@ -264,110 +279,72 @@ export function SearchScreen({
     );
   }, []);
 
-  const items =
+  const users =
+    useMemo(
+      () =>
+        response.users.filter(
+          (
+            resultUser,
+          ) =>
+            resultUser.id !==
+            user?.id,
+        ),
+      [
+        response.users,
+        user?.id,
+      ],
+    );
+
+  const lives =
     useMemo(() => {
-      if (
-        activeTab ===
-        "people"
-      ) {
-        return peopleItems(
-          response.users,
-        );
-      }
-
-      if (
-        activeTab ===
-        "live"
-      ) {
-        return liveItems(
-          response.lives,
-        );
-      }
-
       if (
         activeTab ===
         "nearby"
       ) {
-        return liveItems(
-          response.lives.filter(
+        return response.lives
+          .filter(
             (live) =>
               live.latitude !==
                 null &&
               live.longitude !==
                 null,
-          ),
-        );
+          );
       }
 
-      if (
-        query.trim().length > 0
-      ) {
-        return [
-          ...peopleItems(
-            response.users,
-          ),
-          ...liveItems(
-            response.lives,
-          ),
-        ];
-      }
-
-      return liveItems(response.lives);
+      return response.lives;
     }, [
       activeTab,
-      query,
-      response,
+      response.lives,
     ]);
 
-  function renderItem({
-    item,
-  }: {
-    item: GridItem;
-  }) {
-    return (
-      <View
-        style={
-          styles.gridCell
-        }
-      >
-        {item.type ===
-        "live" ? (
-          <SearchResultCard
-            type="live"
-            live={item.live}
-            onPress={() => {
-              if (
-                item.live
-                  .isSimulated
-              ) {
-                return;
-              }
-
-              onOpenLive(
-                item.live.id,
-              );
-            }}
-          />
-        ) : (
-          <SearchResultCard
-            type="user"
-            user={item.user}
-            onPress={() => {
-              onOpenUser(
-                item.user.id,
-              );
-            }}
-          />
-        )}
-      </View>
+  const showPeople =
+    activeTab ===
+      "people" ||
+    (
+      activeTab ===
+        "for-you" &&
+      query.trim().length >
+        0 &&
+      users.length > 0
     );
-  }
 
-  function renderEmpty() {
+  const liveItems:
+    LiveItem[] =
+      lives.map(
+        (live) => ({
+          id:
+            `live-${live.id}`,
+          live,
+        }),
+      );
+
+  function renderState() {
     if (loading) {
       return (
         <View
-          style={styles.state}
+          style={
+            styles.state
+          }
         >
           <ActivityIndicator
             color="#FF6B5F"
@@ -387,7 +364,9 @@ export function SearchScreen({
     if (error) {
       return (
         <View
-          style={styles.state}
+          style={
+            styles.state
+          }
         >
           <Text
             style={
@@ -410,7 +389,9 @@ export function SearchScreen({
 
     return (
       <View
-        style={styles.state}
+        style={
+          styles.state
+        }
       >
         <Text
           style={
@@ -429,6 +410,85 @@ export function SearchScreen({
           búsqueda.
         </Text>
       </View>
+    );
+  }
+
+  function renderUser({
+    item,
+  }: {
+    item: SearchUser;
+  }) {
+    const name =
+      item.displayName?.trim();
+
+    return (
+      <Pressable
+        style={
+          styles.userRow
+        }
+        onPress={() => {
+          onOpenUser(
+            item.id,
+          );
+        }}
+      >
+        {item.avatarUrl ? (
+          <Image
+            source={{
+              uri:
+                item.avatarUrl,
+            }}
+            style={
+              styles.avatar
+            }
+          />
+        ) : (
+          <View
+            style={[
+              styles.avatar,
+              styles.avatarFallback,
+            ]}
+          >
+            <Text
+              style={
+                styles.avatarLetter
+              }
+            >
+              {item.username
+                .charAt(0)
+                .toUpperCase()}
+            </Text>
+          </View>
+        )}
+
+        <View
+          style={
+            styles.userIdentity
+          }
+        >
+          <Text
+            numberOfLines={1}
+            style={
+              styles.username
+            }
+          >
+            {item.username}
+          </Text>
+
+          {name ? (
+            <Text
+              numberOfLines={
+                1
+              }
+              style={
+                styles.displayName
+              }
+            >
+              {name}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
     );
   }
 
@@ -466,7 +526,9 @@ export function SearchScreen({
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
-            style={styles.input}
+            style={
+              styles.input
+            }
           />
         </View>
 
@@ -480,33 +542,81 @@ export function SearchScreen({
         />
       </View>
 
-      <FlatList
-        key={`${columns}-${activeTab}`}
-        data={items}
-        renderItem={
-          renderItem
-        }
-        keyExtractor={(
-          item,
-        ) => item.id}
-        numColumns={columns}
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={
-          items.length === 0
-            ? styles.emptyList
-            : styles.list
-        }
-        columnWrapperStyle={
-          columns > 1
-            ? styles.row
-            : undefined
-        }
-        ListEmptyComponent={
-          renderEmpty
-        }
-      />
+      {showPeople ? (
+        <FlatList
+          key="people-list"
+          data={users}
+          renderItem={
+            renderUser
+          }
+          keyExtractor={(
+            item,
+          ) => item.id}
+          showsVerticalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            users.length ===
+            0
+              ? styles.emptyList
+              : styles.peopleList
+          }
+          ListEmptyComponent={
+            renderState
+          }
+        />
+      ) : (
+        <FlatList
+          key={`live-${columns}-${activeTab}`}
+          data={
+            liveItems
+          }
+          renderItem={({
+            item,
+          }) => (
+            <View
+              style={
+                styles.gridCell
+              }
+            >
+              <SearchResultCard
+                type="live"
+                live={
+                  item.live
+                }
+                onPress={() => {
+                  onOpenLive(
+                    item.live.id,
+                  );
+                }}
+              />
+            </View>
+          )}
+          keyExtractor={(
+            item,
+          ) => item.id}
+          numColumns={
+            columns
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            liveItems.length ===
+            0
+              ? styles.emptyList
+              : styles.list
+          }
+          columnWrapperStyle={
+            columns > 1
+              ? styles.row
+              : undefined
+          }
+          ListEmptyComponent={
+            renderState
+          }
+        />
+      )}
     </View>
   );
 }
@@ -515,26 +625,37 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         "#F7F7F5",
     },
 
     header: {
       paddingTop: 16,
+
       backgroundColor:
         "#F7F7F5",
     },
 
     searchBox: {
       height: 46,
-      marginHorizontal: 16,
-      marginBottom: 8,
-      paddingHorizontal: 13,
 
-      flexDirection: "row",
-      alignItems: "center",
+      marginHorizontal:
+        16,
+
+      marginBottom: 8,
+
+      paddingHorizontal:
+        13,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
 
       borderWidth: 1,
+
       borderColor:
         "#DEDEDA",
 
@@ -546,19 +667,116 @@ const styles =
 
     searchIcon: {
       marginRight: 8,
-      color: "#898984",
+
+      color:
+        "#898984",
+
       fontSize: 21,
-      fontWeight: "300",
+
+      fontWeight:
+        "300",
     },
 
     input: {
       flex: 1,
+
       height: "100%",
-      color: "#292927",
+
+      color:
+        "#292927",
+
       fontSize: 15,
-      fontWeight: "400",
-      outlineStyle: "none",
+
+      fontWeight:
+        "400",
+
+      outlineStyle:
+        "none",
     } as any,
+
+    peopleList: {
+      paddingVertical: 8,
+
+      paddingBottom: 140,
+    },
+
+    userRow: {
+      minHeight: 72,
+
+      paddingHorizontal:
+        16,
+
+      paddingVertical:
+        8,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      backgroundColor:
+        "#F7F7F5",
+    },
+
+    avatar: {
+      width: 52,
+      height: 52,
+
+      borderRadius: 26,
+    },
+
+    avatarFallback: {
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      backgroundColor:
+        "#E4E4E0",
+    },
+
+    avatarLetter: {
+      color:
+        "#555550",
+
+      fontSize: 19,
+
+      fontWeight:
+        "600",
+    },
+
+    userIdentity: {
+      flex: 1,
+
+      marginLeft: 12,
+
+      justifyContent:
+        "center",
+    },
+
+    username: {
+      color:
+        "#292927",
+
+      fontSize: 14,
+
+      fontWeight:
+        "600",
+    },
+
+    displayName: {
+      marginTop: 3,
+
+      color:
+        "#858580",
+
+      fontSize: 14,
+
+      fontWeight:
+        "400",
+    },
 
     list: {
       paddingBottom: 140,
@@ -566,43 +784,65 @@ const styles =
 
     row: {
       gap: 1,
+
       backgroundColor:
         "#E4E4E0",
     },
 
     gridCell: {
       flex: 1,
+
       minWidth: 0,
-      borderBottomWidth: 1,
+
+      borderBottomWidth:
+        1,
+
       borderBottomColor:
         "#E4E4E0",
     },
 
     emptyList: {
       flexGrow: 1,
+
       paddingBottom: 140,
     },
 
     state: {
       minHeight: 300,
+
       flex: 1,
+
       justifyContent:
         "center",
-      alignItems: "center",
+
+      alignItems:
+        "center",
+
       padding: 24,
     },
 
     stateTitle: {
-      color: "#343432",
+      color:
+        "#343432",
+
       fontSize: 16,
-      fontWeight: "500",
+
+      fontWeight:
+        "500",
     },
 
     stateText: {
       marginTop: 7,
-      color: "#8A8A85",
+
+      color:
+        "#8A8A85",
+
       fontSize: 13,
-      fontWeight: "400",
-      textAlign: "center",
+
+      fontWeight:
+        "400",
+
+      textAlign:
+        "center",
     },
   });
