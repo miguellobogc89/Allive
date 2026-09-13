@@ -44,12 +44,17 @@ import {
 } from "../styles";
 
 type ReplayViewerScreenProps = {
+  requestedReplayId?:
+    | string
+    | null;
+
   onOpenUser?: (
     userId: string,
   ) => void;
 };
 
 export function ReplayViewerScreen({
+  requestedReplayId = null,
   onOpenUser,
 }: ReplayViewerScreenProps) {
   const {
@@ -73,7 +78,8 @@ export function ReplayViewerScreen({
   ] = useState(true);
 
   const activeReplay =
-    replays[currentIndex] ?? null;
+    replays[currentIndex] ??
+    null;
 
   const goToPreviousReplay =
     useCallback(() => {
@@ -85,7 +91,9 @@ export function ReplayViewerScreen({
               ? replays.length - 1
               : index - 1,
       );
-    }, [replays.length]);
+    }, [
+      replays.length,
+    ]);
 
   const goToNextReplay =
     useCallback(() => {
@@ -98,7 +106,9 @@ export function ReplayViewerScreen({
               ? 0
               : index + 1,
       );
-    }, [replays.length]);
+    }, [
+      replays.length,
+    ]);
 
   useEffect(() => {
     const controller =
@@ -106,16 +116,41 @@ export function ReplayViewerScreen({
 
     async function load() {
       try {
+        setLoading(true);
+
         const result =
           await getReplays(
             controller.signal,
           );
 
-        setReplays(result);
-        setCurrentIndex(0);
+        setReplays(
+          result,
+        );
+
+        if (
+          requestedReplayId
+        ) {
+          const requestedIndex =
+            result.findIndex(
+              (replay) =>
+                replay.id ===
+                requestedReplayId,
+            );
+
+          setCurrentIndex(
+            requestedIndex >= 0
+              ? requestedIndex
+              : 0,
+          );
+        } else {
+          setCurrentIndex(
+            0,
+          );
+        }
       } catch (error) {
         if (
-          !controller.signal.aborted
+          !controller
+            .signal.aborted
         ) {
           console.error(
             "Allive replays error:",
@@ -124,9 +159,12 @@ export function ReplayViewerScreen({
         }
       } finally {
         if (
-          !controller.signal.aborted
+          !controller
+            .signal.aborted
         ) {
-          setLoading(false);
+          setLoading(
+            false,
+          );
         }
       }
     }
@@ -136,16 +174,24 @@ export function ReplayViewerScreen({
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [
+    requestedReplayId,
+  ]);
 
   if (
     loading &&
     !activeReplay
   ) {
     return (
-      <View style={styles.loading}>
+      <View
+        style={
+          styles.loading
+        }
+      >
         <ActivityIndicator
-          color={colors.accent}
+          color={
+            colors.accent
+          }
         />
       </View>
     );
@@ -153,14 +199,28 @@ export function ReplayViewerScreen({
 
   if (!activeReplay) {
     return (
-      <View style={styles.container}>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>
+      <View
+        style={
+          styles.container
+        }
+      >
+        <View
+          style={
+            styles.emptyState
+          }
+        >
+          <Text
+            style={
+              styles.emptyTitle
+            }
+          >
             No hay replays disponibles
           </Text>
 
           <Text
-            style={styles.emptySubtitle}
+            style={
+              styles.emptySubtitle
+            }
           >
             Los directos recientes aparecerán aquí.
           </Text>
@@ -171,16 +231,30 @@ export function ReplayViewerScreen({
 
   return (
     <ReplayContent
-      replay={activeReplay}
-      currentIndex={currentIndex}
-      totalReplays={replays.length}
-      viewerIdentity={identity}
-      authToken={token}
+      replay={
+        activeReplay
+      }
+      currentIndex={
+        currentIndex
+      }
+      totalReplays={
+        replays.length
+      }
+      viewerIdentity={
+        identity
+      }
+      authToken={
+        token
+      }
       onPrevious={
         goToPreviousReplay
       }
-      onNext={goToNextReplay}
-      onOpenUser={onOpenUser}
+      onNext={
+        goToNextReplay
+      }
+      onOpenUser={
+        onOpenUser
+      }
     />
   );
 }
@@ -199,8 +273,11 @@ type ReplayContentProps = {
   authToken:
     string | null;
 
-  onPrevious: () => void;
-  onNext: () => void;
+  onPrevious:
+    () => void;
+
+  onNext:
+    () => void;
 
   onOpenUser?: (
     userId: string,
@@ -226,45 +303,80 @@ function ReplayContent({
     likeCount,
     likeLoading,
     toggleLike,
-  } = useLiveViewerLikes({
-    liveId: replay.id,
+  } =
+    useLiveViewerLikes({
+      liveId:
+        replay.id,
 
-    viewerIdentity,
+      viewerIdentity,
 
-    authToken,
-  });
+      authToken,
+    });
 
-  const player = useVideoPlayer(
-    replay.recordingUrl,
-    (videoPlayer) => {
-      videoPlayer.loop = false;
-      videoPlayer.play();
-    },
-  );
+  const player =
+    useVideoPlayer(
+      replay.recordingUrl,
+      (
+        videoPlayer,
+      ) => {
+        videoPlayer.loop =
+          false;
+
+        videoPlayer.play();
+      },
+    );
 
   const creatorId =
     replay.creator?.id;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={
+        styles.container
+      }
+    >
       <VideoView
-        key={replay.id}
-        player={player}
-        style={styles.video}
+        key={
+          replay.id
+        }
+        player={
+          player
+        }
+        style={
+          styles.video
+        }
         contentFit="cover"
         nativeControls
       />
 
       <ReplayOverlay
-        replay={replay}
-        currentIndex={currentIndex}
-        totalReplays={totalReplays}
-        likes={likeCount}
-        liked={liked}
-        likeLoading={likeLoading}
-        onLikePress={toggleLike}
-        onPrevious={onPrevious}
-        onNext={onNext}
+        replay={
+          replay
+        }
+        currentIndex={
+          currentIndex
+        }
+        totalReplays={
+          totalReplays
+        }
+        likes={
+          likeCount
+        }
+        liked={
+          liked
+        }
+        likeLoading={
+          likeLoading
+        }
+        onLikePress={
+          toggleLike
+        }
+        onPrevious={
+          onPrevious
+        }
+        onNext={
+          onNext
+        }
         onOpenCreator={
           creatorId
             ? () => {
@@ -284,27 +396,31 @@ const styles =
     container: {
       flex: 1,
 
-      position: "relative",
+      position:
+        "relative",
 
       backgroundColor:
         colors.background,
     },
 
-video: {
-  ...StyleSheet.absoluteFill,
+    video: {
+      ...StyleSheet.absoluteFill,
 
-  width: "100%",
-  height: "100%",
+      width: "100%",
+      height: "100%",
 
-  backgroundColor:
-    colors.background,
-},
+      backgroundColor:
+        colors.background,
+    },
 
     loading: {
       flex: 1,
 
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
 
       backgroundColor:
         colors.background,
@@ -313,19 +429,27 @@ video: {
     emptyState: {
       flex: 1,
 
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems:
+        "center",
 
-      paddingHorizontal: 32,
+      justifyContent:
+        "center",
+
+      paddingHorizontal:
+        32,
     },
 
     emptyTitle: {
-      color: "#FFFFFF",
+      color:
+        "#FFFFFF",
 
       fontSize: 17,
-      fontWeight: "600",
 
-      textAlign: "center",
+      fontWeight:
+        "600",
+
+      textAlign:
+        "center",
     },
 
     emptySubtitle: {
@@ -335,8 +459,11 @@ video: {
         "rgba(255,255,255,0.58)",
 
       fontSize: 14,
-      fontWeight: "400",
 
-      textAlign: "center",
+      fontWeight:
+        "400",
+
+      textAlign:
+        "center",
     },
   });

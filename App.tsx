@@ -62,6 +62,8 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState("now");
   const [requestedLiveId, setRequestedLiveId] =
     useState<string | null>(null);
+    const [requestedReplayId, setRequestedReplayId] =
+  useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] =
     useState<string | null>(null);
   const [
@@ -126,15 +128,27 @@ function AppContent() {
       }
     }, [token]);
 
-  const openLive = useCallback(
-    (liveId: string) => {
-      setRequestedLiveId(liveId);
-      setSelectedUserId(null);
-      setNotificationsVisible(false);
-      setActiveTab("now");
-    },
-    [],
-  );
+const openLive = useCallback(
+  (liveId: string) => {
+    setRequestedLiveId(liveId);
+    setRequestedReplayId(null);
+    setSelectedUserId(null);
+    setNotificationsVisible(false);
+    setActiveTab("now");
+  },
+  [],
+);
+
+const openReplay = useCallback(
+  (replayId: string) => {
+    setRequestedReplayId(replayId);
+    setRequestedLiveId(null);
+    setSelectedUserId(null);
+    setNotificationsVisible(false);
+    setActiveTab("now");
+  },
+  [],
+);
 
   const openUser = useCallback(
     (userId: string) => {
@@ -282,9 +296,10 @@ function AppContent() {
     setSelectedUserId(null);
     setNotificationsVisible(false);
 
-    if (tab !== "now") {
-      setRequestedLiveId(null);
-    }
+if (tab !== "now") {
+  setRequestedLiveId(null);
+  setRequestedReplayId(null);
+}
 
     setActiveTab(tab);
   }
@@ -343,12 +358,17 @@ function AppContent() {
 
     if (activeTab === "now") {
       return (
-        <NowScreen
-          requestedLiveId={
-            requestedLiveId
-          }
-          onOpenUser={openUser}
-        />
+<NowScreen
+  requestedLiveId={
+    requestedLiveId
+  }
+  requestedReplayId={
+    requestedReplayId
+  }
+  onOpenUser={
+    openUser
+  }
+/>
       );
     }
 
@@ -371,10 +391,17 @@ function AppContent() {
 
     if (activeTab === "search") {
       return (
-        <SearchScreen
-          onOpenLive={openLive}
-          onOpenUser={openUser}
-        />
+<SearchScreen
+  onOpenLive={
+    openLive
+  }
+  onOpenReplay={
+    openReplay
+  }
+  onOpenUser={
+    openUser
+  }
+/>
       );
     }
 
@@ -391,7 +418,17 @@ function AppContent() {
       );
     }
 
-    return <NowScreen requestedLiveId={requestedLiveId} />;
+    return <NowScreen
+  requestedLiveId={
+    requestedLiveId
+  }
+  requestedReplayId={
+    requestedReplayId
+  }
+  onOpenUser={
+    openUser
+  }
+/>;
   }
 
   return (

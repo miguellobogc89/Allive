@@ -20,7 +20,7 @@ import {
 
 import {
   searchAll,
-  type SearchLive,
+  type SearchContent,
   type SearchResponse,
   type SearchUser,
 } from "../api/searchApi";
@@ -43,14 +43,13 @@ import {
   type SearchTab,
 } from "../components/search/SearchTabs";
 
-type LiveItem = {
-  id: string;
-  live: SearchLive;
-};
-
 type SearchScreenProps = {
   onOpenLive: (
     liveId: string,
+  ) => void;
+
+  onOpenReplay: (
+    replayId: string,
   ) => void;
 
   onOpenUser: (
@@ -61,7 +60,7 @@ type SearchScreenProps = {
 const EMPTY_RESPONSE:
   SearchResponse = {
     query: "",
-    lives: [],
+    contents: [],
     users: [],
   };
 
@@ -82,37 +81,40 @@ function getColumnCount(
 function applyMetricUpdate(
   response:
     SearchResponse,
+
   update:
     LiveMetricUpdate,
 ): SearchResponse {
   let changed = false;
 
-  const lives =
-    response.lives.map(
-      (live) => {
+  const contents =
+    response.contents.map(
+      (content) => {
         if (
-          live.id !==
-          update.liveId
+          content.id !==
+            update.liveId ||
+          content.contentType !==
+            "live"
         ) {
-          return live;
+          return content;
         }
 
         changed = true;
 
         return {
-          ...live,
+          ...content,
 
           likeCount:
             update.likeCount ??
-            live.likeCount,
+            content.likeCount,
 
           viewerCount:
             update.viewerCount ??
-            live.viewerCount,
+            content.viewerCount,
 
           thumbnailUrl:
             update.thumbnailUrl ??
-            live.thumbnailUrl,
+            content.thumbnailUrl,
         };
       },
     );
@@ -123,12 +125,13 @@ function applyMetricUpdate(
 
   return {
     ...response,
-    lives,
+    contents,
   };
 }
 
 export function SearchScreen({
   onOpenLive,
+  onOpenReplay,
   onOpenUser,
 }: SearchScreenProps) {
   const {
@@ -295,48 +298,46 @@ export function SearchScreen({
       ],
     );
 
-  const lives =
+  const contents =
     useMemo(() => {
+      if (
+        activeTab ===
+        "live"
+      ) {
+        return response
+          .contents
+          .filter(
+            (content) =>
+              content
+                .contentType ===
+              "live",
+          );
+      }
+
       if (
         activeTab ===
         "nearby"
       ) {
-        return response.lives
+        return response
+          .contents
           .filter(
-            (live) =>
-              live.latitude !==
+            (content) =>
+              content.latitude !==
                 null &&
-              live.longitude !==
+              content.longitude !==
                 null,
           );
       }
 
-      return response.lives;
+      return response.contents;
     }, [
       activeTab,
-      response.lives,
+      response.contents,
     ]);
 
   const showPeople =
     activeTab ===
-      "people" ||
-    (
-      activeTab ===
-        "for-you" &&
-      query.trim().length >
-        0 &&
-      users.length > 0
-    );
-
-  const liveItems:
-    LiveItem[] =
-      lives.map(
-        (live) => ({
-          id:
-            `live-${live.id}`,
-          live,
-        }),
-      );
+    "people";
 
   function renderState() {
     if (loading) {
@@ -477,9 +478,7 @@ export function SearchScreen({
 
           {name ? (
             <Text
-              numberOfLines={
-                1
-              }
+              numberOfLines={1}
               style={
                 styles.displayName
               }
@@ -489,6 +488,26 @@ export function SearchScreen({
           ) : null}
         </View>
       </Pressable>
+    );
+  }
+
+  function openContent(
+    content:
+      SearchContent,
+  ) {
+    if (
+      content.contentType ===
+      "live"
+    ) {
+      onOpenLive(
+        content.id,
+      );
+
+      return;
+    }
+
+    onOpenReplay(
+      content.id,
     );
   }
 
@@ -567,26 +586,26 @@ export function SearchScreen({
         />
       ) : (
         <FlatList
-          key={`live-${columns}-${activeTab}`}
-          data={
-            liveItems
-          }
+          key={`content-${columns}-${activeTab}`}
+          data={contents}
           renderItem={({
             item,
           }) => (
             <View
-              style={
-                styles.gridCell
-              }
+              style={[
+                styles.gridCell,
+                {
+                  width:
+                    `${100 / columns}%`,
+                },
+              ]}
             >
               <SearchResultCard
                 type="live"
-                live={
-                  item.live
-                }
+                live={item}
                 onPress={() => {
-                  onOpenLive(
-                    item.live.id,
+                  openContent(
+                    item,
                   );
                 }}
               />
@@ -594,7 +613,9 @@ export function SearchScreen({
           )}
           keyExtractor={(
             item,
-          ) => item.id}
+          ) =>
+            `${item.contentType}-${item.id}`
+          }
           numColumns={
             columns
           }
@@ -602,15 +623,10 @@ export function SearchScreen({
             false
           }
           contentContainerStyle={
-            liveItems.length ===
+            contents.length ===
             0
               ? styles.emptyList
               : styles.list
-          }
-          columnWrapperStyle={
-            columns > 1
-              ? styles.row
-              : undefined
           }
           ListEmptyComponent={
             renderState
@@ -706,8 +722,7 @@ const styles =
       paddingHorizontal:
         16,
 
-      paddingVertical:
-        8,
+      paddingVertical: 8,
 
       flexDirection:
         "row",
@@ -782,22 +797,14 @@ const styles =
       paddingBottom: 140,
     },
 
-    row: {
-      gap: 1,
-
-      backgroundColor:
-        "#E4E4E0",
-    },
-
     gridCell: {
-      flex: 1,
-
       minWidth: 0,
 
-      borderBottomWidth:
-        1,
+      borderRightWidth: 1,
 
-      borderBottomColor:
+      borderBottomWidth: 1,
+
+      borderColor:
         "#E4E4E0",
     },
 

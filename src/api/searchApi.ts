@@ -7,16 +7,25 @@ import {
 export type SearchUser = {
   id: string;
   username: string;
+
   displayName:
     | string
     | null;
+
   avatarUrl:
     | string
     | null;
 };
 
-export type SearchLive = {
+export type SearchContentType =
+  | "live"
+  | "replay";
+
+export type SearchContent = {
   id: string;
+
+  contentType:
+    SearchContentType;
 
   title:
     | string
@@ -48,16 +57,43 @@ export type SearchLive = {
 
   startedAt: string;
 
+  endedAt:
+    | string
+    | null;
+
+  recordingUrl:
+    | string
+    | null;
+
+  replaySavedAt:
+    | string
+    | null;
+
+  replayVisibleUntil:
+    | string
+    | null;
+
   likeCount: number;
   viewerCount: number;
 
   creator: SearchUser;
 };
 
+/*
+ * Alias temporal para no romper
+ * las tarjetas existentes.
+ */
+export type SearchLive =
+  SearchContent;
+
 export type SearchResponse = {
   query: string;
-  lives: SearchLive[];
-  users: SearchUser[];
+
+  contents:
+    SearchContent[];
+
+  users:
+    SearchUser[];
 };
 
 export async function searchAll(

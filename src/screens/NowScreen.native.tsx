@@ -1,6 +1,7 @@
 // src/screens/NowScreen.native.tsx
 
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -30,6 +31,10 @@ type NowScreenProps = {
     | string
     | null;
 
+  requestedReplayId?:
+    | string
+    | null;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -37,6 +42,7 @@ type NowScreenProps = {
 
 export function NowScreen({
   requestedLiveId = null,
+  requestedReplayId = null,
   onOpenUser,
 }: NowScreenProps) {
   const [
@@ -44,8 +50,33 @@ export function NowScreen({
     setMode,
   ] =
     useState<NowMode>(
-      "live",
+      requestedReplayId
+        ? "replay"
+        : "live",
     );
+
+  useEffect(() => {
+    if (
+      requestedReplayId
+    ) {
+      setMode(
+        "replay",
+      );
+
+      return;
+    }
+
+    if (
+      requestedLiveId
+    ) {
+      setMode(
+        "live",
+      );
+    }
+  }, [
+    requestedLiveId,
+    requestedReplayId,
+  ]);
 
   return (
     <View
@@ -65,6 +96,9 @@ export function NowScreen({
         />
       ) : (
         <ReplayViewerScreen
+          requestedReplayId={
+            requestedReplayId
+          }
           onOpenUser={
             onOpenUser
           }

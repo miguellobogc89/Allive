@@ -13,11 +13,13 @@ import { colors, controls, spacing } from "../styles";
 
 type NowScreenProps = {
   requestedLiveId?: string | null;
+  requestedReplayId?: string | null;
   onOpenUser?: (userId: string) => void;
 };
 
 export function NowScreen({
   requestedLiveId: _requestedLiveId,
+  requestedReplayId: _requestedReplayId,
   onOpenUser: _onOpenUser,
 }: NowScreenProps) {
   return (

@@ -58,12 +58,9 @@ function getLimit(
   if (
     !Number.isFinite(
       parsed,
-    )
+    ) ||
+    parsed < 1
   ) {
-    return DEFAULT_LIMIT;
-  }
-
-  if (parsed < 1) {
     return DEFAULT_LIMIT;
   }
 
@@ -80,17 +77,27 @@ const userSelect = {
   avatarUrl: true,
 } as const;
 
-const liveSelect = {
+const contentSelect = {
   id: true,
   roomName: true,
+  status: true,
+
   title: true,
   description: true,
   eventName: true,
+
   placeName: true,
   latitude: true,
   longitude: true,
+
   thumbnailUrl: true,
+
   startedAt: true,
+  endedAt: true,
+
+  recording_url: true,
+  replay_saved_at: true,
+  replay_visible_until: true,
 
   creator: {
     select: userSelect,
@@ -103,57 +110,17 @@ const liveSelect = {
   },
 } as const;
 
-type SelectedLive = {
-  id: string;
-  roomName: string;
+type SelectedContent =
+  Awaited<
+    ReturnType<
+      typeof prisma.liveSession.findFirst<{
+        select: typeof contentSelect;
+      }>
+    >
+  >;
 
-  title:
-    | string
-    | null;
-
-  description:
-    | string
-    | null;
-
-  eventName:
-    | string
-    | null;
-
-  placeName:
-    | string
-    | null;
-
-  latitude:
-    | number
-    | null;
-
-  longitude:
-    | number
-    | null;
-
-  thumbnailUrl:
-    | string
-    | null;
-
-  startedAt: Date;
-
-  creator: {
-    id: string;
-    username: string;
-
-    displayName:
-      | string
-      | null;
-
-    avatarUrl:
-      | string
-      | null;
-  };
-
-  _count: {
-    live_likes: number;
-  };
-};
+type ExistingContent =
+  NonNullable<SelectedContent>;
 
 async function getViewerCount(
   roomName: string,
@@ -186,56 +153,87 @@ async function getViewerCount(
     }
 
     return viewers;
-  } catch (error) {
-    console.warn(
-      `No se pudieron consultar viewers de ${roomName}:`,
-      error,
-    );
-
+  } catch {
     return 0;
   }
 }
 
-async function mapLive(
-  live: SelectedLive,
+async function mapContent(
+  content: ExistingContent,
 ) {
+  const isLive =
+    content.status ===
+    "LIVE";
+
   const viewerCount =
-    await getViewerCount(
-      live.roomName,
-    );
+    isLive
+      ? await getViewerCount(
+          content.roomName,
+        )
+      : 0;
 
   return {
-    id: live.id,
-    title: live.title,
+    id: content.id,
+
+    contentType:
+      isLive
+        ? "live"
+        : "replay",
+
+    title:
+      content.title,
+
     description:
-      live.description,
+      content.description,
+
     eventName:
-      live.eventName,
+      content.eventName,
+
     placeName:
-      live.placeName,
+      content.placeName,
+
     latitude:
-      live.latitude,
+      content.latitude,
+
     longitude:
-      live.longitude,
+      content.longitude,
+
     thumbnailUrl:
-      live.thumbnailUrl,
+      content.thumbnailUrl,
+
     startedAt:
-      live.startedAt,
+      content.startedAt,
+
+    endedAt:
+      content.endedAt,
+
+    recordingUrl:
+      content.recording_url,
+
+    replaySavedAt:
+      content.replay_saved_at,
+
+    replayVisibleUntil:
+      content.replay_visible_until,
+
     likeCount:
-      live._count
+      content._count
         .live_likes,
+
     viewerCount,
+
     creator:
-      live.creator,
+      content.creator,
   };
 }
 
-async function mapLives(
-  lives: SelectedLive[],
+async function mapContents(
+  contents:
+    ExistingContent[],
 ) {
   return Promise.all(
-    lives.map(
-      mapLive,
+    contents.map(
+      mapContent,
     ),
   );
 }
@@ -266,212 +264,215 @@ export function registerSearchRoutes(
             req.query.limit,
           );
 
-        const realLiveWhere = {
-          status:
-            "LIVE" as const,
+        const now =
+          new Date();
 
-          roomName: {
-            not: {
-              startsWith:
-                DEV_ROOM_PREFIX,
-            },
-          },
-        };
+        const contentVisibilityWhere =
+          {
+            AND: [
+              {
+                NOT: {
+                  roomName: {
+                    startsWith:
+                      DEV_ROOM_PREFIX,
+                  },
+                },
+              },
 
-        if (!query) {
-          const [
-            lives,
-            users,
-          ] =
-            await Promise.all([
-              prisma.liveSession
-                .findMany({
-                  where:
-                    realLiveWhere,
-
-                  orderBy: {
-                    startedAt:
-                      "desc",
+              {
+                OR: [
+                  {
+                    status:
+                      "LIVE" as const,
                   },
 
-                  take: limit,
+                  {
+                    status:
+                      "ENDED" as const,
 
-                  select:
-                    liveSelect,
-                }),
+                    recording_url: {
+                      not: null,
+                    },
 
-              prisma.user
-                .findMany({
-                  where: {
-                    id: {
-                      not:
-                        currentUserId,
+                    replay_saved_at: {
+                      not: null,
+                    },
+
+                    replay_visible_until:
+                      {
+                        gt: now,
+                      },
+                  },
+                ],
+              },
+            ],
+          };
+
+        const queryWhere =
+          query
+            ? {
+                OR: [
+                  {
+                    title: {
+                      contains:
+                        query,
+                      mode:
+                        "insensitive" as const,
                     },
                   },
 
-                  orderBy: {
-                    createdAt:
-                      "desc",
+                  {
+                    description: {
+                      contains:
+                        query,
+                      mode:
+                        "insensitive" as const,
+                    },
                   },
 
-                  take: 12,
+                  {
+                    eventName: {
+                      contains:
+                        query,
+                      mode:
+                        "insensitive" as const,
+                    },
+                  },
 
-                  select:
-                    userSelect,
-                }),
-            ]);
+                  {
+                    placeName: {
+                      contains:
+                        query,
+                      mode:
+                        "insensitive" as const,
+                    },
+                  },
 
-          const mappedLives =
-            await mapLives(
-              lives,
-            );
+                  {
+                    creator: {
+                      is: {
+                        username: {
+                          contains:
+                            query,
+                          mode:
+                            "insensitive" as const,
+                        },
+                      },
+                    },
+                  },
 
-          return res.json({
-            query,
-            lives:
-              mappedLives,
-            users,
-          });
-        }
+                  {
+                    creator: {
+                      is: {
+                        displayName: {
+                          contains:
+                            query,
+                          mode:
+                            "insensitive" as const,
+                        },
+                      },
+                    },
+                  },
+                ],
+              }
+            : {};
 
         const [
-          lives,
+          contents,
           users,
         ] =
           await Promise.all([
             prisma.liveSession
               .findMany({
                 where: {
-                  ...realLiveWhere,
-
-                  OR: [
-                    {
-                      title: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
-                      },
-                    },
-
-                    {
-                      description: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
-                      },
-                    },
-
-                    {
-                      eventName: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
-                      },
-                    },
-
-                    {
-                      placeName: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
-                      },
-                    },
-
-                    {
-                      creator: {
-                        is: {
-                          username:
-                            {
-                              contains:
-                                query,
-                              mode:
-                                "insensitive",
-                            },
-                        },
-                      },
-                    },
-
-                    {
-                      creator: {
-                        is: {
-                          displayName:
-                            {
-                              contains:
-                                query,
-                              mode:
-                                "insensitive",
-                            },
-                        },
-                      },
-                    },
-                  ],
+                  ...contentVisibilityWhere,
+                  ...queryWhere,
                 },
 
-                orderBy: {
-                  startedAt:
-                    "desc",
-                },
+                orderBy: [
+                  {
+                    status:
+                      "desc",
+                  },
+                  {
+                    startedAt:
+                      "desc",
+                  },
+                ],
 
                 take: limit,
 
                 select:
-                  liveSelect,
+                  contentSelect,
               }),
 
             prisma.user
               .findMany({
-                where: {
-                  id: {
-                    not:
-                      currentUserId,
-                  },
+                where: query
+                  ? {
+                      id: {
+                        not:
+                          currentUserId,
+                      },
 
-                  OR: [
-                    {
-                      username: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
+                      OR: [
+                        {
+                          username: {
+                            contains:
+                              query,
+                            mode:
+                              "insensitive",
+                          },
+                        },
+
+                        {
+                          displayName: {
+                            contains:
+                              query,
+                            mode:
+                              "insensitive",
+                          },
+                        },
+                      ],
+                    }
+                  : {
+                      id: {
+                        not:
+                          currentUserId,
                       },
                     },
 
-                    {
-                      displayName: {
-                        contains:
-                          query,
-                        mode:
-                          "insensitive",
-                      },
+                orderBy: query
+                  ? {
+                      username:
+                        "asc",
+                    }
+                  : {
+                      createdAt:
+                        "desc",
                     },
-                  ],
-                },
 
-                orderBy: {
-                  username:
-                    "asc",
-                },
-
-                take: limit,
+                take:
+                  query
+                    ? limit
+                    : 12,
 
                 select:
                   userSelect,
               }),
           ]);
 
-        const mappedLives =
-          await mapLives(
-            lives,
+        const mappedContents =
+          await mapContents(
+            contents,
           );
 
         return res.json({
           query,
-          lives:
-            mappedLives,
+
+          contents:
+            mappedContents,
+
           users,
         });
       } catch (error) {
