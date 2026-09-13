@@ -426,6 +426,15 @@ function AppContent() {
           requestedReplayId={
             requestedReplayId
           }
+          unreadNotifications={
+            unreadNotifications
+          }
+          onOpenSearch={() => {
+            changeTab("search");
+          }}
+          onOpenNotifications={
+            openNotifications
+          }
           onOpenUser={
             openUser
           }
@@ -499,6 +508,15 @@ function AppContent() {
         }
         requestedReplayId={
           requestedReplayId
+        }
+        unreadNotifications={
+          unreadNotifications
+        }
+        onOpenSearch={() => {
+          changeTab("search");
+        }}
+        onOpenNotifications={
+          openNotifications
         }
         onOpenUser={
           openUser

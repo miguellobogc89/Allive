@@ -5,10 +5,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
 import {
+  Image,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -21,6 +23,11 @@ import {
   getActiveLives,
 } from "../api/liveApi";
 
+import {
+  getReplays,
+  type ReplayItem,
+} from "../api/replayApi";
+
 import type {
   ActiveLive,
 } from "../components/live/types";
@@ -28,6 +35,10 @@ import type {
 import {
   AlliveLoadingScreen,
 } from "../components/loading/AlliveLoadingScreen";
+
+import {
+  NotificationButton,
+} from "../components/notifications/NotificationButton";
 
 import {
   MapScreen,
@@ -53,11 +64,26 @@ type NowSection =
 type NowScreenProps = {
   requestedLiveId?: string | null;
   requestedReplayId?: string | null;
-
+  unreadNotifications?: number;
+  onOpenSearch?: () => void;
+  onOpenNotifications?: () => void;
   onOpenUser?: (
     userId: string,
   ) => void;
 };
+
+type GridItem =
+  | {
+      type: "live";
+      live: ActiveLive;
+    }
+  | {
+      type: "replay";
+      replay: ReplayItem;
+    };
+
+const logoImage =
+  require("../../public/logo/logo_allive.png");
 
 const tabs: {
   id: NowSection;
@@ -80,6 +106,9 @@ const tabs: {
 export function NowScreen({
   requestedLiveId = null,
   requestedReplayId = null,
+  unreadNotifications = 0,
+  onOpenSearch,
+  onOpenNotifications,
   onOpenUser,
 }: NowScreenProps) {
   const [
@@ -97,8 +126,22 @@ export function NowScreen({
   >([]);
 
   const [
+    replays,
+    setReplays,
+  ] = useState<
+    ReplayItem[]
+  >([]);
+
+  const [
     selectedLiveId,
     setSelectedLiveId,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
+    selectedReplayId,
+    setSelectedReplayId,
   ] = useState<
     string | null
   >(null);
@@ -127,14 +170,21 @@ export function NowScreen({
     const controller =
       new AbortController();
 
-    async function loadLives() {
+    async function loadContent() {
       try {
         setError(null);
 
-        const nextLives =
-          await getActiveLives(
+        const [
+          nextLives,
+          nextReplays,
+        ] = await Promise.all([
+          getActiveLives(
             controller.signal,
-          );
+          ),
+          getReplays(
+            controller.signal,
+          ),
+        ]);
 
         if (
           controller.signal
@@ -144,6 +194,7 @@ export function NowScreen({
         }
 
         setLives(nextLives);
+        setReplays(nextReplays);
       } catch (loadError) {
         if (
           !controller.signal
@@ -155,7 +206,7 @@ export function NowScreen({
           );
 
           setError(
-            "No se pudieron cargar los directos.",
+            "No se pudo cargar el contenido.",
           );
         }
       } finally {
@@ -168,11 +219,11 @@ export function NowScreen({
       }
     }
 
-    void loadLives();
+    void loadContent();
 
     const interval =
       window.setInterval(
-        loadLives,
+        loadContent,
         5000,
       );
 
@@ -187,21 +238,52 @@ export function NowScreen({
     requestedReplayId,
   ]);
 
-  const openLive =
+  const gridItems =
+    useMemo<GridItem[]>(
+      () =>
+        lives.length > 0
+          ? lives.map((live) => ({
+              type: "live",
+              live,
+            }))
+          : replays.map((replay) => ({
+              type: "replay",
+              replay,
+            })),
+      [
+        lives,
+        replays,
+      ],
+    );
+
+  const openItem =
     useCallback(
-      (liveId: string) => {
-        setSelectedLiveId(
-          liveId,
+      (item: GridItem) => {
+        if (
+          item.type === "live"
+        ) {
+          setSelectedLiveId(
+            item.live.id,
+          );
+          return;
+        }
+
+        setSelectedReplayId(
+          item.replay.id,
         );
       },
       [],
     );
 
-  if (requestedReplayId) {
+  if (
+    requestedReplayId ||
+    selectedReplayId
+  ) {
     return (
       <ReplayViewerScreen
         requestedReplayId={
-          requestedReplayId
+          requestedReplayId ??
+          selectedReplayId
         }
         onOpenUser={
           onOpenUser
@@ -238,22 +320,17 @@ export function NowScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.brand}>
-          Allive
-        </Text>
-
-        <Pressable
-          style={styles.searchButton}
-          accessibilityLabel="Buscar"
-        >
-          <Ionicons
-            name="search"
-            size={26}
-            color="#FFFFFF"
-          />
-        </Pressable>
-      </View>
+      <NowHeader
+        unreadNotifications={
+          unreadNotifications
+        }
+        onOpenSearch={
+          onOpenSearch
+        }
+        onOpenNotifications={
+          onOpenNotifications
+        }
+      />
 
       <View style={styles.tabs}>
         {tabs.map((tab) => {
@@ -296,11 +373,11 @@ export function NowScreen({
 
       {activeSection ===
       "now" ? (
-        <LiveGrid
-          lives={lives}
+        <ContentGrid
+          items={gridItems}
           error={error}
-          onLivePress={
-            openLive
+          onItemPress={
+            openItem
           }
         />
       ) : activeSection ===
@@ -315,19 +392,70 @@ export function NowScreen({
   );
 }
 
-type LiveGridProps = {
-  lives: ActiveLive[];
+type NowHeaderProps = {
+  unreadNotifications: number;
+  onOpenSearch?: () => void;
+  onOpenNotifications?: () => void;
+};
+
+function NowHeader({
+  unreadNotifications,
+  onOpenSearch,
+  onOpenNotifications,
+}: NowHeaderProps) {
+  return (
+    <View style={styles.header}>
+      <Image
+        source={logoImage}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
+      <View style={styles.headerActions}>
+        <NotificationButton
+          unreadNotifications={
+            unreadNotifications
+          }
+          onPress={
+            onOpenNotifications
+          }
+          borderColor="#020609"
+        />
+
+        <Pressable
+          onPress={onOpenSearch}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.iconButton,
+            pressed
+              ? styles.pressed
+              : undefined,
+          ]}
+        >
+          <Ionicons
+            name="search"
+            size={26}
+            color="#FFFFFF"
+          />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+type ContentGridProps = {
+  items: GridItem[];
   error: string | null;
-  onLivePress: (
-    liveId: string,
+  onItemPress: (
+    item: GridItem,
   ) => void;
 };
 
-function LiveGrid({
-  lives,
+function ContentGrid({
+  items,
   error,
-  onLivePress,
-}: LiveGridProps) {
+  onItemPress,
+}: ContentGridProps) {
   if (error) {
     return (
       <View style={styles.state}>
@@ -338,15 +466,15 @@ function LiveGrid({
     );
   }
 
-  if (lives.length === 0) {
+  if (items.length === 0) {
     return (
       <View style={styles.state}>
         <Text style={styles.stateTitle}>
-          No hay directos ahora
+          No hay contenido ahora
         </Text>
 
         <Text style={styles.stateSubtitle}>
-          Vuelve en un rato para ver lo que esta pasando.
+          Cuando haya directos o replays apareceran aqui.
         </Text>
       </View>
     );
@@ -362,12 +490,16 @@ function LiveGrid({
         false
       }
     >
-      {lives.map((live) => (
-        <LiveCard
-          key={live.id}
-          live={live}
+      {items.map((item) => (
+        <ContentCard
+          key={
+            item.type === "live"
+              ? item.live.id
+              : item.replay.id
+          }
+          item={item}
           onPress={() =>
-            onLivePress(live.id)
+            onItemPress(item)
           }
         />
       ))}
@@ -375,31 +507,46 @@ function LiveGrid({
   );
 }
 
-type LiveCardProps = {
-  live: ActiveLive;
+type ContentCardProps = {
+  item: GridItem;
   onPress: () => void;
 };
 
-function LiveCard({
-  live,
+function ContentCard({
+  item,
   onPress,
-}: LiveCardProps) {
+}: ContentCardProps) {
+  const source =
+    item.type === "live"
+      ? item.live
+      : item.replay;
+
+  const thumbnailUrl =
+    source.thumbnailUrl;
+
   const hasThumbnail =
-    typeof live.thumbnailUrl ===
+    typeof thumbnailUrl ===
       "string" &&
-    live.thumbnailUrl.length >
+    thumbnailUrl.length >
       0;
 
   const place =
-    live.placeName ||
-    live.creator?.displayName ||
-    live.creator?.username ||
+    source.placeName ||
+    source.creator?.displayName ||
+    source.creator?.username ||
     "Allive";
 
   const title =
-    live.title ||
-    live.eventName ||
-    "Directo en vivo";
+    source.title ||
+    source.eventName ||
+    (item.type === "live"
+      ? "Directo en vivo"
+      : "Replay");
+
+  const count =
+    item.type === "live"
+      ? item.live.viewerCount
+      : item.replay.likeCount;
 
   return (
     <Pressable
@@ -409,7 +556,7 @@ function LiveCard({
       {hasThumbnail ? (
         <ImageBackground
           source={{
-            uri: live.thumbnailUrl!,
+            uri: thumbnailUrl!,
           }}
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
@@ -439,15 +586,28 @@ function LiveCard({
       />
 
       <View style={styles.cardTop}>
-        <View style={styles.liveBadge}>
+        <View
+          style={[
+            styles.liveBadge,
+            item.type === "replay"
+              ? styles.replayBadge
+              : undefined,
+          ]}
+        >
           <Text style={styles.liveText}>
-            LIVE
+            {item.type === "live"
+              ? "LIVE"
+              : "REPLAY"}
           </Text>
         </View>
 
         <View style={styles.viewerBadge}>
           <Ionicons
-            name="person"
+            name={
+              item.type === "live"
+                ? "person"
+                : "heart"
+            }
             size={12}
             color="#FFFFFF"
           />
@@ -455,9 +615,7 @@ function LiveCard({
           <Text
             style={styles.viewerText}
           >
-            {formatCount(
-              live.viewerCount,
-            )}
+            {formatCount(count)}
           </Text>
         </View>
       </View>
@@ -536,19 +694,29 @@ const styles =
       paddingBottom: 12,
     },
 
-    brand: {
-      color: "#FFFFFF",
-
-      fontSize: 30,
-      fontWeight: "800",
+    logo: {
+      width: 112,
+      height: 46,
     },
 
-    searchButton: {
-      width: 42,
-      height: 42,
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+
+    iconButton: {
+      position: "relative",
+
+      width: 36,
+      height: 36,
 
       alignItems: "center",
       justifyContent: "center",
+    },
+
+    pressed: {
+      opacity: 0.6,
     },
 
     tabs: {
@@ -646,6 +814,11 @@ const styles =
 
       backgroundColor:
         "#FF2F68",
+    },
+
+    replayBadge: {
+      backgroundColor:
+        "#6E5CFF",
     },
 
     liveText: {

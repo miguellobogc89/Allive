@@ -5,9 +5,12 @@ import {
   Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
+
+import {
+  NotificationButton,
+} from "../notifications/NotificationButton";
 
 type Props = {
   username: string;
@@ -21,11 +24,6 @@ export function ProfileTopBar({
   onPressNotifications,
   unreadNotifications = 0,
 }: Props) {
-  const badge =
-    unreadNotifications > 99
-      ? "99+"
-      : String(unreadNotifications);
-
   return (
     <View style={styles.container}>
       <Image
@@ -35,27 +33,12 @@ export function ProfileTopBar({
       />
 
       <View style={styles.actions}>
-        <Pressable
+        <NotificationButton
+          unreadNotifications={
+            unreadNotifications
+          }
           onPress={onPressNotifications}
-          hitSlop={10}
-          style={({ pressed }) => [
-            styles.iconButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Ionicons
-            name="notifications-outline"
-            size={23}
-            color="#FFFFFF"
-          />
-          {unreadNotifications > 0 ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {badge}
-              </Text>
-            </View>
-          ) : null}
-        </Pressable>
+        />
 
         <Pressable
           onPress={onPressSettings}
@@ -107,31 +90,6 @@ const styles = StyleSheet.create({
 
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  badge: {
-    position: "absolute",
-    top: 1,
-    right: 0,
-
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    paddingHorizontal: 4,
-
-    backgroundColor: "#FF3B30",
-    borderWidth: 1,
-    borderColor: "#06101A",
-  },
-
-  badgeText: {
-    color: "#FFFFFF",
-    fontSize: 8,
-    fontWeight: "900",
   },
 
   pressed: {

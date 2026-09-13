@@ -2,22 +2,30 @@
 
 import {
   ActivityIndicator,
+  ImageBackground,
   StyleSheet,
-  View,
 } from "react-native";
+
+const loadScreenImage =
+  require("../../../public/icons/load-screen.png");
 
 export function AlliveLoadingScreen() {
   return (
-    <View
+    <ImageBackground
+      source={loadScreenImage}
       style={
         styles.container
       }
+      resizeMode="cover"
     >
       <ActivityIndicator
         color="#FFFFFF"
         size="large"
+        style={
+          styles.spinner
+        }
       />
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -26,9 +34,16 @@ const styles =
     container: {
       flex: 1,
 
-      alignItems: "center",
-      justifyContent: "center",
+      position: "relative",
 
       backgroundColor: "#000000",
+    },
+
+    spinner: {
+      position: "absolute",
+
+      left: 0,
+      right: 0,
+      bottom: "33.333%",
     },
   });
