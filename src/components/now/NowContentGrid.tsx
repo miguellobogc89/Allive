@@ -3,6 +3,8 @@
 import {
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 
 import {
@@ -30,6 +32,9 @@ type NowContentGridProps = {
   ) => void;
 };
 
+const HORIZONTAL_PADDING = 10;
+const COLUMN_GAP = 8;
+
 export function NowContentGrid({
   items,
   error = null,
@@ -39,12 +44,23 @@ export function NowContentGrid({
     "Cuando haya directos o replays aparecerán aquí.",
   onItemPress,
 }: NowContentGridProps) {
+  const {
+    width: screenWidth,
+  } = useWindowDimensions();
+
+  const cardWidth =
+    Math.floor(
+      (
+        screenWidth -
+        HORIZONTAL_PADDING * 2 -
+        COLUMN_GAP
+      ) / 2,
+    );
+
   if (error) {
     return (
       <NowEmptyState
-        title={
-          error
-        }
+        title={error}
       />
     );
   }
@@ -70,32 +86,41 @@ export function NowContentGrid({
         styles.scroller
       }
       contentContainerStyle={
-        styles.grid
+        styles.content
       }
       showsVerticalScrollIndicator={
         false
       }
     >
-      {items.map(
-        (item) => (
-          <NowContentCard
-            key={
-              item.type ===
-              "live"
-                ? `live-${item.live.id}`
-                : `replay-${item.replay.id}`
-            }
-            item={
-              item
-            }
-            onPress={() => {
-              onItemPress(
-                item,
-              );
-            }}
-          />
-        ),
-      )}
+      <View
+        style={
+          styles.grid
+        }
+      >
+        {items.map(
+          (item) => (
+            <NowContentCard
+              key={
+                item.type ===
+                "live"
+                  ? `live-${item.live.id}`
+                  : `replay-${item.replay.id}`
+              }
+              item={
+                item
+              }
+              width={
+                cardWidth
+              }
+              onPress={() => {
+                onItemPress(
+                  item,
+                );
+              }}
+            />
+          ),
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -104,27 +129,29 @@ const styles =
   StyleSheet.create({
     scroller: {
       flex: 1,
+
+      backgroundColor:
+        "#020609",
+    },
+
+    content: {
+      paddingHorizontal:
+        HORIZONTAL_PADDING,
+
+      paddingTop: 10,
+      paddingBottom: 28,
     },
 
     grid: {
+      width: "100%",
+
       flexDirection:
         "row",
 
       flexWrap:
         "wrap",
 
-      justifyContent:
-        "space-between",
-
-      paddingHorizontal:
-        10,
-
-      paddingTop:
-        10,
-
-      paddingBottom:
-        28,
-
-      rowGap: 8,
+      gap:
+        COLUMN_GAP,
     },
   });

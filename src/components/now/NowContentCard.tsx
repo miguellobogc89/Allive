@@ -1,6 +1,8 @@
 // src/components/now/NowContentCard.tsx
 
-import { LinearGradient } from "expo-linear-gradient";
+import {
+  LinearGradient,
+} from "expo-linear-gradient";
 
 import {
   Image,
@@ -24,11 +26,15 @@ import type {
 
 type NowContentCardProps = {
   item: NowGridItem;
+
+  width: number;
+
   onPress: () => void;
 };
 
 export function NowContentCard({
   item,
+  width,
   onPress,
 }: NowContentCardProps) {
   const isLive =
@@ -71,19 +77,33 @@ export function NowContentCard({
       : item.replay
           .likeCount;
 
+  /*
+   * La referencia visual es vertical,
+   * aproximadamente 3:4.
+   */
+  const cardHeight =
+    Math.round(
+      width * 1.34,
+    );
+
   return (
     <Pressable
+      onPress={
+        onPress
+      }
       style={({
         pressed,
       }) => [
         styles.card,
+        {
+          width,
+          height:
+            cardHeight,
+        },
         pressed
           ? styles.pressed
           : undefined,
       ]}
-      onPress={
-        onPress
-      }
     >
       {hasThumbnail ? (
         <Image
@@ -104,33 +124,35 @@ export function NowContentCard({
             "#070B0E",
           ]}
           style={
-            StyleSheet.absoluteFill
+            styles.absolute
           }
         />
       )}
 
       <LinearGradient
         colors={[
-          "rgba(0,0,0,0.05)",
-          "rgba(0,0,0,0.05)",
+          "rgba(0,0,0,0.00)",
+          "rgba(0,0,0,0.04)",
           "rgba(0,0,0,0.32)",
           "rgba(0,0,0,0.92)",
         ]}
         locations={[
           0,
-          0.45,
-          0.7,
+          0.48,
+          0.72,
           1,
         ]}
         style={
-          StyleSheet.absoluteFill
+          styles.absolute
         }
+        pointerEvents="none"
       />
 
       <View
         style={
           styles.top
         }
+        pointerEvents="none"
       >
         <NowStatusBadge
           type={
@@ -152,6 +174,7 @@ export function NowContentCard({
         style={
           styles.bottom
         }
+        pointerEvents="none"
       >
         <Text
           style={
@@ -181,42 +204,40 @@ const styles =
       position:
         "relative",
 
-      width:
-        "48.7%",
-
-      aspectRatio:
-        0.74,
-
       overflow:
         "hidden",
 
-      borderRadius:
-        15,
+      borderRadius: 15,
 
       backgroundColor:
         "#111820",
     },
 
-image: {
-  position: "absolute",
+    absolute: {
+      position:
+        "absolute",
 
-  top: 0,
-  right: 0,
-  bottom: 0,
-  left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    },
 
-  width: "100%",
-  height: "100%",
-},
+    image: {
+      position:
+        "absolute",
+
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+
+      width: "100%",
+      height: "100%",
+    },
 
     pressed: {
       opacity: 0.88,
-
-      transform: [
-        {
-          scale: 0.99,
-        },
-      ],
     },
 
     top: {
@@ -257,7 +278,7 @@ image: {
         "800",
 
       textShadowColor:
-        "rgba(0,0,0,0.65)",
+        "rgba(0,0,0,0.7)",
 
       textShadowOffset: {
         width: 0,
@@ -281,7 +302,7 @@ image: {
         "600",
 
       textShadowColor:
-        "rgba(0,0,0,0.65)",
+        "rgba(0,0,0,0.7)",
 
       textShadowOffset: {
         width: 0,

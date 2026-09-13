@@ -21,6 +21,11 @@
         "foregroundImage": "./public/icons/app-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDR2IqA3fDnA3v6bKFp3TiCWjrXqTqgjCk"
+        }
+      },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
