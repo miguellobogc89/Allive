@@ -18,8 +18,8 @@ import {
 } from "react-native";
 
 import {
-  API_URL,
-} from "../api/apiConfig";
+  getActiveLives,
+} from "../api/liveApi";
 
 import {
   useAuth,
@@ -49,10 +49,17 @@ import {
 const REFRESH_INTERVAL_MS =
   5000;
 
+const EMPTY_INITIAL_LIVES:
+  ActiveLive[] = [];
+
 type LiveViewerScreenProps = {
   requestedLiveId?:
     | string
     | null;
+
+  initialLives?: ActiveLive[];
+
+  onNoLivesAvailable?: () => void;
 
   onOpenUser?: (
     userId: string,
@@ -61,6 +68,8 @@ type LiveViewerScreenProps = {
 
 export function LiveViewerScreen({
   requestedLiveId = null,
+  initialLives = EMPTY_INITIAL_LIVES,
+  onNoLivesAvailable,
   onOpenUser,
 }: LiveViewerScreenProps) {
   const {
@@ -74,7 +83,7 @@ export function LiveViewerScreen({
     setLives,
   ] = useState<
     ActiveLive[]
-  >([]);
+  >(initialLives);
 
   const [
     currentIndex,
@@ -98,7 +107,10 @@ export function LiveViewerScreen({
   const [
     loadingLives,
     setLoadingLives,
-  ] = useState(true);
+  ] = useState(
+    initialLives.length ===
+      0,
+  );
 
   const activeLive =
     lives[currentIndex] ??
@@ -134,29 +146,14 @@ export function LiveViewerScreen({
     useCallback(
       async () => {
         try {
-          const response =
-            await fetch(
-              `${API_URL}/api/lives/active`,
-            );
-
-          if (!response.ok) {
-            throw new Error(
-              `No se pudieron consultar los LIVE activos (${response.status})`,
-            );
-          }
-
           const nextLives =
-            (await response.json()) as
-              ActiveLive[];
+            await getActiveLives();
 
           if (
-            !Array.isArray(
-              nextLives,
-            )
+            nextLives.length ===
+            0
           ) {
-            throw new Error(
-              "Respuesta inválida del servidor.",
-            );
+            onNoLivesAvailable?.();
           }
 
           setLives(
@@ -250,8 +247,22 @@ export function LiveViewerScreen({
           );
         }
       },
-      [currentIndex],
+      [
+        currentIndex,
+        onNoLivesAvailable,
+      ],
     );
+
+  useEffect(() => {
+    setLives(initialLives);
+
+    setCurrentIndex(0);
+
+    setLoadingLives(
+      initialLives.length ===
+        0,
+    );
+  }, [initialLives]);
 
   useEffect(() => {
     void loadActiveLives();

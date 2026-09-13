@@ -76,7 +76,9 @@ export function ReplayViewerScreen({
   const [
     replays,
     setReplays,
-  ] = useState<ReplayItem[]>([]);
+  ] = useState<
+    ReplayItem[]
+  >([]);
 
   const [
     currentIndex,
@@ -89,8 +91,9 @@ export function ReplayViewerScreen({
   ] = useState(true);
 
   const activeReplay =
-    replays[currentIndex] ??
-    null;
+    replays[
+      currentIndex
+    ] ?? null;
 
   const goToPreviousReplay =
     useCallback(() => {
@@ -125,6 +128,7 @@ export function ReplayViewerScreen({
     onNavigationReady?.({
       previous:
         goToPreviousReplay,
+
       next:
         goToNextReplay,
     });
@@ -327,6 +331,21 @@ function ReplayContent({
     setPaused,
   ] = useState(false);
 
+  const [
+    muted,
+    setMuted,
+  ] = useState(false);
+
+  const [
+    currentTime,
+    setCurrentTime,
+  ] = useState(0);
+
+  const [
+    duration,
+    setDuration,
+  ] = useState(0);
+
   const {
     liked,
     likeCount,
@@ -357,22 +376,138 @@ function ReplayContent({
 
   useEffect(() => {
     setPaused(false);
+    setMuted(
+      player.muted,
+    );
+    setCurrentTime(0);
+
+    const interval =
+      setInterval(() => {
+        setCurrentTime(
+          Number.isFinite(
+            player.currentTime,
+          )
+            ? player.currentTime
+            : 0,
+        );
+
+        setDuration(
+          Number.isFinite(
+            player.duration,
+          )
+            ? player.duration
+            : 0,
+        );
+
+        setMuted(
+          player.muted,
+        );
+
+        setPaused(
+          !player.playing,
+        );
+      }, 250);
+
+    return () => {
+      clearInterval(
+        interval,
+      );
+    };
   }, [
+    player,
     replay.id,
   ]);
 
   const togglePlayback =
     useCallback(() => {
-      if (paused) {
-        player.play();
-        setPaused(false);
+      if (
+        player.playing
+      ) {
+        player.pause();
+        setPaused(true);
         return;
       }
 
-      player.pause();
-      setPaused(true);
+      player.play();
+      setPaused(false);
     }, [
-      paused,
+      player,
+    ]);
+
+  const seekTo =
+    useCallback(
+      (
+        time: number,
+      ) => {
+        const maxDuration =
+          Number.isFinite(
+            player.duration,
+          )
+            ? Math.max(
+                0,
+                player.duration,
+              )
+            : 0;
+
+        const nextTime =
+          Math.min(
+            Math.max(
+              time,
+              0,
+            ),
+            maxDuration ||
+              Math.max(
+                0,
+                time,
+              ),
+          );
+
+        player.currentTime =
+          nextTime;
+
+        setCurrentTime(
+          nextTime,
+        );
+      },
+      [
+        player,
+      ],
+    );
+
+  const skipBackward =
+    useCallback(() => {
+      seekTo(
+        player.currentTime -
+          10,
+      );
+    }, [
+      player,
+      seekTo,
+    ]);
+
+  const skipForward =
+    useCallback(() => {
+      seekTo(
+        player.currentTime +
+          15,
+      );
+    }, [
+      player,
+      seekTo,
+    ]);
+
+  const toggleMute =
+    useCallback(() => {
+      const nextMuted =
+        !player.muted;
+
+      player.muted =
+        nextMuted;
+
+      setMuted(
+        nextMuted,
+      );
+    }, [
       player,
     ]);
 
@@ -444,8 +579,29 @@ function ReplayContent({
         playbackPaused={
           paused
         }
+        playbackMuted={
+          muted
+        }
+        currentTime={
+          currentTime
+        }
+        duration={
+          duration
+        }
         onPlaybackToggle={
           togglePlayback
+        }
+        onSeek={
+          seekTo
+        }
+        onSkipBackward={
+          skipBackward
+        }
+        onSkipForward={
+          skipForward
+        }
+        onToggleMute={
+          toggleMute
         }
       />
     </View>

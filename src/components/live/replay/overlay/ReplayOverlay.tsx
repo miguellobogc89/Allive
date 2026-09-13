@@ -6,10 +6,6 @@ import {
 } from "react";
 
 import {
-  Ionicons,
-} from "@expo/vector-icons";
-
-import {
   LinearGradient,
 } from "expo-linear-gradient";
 
@@ -40,6 +36,10 @@ import {
   ReplayHeader,
 } from "../header/ReplayHeader";
 
+import {
+  ReplayPlaybackControls,
+} from "../player/ReplayPlaybackControls";
+
 import type {
   Replay,
 } from "../types";
@@ -69,7 +69,16 @@ type ReplayOverlayProps = {
   showNavigation?: boolean;
 
   playbackPaused?: boolean;
+  playbackMuted?: boolean;
+
+  currentTime?: number;
+  duration?: number;
+
   onPlaybackToggle?: () => void;
+  onSeek?: (time: number) => void;
+  onSkipBackward?: () => void;
+  onSkipForward?: () => void;
+  onToggleMute?: () => void;
 };
 
 export function ReplayOverlay({
@@ -96,7 +105,16 @@ export function ReplayOverlay({
   showNavigation = true,
 
   playbackPaused = false,
+  playbackMuted = false,
+
+  currentTime = 0,
+  duration = 0,
+
   onPlaybackToggle,
+  onSeek,
+  onSkipBackward,
+  onSkipForward,
+  onToggleMute,
 }: ReplayOverlayProps) {
   const [
     contentVisible,
@@ -193,14 +211,25 @@ export function ReplayOverlay({
     toggleContent();
   }
 
-  const nativePlaybackMode =
+  const playbackMode =
     Boolean(
       onPlaybackToggle,
     );
 
+  const hasPlaybackControls =
+    Boolean(
+      onPlaybackToggle &&
+        onSeek &&
+        onSkipBackward &&
+        onSkipForward &&
+        onToggleMute,
+    );
+
   return (
     <View
-      style={styles.overlay}
+      style={
+        styles.overlay
+      }
       pointerEvents="box-none"
     >
       <LinearGradient
@@ -237,14 +266,15 @@ export function ReplayOverlay({
 
       <Animated.View
         pointerEvents={
-          nativePlaybackMode ||
+          playbackMode ||
           contentVisible
             ? "box-none"
             : "none"
         }
         style={[
           styles.identityLayer,
-          nativePlaybackMode
+
+          playbackMode
             ? undefined
             : {
                 opacity:
@@ -278,14 +308,15 @@ export function ReplayOverlay({
 
       <Animated.View
         pointerEvents={
-          nativePlaybackMode ||
+          playbackMode ||
           contentVisible
             ? "auto"
             : "none"
         }
         style={[
           styles.likeLayer,
-          nativePlaybackMode
+
+          playbackMode
             ? undefined
             : {
                 opacity:
@@ -311,19 +342,36 @@ export function ReplayOverlay({
         />
       </Animated.View>
 
-      {playbackPaused ? (
-        <View
-          style={
-            styles.playIndicator
+      {hasPlaybackControls ? (
+        <ReplayPlaybackControls
+          currentTime={
+            currentTime
           }
-          pointerEvents="none"
-        >
-          <Ionicons
-            name="play"
-            size={34}
-            color="#FFFFFF"
-          />
-        </View>
+          duration={
+            duration
+          }
+          paused={
+            playbackPaused
+          }
+          muted={
+            playbackMuted
+          }
+          onTogglePlayback={
+            onPlaybackToggle!
+          }
+          onSeek={
+            onSeek!
+          }
+          onSkipBackward={
+            onSkipBackward!
+          }
+          onSkipForward={
+            onSkipForward!
+          }
+          onToggleMute={
+            onToggleMute!
+          }
+        />
       ) : null}
 
       {showNavigation ? (
@@ -350,16 +398,20 @@ const styles =
   StyleSheet.create({
     overlay: {
       ...StyleSheet.absoluteFill,
+
       zIndex: 10,
     },
 
     tapSurface: {
       ...StyleSheet.absoluteFill,
+
       zIndex: 1,
     },
 
     bottomGradient: {
-      position: "absolute",
+      position:
+        "absolute",
+
       left: 0,
       right: 0,
       bottom: 0,
@@ -368,7 +420,9 @@ const styles =
     },
 
     identityLayer: {
-      position: "absolute",
+      position:
+        "absolute",
+
       top: 80,
       left: spacing.md,
       right: spacing.md,
@@ -377,33 +431,12 @@ const styles =
     },
 
     likeLayer: {
-      position: "absolute",
+      position:
+        "absolute",
+
       right: spacing.md,
       bottom: 28,
 
       zIndex: 30,
-    },
-
-    playIndicator: {
-      position: "absolute",
-
-      left: "50%",
-      top: "50%",
-
-      width: 68,
-      height: 68,
-
-      marginLeft: -34,
-      marginTop: -34,
-
-      borderRadius: 34,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      backgroundColor:
-        "rgba(0,0,0,0.56)",
-
-      zIndex: 40,
     },
   });

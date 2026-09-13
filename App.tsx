@@ -8,7 +8,6 @@ import {
 } from "react";
 
 import {
-  ActivityIndicator,
   AppState,
   Platform,
   Text,
@@ -35,6 +34,10 @@ import {
 import {
   BottomNav,
 } from "./src/components/navigation/BottomNav";
+
+import {
+  AlliveLoadingScreen,
+} from "./src/components/loading/AlliveLoadingScreen";
 
 import {
   useAppNavigation,
@@ -85,7 +88,6 @@ import {
 
 import {
   appFontFamily,
-  colors,
 } from "./src/styles";
 
 function AppContent() {
@@ -337,17 +339,7 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <SafeAreaView
-        style={
-          styles.loading
-        }
-      >
-        <ActivityIndicator
-          color={
-            colors.accent
-          }
-        />
-      </SafeAreaView>
+      <AlliveLoadingScreen />
     );
   }
 
