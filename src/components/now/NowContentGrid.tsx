@@ -2,7 +2,6 @@
 
 import {
   ScrollView,
-  StyleSheet,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -14,6 +13,10 @@ import {
 import {
   NowEmptyState,
 } from "./NowEmptyState";
+
+import {
+  nowContentGridStyles as styles,
+} from "./NowContentGrid.styles";
 
 import type {
   NowGridItem,
@@ -125,33 +128,3 @@ export function NowContentGrid({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    scroller: {
-      flex: 1,
-
-      backgroundColor:
-        "#020609",
-    },
-
-    content: {
-      paddingHorizontal:
-        HORIZONTAL_PADDING,
-
-      paddingTop: 10,
-      paddingBottom: 28,
-    },
-
-    grid: {
-      width: "100%",
-
-      flexDirection:
-        "row",
-
-      flexWrap:
-        "wrap",
-
-      gap:
-        COLUMN_GAP,
-    },
-  });

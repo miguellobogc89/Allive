@@ -7,10 +7,13 @@ import {
 import {
   Image,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  tokens,
+} from "../../styles";
 
 import {
   NowAudienceBadge,
@@ -19,6 +22,10 @@ import {
 import {
   NowStatusBadge,
 } from "./NowStatusBadge";
+
+import {
+  nowContentCardStyles as styles,
+} from "./NowContentCard.styles";
 
 import type {
   NowGridItem,
@@ -133,11 +140,10 @@ export function NowContentCard({
 />
       ) : (
         <LinearGradient
-          colors={[
-            "#334A5C",
-            "#16232D",
-            "#070B0E",
-          ]}
+          colors={
+            tokens.color.gradient
+              .nowCardFallback
+          }
           style={
             styles.absolute
           }
@@ -145,12 +151,10 @@ export function NowContentCard({
       )}
 
       <LinearGradient
-        colors={[
-          "rgba(0,0,0,0.00)",
-          "rgba(0,0,0,0.04)",
-          "rgba(0,0,0,0.32)",
-          "rgba(0,0,0,0.92)",
-        ]}
+        colors={
+          tokens.color.gradient
+            .nowCardOverlay
+        }
         locations={[
           0,
           0.48,
@@ -213,118 +217,3 @@ export function NowContentCard({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    card: {
-      position:
-        "relative",
-
-      overflow:
-        "hidden",
-
-      borderRadius: 15,
-
-      backgroundColor:
-        "#111820",
-    },
-
-    absolute: {
-      position:
-        "absolute",
-
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-
-    image: {
-      position:
-        "absolute",
-
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-
-      width: "100%",
-      height: "100%",
-    },
-
-    pressed: {
-      opacity: 0.88,
-    },
-
-    top: {
-      position:
-        "absolute",
-
-      top: 9,
-      left: 9,
-      right: 9,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "space-between",
-    },
-
-    bottom: {
-      position:
-        "absolute",
-
-      left: 11,
-      right: 11,
-      bottom: 11,
-    },
-
-    place: {
-      color:
-        "#FFFFFF",
-
-      fontSize: 13,
-      lineHeight: 17,
-
-      fontWeight:
-        "800",
-
-      textShadowColor:
-        "rgba(0,0,0,0.7)",
-
-      textShadowOffset: {
-        width: 0,
-        height: 1,
-      },
-
-      textShadowRadius:
-        2,
-    },
-
-    title: {
-      marginTop: 2,
-
-      color:
-        "rgba(255,255,255,0.90)",
-
-      fontSize: 13,
-      lineHeight: 17,
-
-      fontWeight:
-        "600",
-
-      textShadowColor:
-        "rgba(0,0,0,0.7)",
-
-      textShadowOffset: {
-        width: 0,
-        height: 1,
-      },
-
-      textShadowRadius:
-        2,
-    },
-  });

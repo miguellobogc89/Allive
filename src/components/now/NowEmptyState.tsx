@@ -1,10 +1,13 @@
 // src/components/now/NowEmptyState.tsx
 
 import {
-  StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  nowEmptyStateStyles as styles,
+} from "./NowEmptyState.styles";
 
 type NowEmptyStateProps = {
   title: string;
@@ -42,45 +45,3 @@ export function NowEmptyState({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      paddingHorizontal:
-        36,
-    },
-
-    title: {
-      color:
-        "#FFFFFF",
-
-      fontSize: 18,
-      fontWeight:
-        "800",
-
-      textAlign:
-        "center",
-    },
-
-    description: {
-      maxWidth: 340,
-
-      marginTop: 8,
-
-      color:
-        "rgba(255,255,255,0.5)",
-
-      fontSize: 14,
-      lineHeight: 20,
-
-      textAlign:
-        "center",
-    },
-  });

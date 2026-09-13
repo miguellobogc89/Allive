@@ -1,34 +1,17 @@
 // src/screens/LiveViewerScreen.native.tsx
 
-import type {
-  Room,
-} from "livekit-client";
-
 import {
   useCallback,
-  useEffect,
-  useState,
 } from "react";
 
 import {
   ActivityIndicator,
-  StyleSheet,
-  Text,
   View,
 } from "react-native";
 
 import {
   API_URL,
 } from "../api/apiConfig";
-
-import {
-  useAuth,
-} from "../auth/AuthContext";
-
-import {
-  emptyLiveAudience,
-  type LiveAudience,
-} from "../components/live/liveAudience";
 
 import {
   LiveVideoSurface,
@@ -39,8 +22,16 @@ import type {
 } from "../components/live/types";
 
 import {
-  LiveViewerOverlay,
-} from "../components/live/viewer/overlay/LiveViewerOverlay";
+  liveViewerScreenStyles as styles,
+} from "../components/live/viewer/LiveViewerScreen.styles";
+
+import {
+  LiveViewerScreenBase,
+} from "../components/live/viewer/LiveViewerScreenBase";
+
+import type {
+  LiveViewerNavigation,
+} from "../components/live/viewer/hooks/useLiveViewerFeed";
 
 import {
   colors,
@@ -48,11 +39,6 @@ import {
 
 const REFRESH_INTERVAL_MS =
   5000;
-
-type NowNavigation = {
-  previous: () => void;
-  next: () => void;
-};
 
 type LiveViewerScreenProps = {
   requestedLiveId?:
@@ -65,7 +51,7 @@ type LiveViewerScreenProps = {
 
   onNavigationReady?: (
     navigation:
-      NowNavigation,
+      LiveViewerNavigation,
   ) => void;
 };
 
@@ -74,293 +60,54 @@ export function LiveViewerScreen({
   onOpenUser,
   onNavigationReady,
 }: LiveViewerScreenProps) {
-  const {
-    identity,
-    user,
-    token,
-  } = useAuth();
-
-  const [
-    lives,
-    setLives,
-  ] = useState<
-    ActiveLive[]
-  >([]);
-
-  const [
-    currentIndex,
-    setCurrentIndex,
-  ] = useState(0);
-
-  const [
-    audience,
-    setAudience,
-  ] =
-    useState<LiveAudience>(
-      emptyLiveAudience(),
-    );
-
-  const [
-    viewerRoom,
-    setViewerRoom,
-  ] =
-    useState<Room | null>(
-      null,
-    );
-
-  const [
-    loadingLives,
-    setLoadingLives,
-  ] = useState(true);
-
-  const activeLive =
-    lives[currentIndex] ??
-    null;
-
-  useEffect(() => {
-    if (
-      !requestedLiveId
-    ) {
-      return;
-    }
-
-    const requestedIndex =
-      lives.findIndex(
-        (live) =>
-          live.id ===
-          requestedLiveId,
-      );
-
-    if (
-      requestedIndex < 0
-    ) {
-      return;
-    }
-
-    setCurrentIndex(
-      requestedIndex,
-    );
-  }, [
-    requestedLiveId,
-    lives,
-  ]);
-
-  const loadActiveLives =
+  const loadLives =
     useCallback(
       async () => {
-        try {
-          const response =
-            await fetch(
-              `${API_URL}/api/lives/active`,
-            );
-
-          if (
-            !response.ok
-          ) {
-            throw new Error(
-              `No se pudieron consultar los LIVE activos (${response.status})`,
-            );
-          }
-
-          const nextLives =
-            (await response.json()) as
-              ActiveLive[];
-
-          if (
-            !Array.isArray(
-              nextLives,
-            )
-          ) {
-            throw new Error(
-              "Respuesta inválida del servidor.",
-            );
-          }
-
-          setLives(
-            (
-              previousLives,
-            ) => {
-              if (
-                nextLives.length ===
-                0
-              ) {
-                return [];
-              }
-
-              const currentLive =
-                previousLives[
-                  currentIndex
-                ];
-
-              if (
-                !currentLive
-              ) {
-                return nextLives;
-              }
-
-              const stillActiveIndex =
-                nextLives.findIndex(
-                  (live) =>
-                    live.id ===
-                    currentLive.id,
-                );
-
-              if (
-                stillActiveIndex ===
-                -1
-              ) {
-                return nextLives;
-              }
-
-              if (
-                stillActiveIndex !==
-                currentIndex
-              ) {
-                const reordered =
-                  [
-                    ...nextLives,
-                  ];
-
-                const [
-                  stillActiveLive,
-                ] =
-                  reordered.splice(
-                    stillActiveIndex,
-                    1,
-                  );
-
-                reordered.splice(
-                  Math.min(
-                    currentIndex,
-                    reordered.length,
-                  ),
-                  0,
-                  stillActiveLive,
-                );
-
-                return reordered;
-              }
-
-              return nextLives;
-            },
+        const response =
+          await fetch(
+            `${API_URL}/api/lives/active`,
           );
 
-          setCurrentIndex(
-            (index) =>
-              nextLives.length ===
-              0
-                ? 0
-                : Math.min(
-                    index,
-                    nextLives.length -
-                      1,
-                  ),
-          );
-        } catch (
-          error
+        if (
+          !response.ok
         ) {
-          console.error(
-            "Allive NOW native refresh error:",
-            error,
-          );
-        } finally {
-          setLoadingLives(
-            false,
+          throw new Error(
+            `No se pudieron consultar los LIVE activos (${response.status})`,
           );
         }
+
+        const nextLives =
+          (await response.json()) as
+            ActiveLive[];
+
+        if (
+          !Array.isArray(
+            nextLives,
+          )
+        ) {
+          throw new Error(
+            "Respuesta inv\u00c3\u00a1lida del servidor.",
+          );
+        }
+
+        return nextLives;
       },
-      [
-        currentIndex,
-      ],
+      [],
     );
-
-  useEffect(() => {
-    void loadActiveLives();
-
-    const interval =
-      setInterval(
-        () => {
-          void loadActiveLives();
-        },
-        REFRESH_INTERVAL_MS,
-      );
-
-    return () => {
-      clearInterval(
-        interval,
-      );
-    };
-  }, [
-    loadActiveLives,
-  ]);
-
-  useEffect(() => {
-    setAudience(
-      emptyLiveAudience(),
-    );
-
-    setViewerRoom(
-      null,
-    );
-  }, [
-    activeLive?.id,
-  ]);
-
-  const goToPreviousLive =
-    useCallback(() => {
-      setCurrentIndex(
-        (index) =>
-          lives.length <=
-          1
-            ? index
-            : index <=
-                0
-              ? lives.length -
-                1
-              : index - 1,
-      );
-    }, [
-      lives.length,
-    ]);
-
-  const goToNextLive =
-    useCallback(() => {
-      setCurrentIndex(
-        (index) =>
-          lives.length <=
-          1
-            ? index
-            : index >=
-                lives.length -
-                  1
-              ? 0
-              : index + 1,
-      );
-    }, [
-      lives.length,
-    ]);
-
-  useEffect(() => {
-    onNavigationReady?.({
-      previous:
-        goToPreviousLive,
-      next:
-        goToNextLive,
-    });
-  }, [
-    goToNextLive,
-    goToPreviousLive,
-    onNavigationReady,
-  ]);
 
   return (
-    <View
-      style={
-        styles.container
+    <LiveViewerScreenBase
+      requestedLiveId={
+        requestedLiveId
       }
-    >
-      {loadingLives &&
-      !activeLive ? (
+      refreshIntervalMs={
+        REFRESH_INTERVAL_MS
+      }
+      loadLives={
+        loadLives
+      }
+      refreshErrorLabel="Allive NOW native refresh error:"
+      renderLoading={() => (
         <View
           style={
             styles.loading
@@ -372,158 +119,45 @@ export function LiveViewerScreen({
             }
           />
         </View>
-      ) : activeLive ? (
+      )}
+      renderVideoSurface={({
+        live,
+        viewerIdentity,
+        viewerUser,
+        authToken,
+        onAudienceChange,
+        onRoomChange,
+      }) => (
         <LiveVideoSurface
           live={
-            activeLive
+            live
           }
           viewerIdentity={
-            identity
+            viewerIdentity
           }
           viewerUser={
-            user
+            viewerUser
           }
           authToken={
-            token
+            authToken
           }
           onAudienceChange={
-            setAudience
+            onAudienceChange
           }
           onRoomChange={
-            setViewerRoom
+            onRoomChange
           }
         />
-      ) : (
-        <View
-          style={
-            styles.emptyState
-          }
-        >
-          <Text
-            style={
-              styles.emptyTitle
-            }
-          >
-            No hay directos actualmente
-          </Text>
-
-          <Text
-            style={
-              styles.emptySubtitle
-            }
-          >
-            Puedes ver los replays mientras tanto.
-          </Text>
-        </View>
       )}
-
-      {activeLive ? (
-        <LiveViewerOverlay
-          live={
-            activeLive
-          }
-          room={
-            viewerRoom
-          }
-          audience={
-            audience
-          }
-          viewerIdentity={
-            identity
-          }
-          authToken={
-            token
-          }
-          currentIndex={
-            currentIndex
-          }
-          totalLives={
-            lives.length
-          }
-          onPrevious={
-            goToPreviousLive
-          }
-          onNext={
-            goToNextLive
-          }
-          onOpenUser={
-            onOpenUser
-          }
-          showNavigation={
-            false
-          }
-        />
-      ) : null}
-    </View>
+      onOpenUser={
+        onOpenUser
+      }
+      onNavigationReady={
+        onNavigationReady
+      }
+      showNavigation={
+        false
+      }
+    />
   );
 }
-
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-
-      position:
-        "relative",
-
-      backgroundColor:
-        colors.background,
-    },
-
-    loading: {
-      ...StyleSheet.absoluteFill,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      backgroundColor:
-        colors.background,
-    },
-
-    emptyState: {
-      flex: 1,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      paddingHorizontal:
-        32,
-    },
-
-    emptyTitle: {
-      color:
-        "#FFFFFF",
-
-      fontSize:
-        17,
-
-      fontWeight:
-        "600",
-
-      textAlign:
-        "center",
-    },
-
-    emptySubtitle: {
-      marginTop:
-        6,
-
-      color:
-        "rgba(255,255,255,0.58)",
-
-      fontSize:
-        14,
-
-      fontWeight:
-        "400",
-
-      textAlign:
-        "center",
-    },
-  });

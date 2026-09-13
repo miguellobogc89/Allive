@@ -3,10 +3,17 @@
 import { Ionicons } from "@expo/vector-icons";
 
 import {
-  StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  tokens,
+} from "../../styles";
+
+import {
+  nowAudienceBadgeStyles as styles,
+} from "./NowAudienceBadge.styles";
 
 type NowAudienceBadgeProps = {
   type:
@@ -32,8 +39,12 @@ export function NowAudienceBadge({
             ? "person"
             : "heart"
         }
-        size={12}
-        color="#FFFFFF"
+        size={
+          tokens.icon.now.audience
+        }
+        color={
+          tokens.color.text.primary
+        }
       />
 
       <Text
@@ -87,38 +98,3 @@ function formatCount(
   );
 }
 
-const styles =
-  StyleSheet.create({
-    badge: {
-      minHeight: 24,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      gap: 4,
-
-      paddingHorizontal:
-        8,
-
-      borderRadius:
-        999,
-
-      backgroundColor:
-        "rgba(10,16,22,0.72)",
-    },
-
-    text: {
-      color:
-        "#FFFFFF",
-
-      fontSize: 11,
-      fontWeight:
-        "800",
-    },
-  });

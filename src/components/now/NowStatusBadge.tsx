@@ -1,10 +1,13 @@
 // src/components/now/NowStatusBadge.tsx
 
 import {
-  StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  nowStatusBadgeStyles as styles,
+} from "./NowStatusBadge.styles";
 
 type NowStatusBadgeProps = {
   type:
@@ -40,42 +43,3 @@ export function NowStatusBadge({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    badge: {
-      minHeight: 24,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      paddingHorizontal:
-        9,
-
-      borderRadius: 7,
-    },
-
-    live: {
-      backgroundColor:
-        "#FF2147",
-    },
-
-    replay: {
-      backgroundColor:
-        "#168CFF",
-    },
-
-    text: {
-      color:
-        "#FFFFFF",
-
-      fontSize: 10,
-      fontWeight:
-        "900",
-
-      letterSpacing:
-        0.5,
-    },
-  });

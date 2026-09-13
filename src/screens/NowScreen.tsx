@@ -2,36 +2,16 @@
 
 import {
   useCallback,
-  useEffect,
-  useMemo,
   useState,
 } from "react";
 
 import {
-  StyleSheet,
   View,
 } from "react-native";
 
 import {
-  getFollowingFeed,
-} from "../api/followingApi";
-
-import {
-  getActiveLives,
-} from "../api/liveApi";
-
-import {
-  getReplays,
-  type ReplayItem,
-} from "../api/replayApi";
-
-import {
   useAuth,
 } from "../auth/AuthContext";
-
-import type {
-  ActiveLive,
-} from "../components/live/types";
 
 import {
   AlliveLoadingScreen,
@@ -46,6 +26,22 @@ import {
 } from "../components/now/NowHeader";
 
 import {
+  NowLiveViewer,
+} from "../components/now/NowLiveViewer";
+
+import {
+  NowMapSection,
+} from "../components/now/NowMapSection";
+
+import {
+  NowReplayViewer,
+} from "../components/now/NowReplayViewer";
+
+import {
+  nowScreenStyles as styles,
+} from "../components/now/NowScreen.styles";
+
+import {
   NowTabs,
 } from "../components/now/NowTabs";
 
@@ -55,16 +51,12 @@ import type {
 } from "../components/now/now.types";
 
 import {
-  MapScreen,
-} from "../maps/MapScreen";
+  useFollowingFeed,
+} from "../components/now/useFollowingFeed";
 
 import {
-  LiveViewerScreen,
-} from "./LiveViewerScreen.native";
-
-import {
-  ReplayViewerScreen,
-} from "./ReplayViewerScreen.native";
+  useNowFeed,
+} from "../components/now/useNowFeed";
 
 type NowScreenProps = {
   requestedLiveId?: string | null;
@@ -101,58 +93,6 @@ export function NowScreen({
   );
 
   const [
-    lives,
-    setLives,
-  ] = useState<
-    ActiveLive[]
-  >([]);
-
-  const [
-    replays,
-    setReplays,
-  ] = useState<
-    ReplayItem[]
-  >([]);
-
-  const [
-    followingLives,
-    setFollowingLives,
-  ] = useState<
-    ActiveLive[]
-  >([]);
-
-  const [
-    followingReplays,
-    setFollowingReplays,
-  ] = useState<
-    ReplayItem[]
-  >([]);
-
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
-
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
-
-  const [
-    followingLoading,
-    setFollowingLoading,
-  ] = useState(false);
-
-  const [
-    followingError,
-    setFollowingError,
-  ] = useState<
-    string | null
-  >(null);
-
-  const [
     selectedLiveId,
     setSelectedLiveId,
   ] = useState<
@@ -166,273 +106,24 @@ export function NowScreen({
     string | null
   >(null);
 
-  useEffect(() => {
-    if (
-      requestedLiveId ||
-      requestedReplayId
-    ) {
-      setLoading(
-        false,
-      );
-
-      return;
-    }
-
-    const controller =
-      new AbortController();
-
-    async function loadContent() {
-      try {
-        setError(
-          null,
-        );
-
-        const nextLives =
-          await getActiveLives(
-            controller.signal,
-          );
-
-          console.log(
-  "[ANDROID NOW LIVES]",
-  nextLives.map((live) => ({
-    id: live.id,
-    thumbnailUrl: live.thumbnailUrl,
-  })),
-);
-
-        const nextReplays =
-          await getReplays(
-            controller.signal,
-          );
-
-        if (
-          controller.signal
-            .aborted
-        ) {
-          return;
-        }
-
-        setLives(
-          nextLives,
-        );
-
-        setReplays(
-          nextReplays,
-        );
-      } catch (loadError) {
-        if (
-          controller.signal
-            .aborted
-        ) {
-          return;
-        }
-
-        console.error(
-          "Allive NOW error:",
-          loadError,
-        );
-
-        setError(
-          "No se pudo cargar el contenido.",
-        );
-      } finally {
-        if (
-          !controller.signal
-            .aborted
-        ) {
-          setLoading(
-            false,
-          );
-        }
-      }
-    }
-
-    void loadContent();
-
-    const interval =
-      setInterval(
-        loadContent,
-        5000,
-      );
-
-    return () => {
-      controller.abort();
-
-      clearInterval(
-        interval,
-      );
-    };
-  }, [
+  const {
+    lives,
+    gridItems,
+    loading,
+    error,
+  } = useNowFeed({
     requestedLiveId,
     requestedReplayId,
-  ]);
+  });
 
-  useEffect(() => {
-    if (
-      activeSection !==
-      "following"
-    ) {
-      return;
-    }
-
-    if (!token) {
-      setFollowingLives(
-        [],
-      );
-
-      setFollowingReplays(
-        [],
-      );
-
-      setFollowingError(
-        "Inicia sesión para ver a las personas que sigues.",
-      );
-
-      setFollowingLoading(
-        false,
-      );
-
-      return;
-    }
-
-    const controller =
-      new AbortController();
-
-    async function loadFollowing() {
-      try {
-        setFollowingError(
-          null,
-        );
-
-        const result =
-          await getFollowingFeed(
-            token!,
-            controller.signal,
-          );
-
-        if (
-          controller.signal
-            .aborted
-        ) {
-          return;
-        }
-
-        setFollowingLives(
-          result.lives,
-        );
-
-        setFollowingReplays(
-          result.replays,
-        );
-      } catch (loadError) {
-        if (
-          controller.signal
-            .aborted
-        ) {
-          return;
-        }
-
-        console.error(
-          "Error cargando Siguiendo:",
-          loadError,
-        );
-
-        setFollowingError(
-          "No se pudo cargar Siguiendo.",
-        );
-      } finally {
-        if (
-          !controller.signal
-            .aborted
-        ) {
-          setFollowingLoading(
-            false,
-          );
-        }
-      }
-    }
-
-    setFollowingLoading(
-      true,
-    );
-
-    void loadFollowing();
-
-    const interval =
-      setInterval(
-        loadFollowing,
-        5000,
-      );
-
-    return () => {
-      controller.abort();
-
-      clearInterval(
-        interval,
-      );
-    };
-  }, [
+  const {
+    followingItems,
+    followingLoading,
+    followingError,
+  } = useFollowingFeed({
     activeSection,
     token,
-  ]);
-
-  const gridItems =
-    useMemo<
-      NowGridItem[]
-    >(
-      () => [
-        ...lives.map(
-          (live) => ({
-            type:
-              "live" as const,
-
-            live,
-          }),
-        ),
-
-        ...replays.map(
-          (replay) => ({
-            type:
-              "replay" as const,
-
-            replay,
-          }),
-        ),
-      ],
-      [
-        lives,
-        replays,
-      ],
-    );
-
-  const followingItems =
-    useMemo<
-      NowGridItem[]
-    >(
-      () => [
-        ...followingLives.map(
-          (live) => ({
-            type:
-              "live" as const,
-
-            live,
-          }),
-        ),
-
-        ...followingReplays.map(
-          (replay) => ({
-            type:
-              "replay" as const,
-
-            replay,
-          }),
-        ),
-      ],
-      [
-        followingLives,
-        followingReplays,
-      ],
-    );
+  });
 
   const openItem =
     useCallback(
@@ -471,9 +162,11 @@ export function NowScreen({
     selectedReplayId
   ) {
     return (
-      <ReplayViewerScreen
+      <NowReplayViewer
         requestedReplayId={
-          requestedReplayId ??
+          requestedReplayId
+        }
+        selectedReplayId={
           selectedReplayId
         }
         onOpenUser={
@@ -488,10 +181,15 @@ export function NowScreen({
     selectedLiveId
   ) {
     return (
-      <LiveViewerScreen
+      <NowLiveViewer
         requestedLiveId={
-          requestedLiveId ??
+          requestedLiveId
+        }
+        selectedLiveId={
           selectedLiveId
+        }
+        lives={
+          lives
         }
         onOpenUser={
           onOpenUser
@@ -555,7 +253,7 @@ export function NowScreen({
             styles.section
           }
         >
-          <MapScreen />
+          <NowMapSection />
         </View>
       ) : followingLoading ? (
         <View
@@ -574,7 +272,7 @@ export function NowScreen({
             followingError
           }
           emptyTitle="No hay contenido nuevo"
-          emptyDescription="Cuando las personas que sigues hagan un directo o guarden un replay, aparecerá aquí."
+          emptyDescription="Cuando las personas que sigues hagan un directo o guarden un replay, aparecer\u00e1 aqu\u00ed."
           onItemPress={
             openItem
           }
@@ -583,17 +281,3 @@ export function NowScreen({
     </View>
   );
 }
-
-const styles =
-  StyleSheet.create({
-    screen: {
-      flex: 1,
-
-      backgroundColor:
-        "#020609",
-    },
-
-    section: {
-      flex: 1,
-    },
-  });

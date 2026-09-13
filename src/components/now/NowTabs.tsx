@@ -2,10 +2,13 @@
 
 import {
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
+
+import {
+  nowTabsStyles as styles,
+} from "./NowTabs.styles";
 
 import type {
   NowSection,
@@ -94,58 +97,3 @@ export function NowTabs({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    tabs: {
-      height: 48,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "flex-end",
-
-      justifyContent:
-        "space-around",
-
-      paddingHorizontal:
-        36,
-    },
-
-    tab: {
-      minWidth: 82,
-      height: 40,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "flex-start",
-    },
-
-    text: {
-      color:
-        "rgba(255,255,255,0.44)",
-
-      fontSize: 15,
-      fontWeight:
-        "800",
-    },
-
-    activeText: {
-      color:
-        "#FFFFFF",
-    },
-
-    indicator: {
-      width: 34,
-      height: 3,
-
-      marginTop: 11,
-
-      borderRadius: 2,
-
-      backgroundColor:
-        "#22F0DE",
-    },
-  });
