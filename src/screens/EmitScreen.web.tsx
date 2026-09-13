@@ -104,8 +104,11 @@ export function EmitScreen({
   const previewStreamRef =
     useRef<MediaStream | null>(null);
 
-      const finishLivePromiseRef =
+  const finishLivePromiseRef =
     useRef<Promise<void> | null>(null);
+  
+  const finishedLiveSessionIdRef =
+    useRef<string | null>(null);
 
   const previewVideoElementRef =
     useRef<HTMLVideoElement | null>(null);
@@ -800,7 +803,7 @@ export function EmitScreen({
 
 async function handleSaveReplay() {
   const currentLiveSessionId =
-    liveSessionId;
+    finishedLiveSessionIdRef.current;
 
   const authToken = token;
 
@@ -819,12 +822,15 @@ async function handleSaveReplay() {
       await finishLivePromiseRef.current;
     }
 
-    await saveLiveReplay(
-      currentLiveSessionId,
-      authToken,
-    );
+  await saveLiveReplay(
+    currentLiveSessionId,
+    authToken,
+  );
 
-    setFinishModalVisible(false);
+  finishedLiveSessionIdRef.current =
+    null;
+
+  setFinishModalVisible(false);
   } catch (caughtError) {
     console.error(
       "No se pudo guardar el REPLAY:",
@@ -846,6 +852,12 @@ async function handleSaveReplay() {
 
     const room =
       roomRef.current;
+
+    const currentLiveSessionId =
+      liveSessionIdRef.current;
+
+    finishedLiveSessionIdRef.current =
+      currentLiveSessionId;
 
     setError(null);
 
@@ -971,9 +983,14 @@ async function handleSaveReplay() {
         onSave={() => {
           void handleSaveReplay();
         }}
+
         onDiscard={() => {
+          finishedLiveSessionIdRef.current =
+            null;
+
           setFinishModalVisible(false);
         }}
+
       />
     </View>
   );

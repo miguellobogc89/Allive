@@ -222,6 +222,218 @@ export function registerLiveRoutes(
     },
   );
 
+    /*
+  * Obtener LIVE + REPLAYS
+  * de usuarios que sigue
+  * el usuario autenticado.
+  */
+  app.get(
+    "/api/lives/following",
+    requireAuth,
+    async (
+      req: AuthenticatedRequest,
+      res,
+    ) => {
+      try {
+        const followerId =
+          req.authUser!.id;
+
+        const follows =
+          await prisma.user_follows.findMany({
+            where: {
+              follower_id:
+                followerId,
+            },
+
+            select: {
+              following_id:
+                true,
+            },
+          });
+
+        const followingIds =
+          follows.map(
+            (follow) =>
+              follow.following_id,
+          );
+
+        if (
+          followingIds.length === 0
+        ) {
+          return res.json({
+            lives: [],
+            replays: [],
+          });
+        }
+
+        const [
+          activeLives,
+          replays,
+        ] = await Promise.all([
+          reconcileActiveLives(),
+
+          prisma.liveSession.findMany({
+            where: {
+              creatorId: {
+                in: followingIds,
+              },
+
+              status: "ENDED",
+
+              endedAt: {
+                not: null,
+              },
+
+              recording_url: {
+                not: null,
+              },
+
+              replay_saved_at: {
+                not: null,
+              },
+
+              replay_visible_until: {
+                gt: new Date(),
+              },
+            },
+
+            orderBy: {
+              endedAt: "desc",
+            },
+
+            take: 50,
+
+            select: {
+              id: true,
+              roomName: true,
+
+              title: true,
+              description: true,
+              eventName: true,
+
+              placeName: true,
+              latitude: true,
+              longitude: true,
+
+              startedAt: true,
+              endedAt: true,
+
+              thumbnailUrl: true,
+
+              recording_url: true,
+
+              replay_saved_at: true,
+              replay_visible_until:
+                true,
+
+              creator: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatarUrl: true,
+                },
+              },
+
+              _count: {
+                select: {
+                  live_likes: true,
+                  live_comments:
+                    true,
+                },
+              },
+            },
+          }),
+        ]);
+
+        const followingSet =
+          new Set(followingIds);
+
+        const filteredLives =
+          activeLives.filter(
+            (live) =>
+              followingSet.has(
+                live.creatorId,
+              ),
+          );
+
+        return res.json({
+          lives:
+            filteredLives,
+
+          replays:
+            replays.map(
+              (replay) => ({
+                id: replay.id,
+
+                roomName:
+                  replay.roomName,
+
+                title:
+                  replay.title,
+
+                description:
+                  replay.description,
+
+                eventName:
+                  replay.eventName,
+
+                placeName:
+                  replay.placeName,
+
+                latitude:
+                  replay.latitude,
+
+                longitude:
+                  replay.longitude,
+
+                startedAt:
+                  replay.startedAt,
+
+                endedAt:
+                  replay.endedAt,
+
+                thumbnailUrl:
+                  replay.thumbnailUrl,
+
+                recordingUrl:
+                  replay.recording_url,
+
+                replaySavedAt:
+                  replay.replay_saved_at,
+
+                replayVisibleUntil:
+                  replay.replay_visible_until,
+
+                likeCount:
+                  replay._count
+                    .live_likes,
+
+                commentCount:
+                  replay._count
+                    .live_comments,
+
+                creator:
+                  replay.creator,
+              }),
+            ),
+        });
+      } catch (error) {
+        console.error(
+          "Error obteniendo feed siguiendo:",
+          error,
+        );
+
+        return res
+          .status(500)
+          .json({
+            error:
+              "No se pudo cargar el contenido de las personas que sigues",
+          });
+      }
+    },
+  );
+
   /*
    * Obtener REPLAYS.
    * Emisiones que ya han terminado.

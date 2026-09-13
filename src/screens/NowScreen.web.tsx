@@ -20,6 +20,10 @@ import {
 } from "react-native";
 
 import {
+  getFollowingFeed,
+} from "../api/followingApi";
+
+import {
   getActiveLives,
 } from "../api/liveApi";
 
@@ -27,6 +31,10 @@ import {
   getReplays,
   type ReplayItem,
 } from "../api/replayApi";
+
+import {
+  useAuth,
+} from "../auth/AuthContext";
 
 import type {
   ActiveLive,
@@ -43,10 +51,6 @@ import {
 import {
   MapScreen,
 } from "../maps/MapScreen.web";
-
-import {
-  colors,
-} from "../styles";
 
 import {
   LiveViewerScreen,
@@ -111,6 +115,10 @@ export function NowScreen({
   onOpenNotifications,
   onOpenUser,
 }: NowScreenProps) {
+  const {
+    token,
+  } = useAuth();
+
   const [
     activeSection,
     setActiveSection,
@@ -131,6 +139,32 @@ export function NowScreen({
   ] = useState<
     ReplayItem[]
   >([]);
+
+  const [
+    followingLives,
+    setFollowingLives,
+  ] = useState<
+    ActiveLive[]
+  >([]);
+
+  const [
+    followingReplays,
+    setFollowingReplays,
+  ] = useState<
+    ReplayItem[]
+  >([]);
+
+  const [
+    followingLoading,
+    setFollowingLoading,
+  ] = useState(false);
+
+  const [
+    followingError,
+    setFollowingError,
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     selectedLiveId,
@@ -229,6 +263,7 @@ export function NowScreen({
 
     return () => {
       controller.abort();
+
       window.clearInterval(
         interval,
       );
@@ -238,21 +273,155 @@ export function NowScreen({
     requestedReplayId,
   ]);
 
+  useEffect(() => {
+    if (
+      activeSection !==
+      "following"
+    ) {
+      return;
+    }
+
+    if (!token) {
+      setFollowingLives([]);
+      setFollowingReplays([]);
+
+      setFollowingError(
+        "Inicia sesión para ver a las personas que sigues.",
+      );
+
+      setFollowingLoading(
+        false,
+      );
+
+      return;
+    }
+
+    const controller =
+      new AbortController();
+
+    async function loadFollowing() {
+      try {
+        setFollowingError(
+          null,
+        );
+
+        const result =
+          await getFollowingFeed(
+            token!,
+            controller.signal,
+          );
+
+        if (
+          controller.signal
+            .aborted
+        ) {
+          return;
+        }
+
+        setFollowingLives(
+          result.lives,
+        );
+
+        setFollowingReplays(
+          result.replays,
+        );
+      } catch (loadError) {
+        if (
+          controller.signal
+            .aborted
+        ) {
+          return;
+        }
+
+        console.error(
+          "Error cargando Siguiendo:",
+          loadError,
+        );
+
+        setFollowingError(
+          "No se pudo cargar Siguiendo.",
+        );
+      } finally {
+        if (
+          !controller.signal
+            .aborted
+        ) {
+          setFollowingLoading(
+            false,
+          );
+        }
+      }
+    }
+
+    setFollowingLoading(true);
+
+    void loadFollowing();
+
+    const interval =
+      window.setInterval(
+        loadFollowing,
+        5000,
+      );
+
+    return () => {
+      controller.abort();
+
+      window.clearInterval(
+        interval,
+      );
+    };
+  }, [
+    activeSection,
+    token,
+  ]);
+
   const gridItems =
     useMemo<GridItem[]>(
-      () =>
-        lives.length > 0
-          ? lives.map((live) => ({
-              type: "live",
-              live,
-            }))
-          : replays.map((replay) => ({
-              type: "replay",
-              replay,
-            })),
+      () => [
+        ...lives.map(
+          (live) => ({
+            type:
+              "live" as const,
+            live,
+          }),
+        ),
+
+        ...replays.map(
+          (replay) => ({
+            type:
+              "replay" as const,
+            replay,
+          }),
+        ),
+      ],
       [
         lives,
         replays,
+      ],
+    );
+
+  const followingItems =
+    useMemo<GridItem[]>(
+      () => [
+        ...followingLives.map(
+          (live) => ({
+            type:
+              "live" as const,
+            live,
+          }),
+        ),
+
+        ...followingReplays.map(
+          (replay) => ({
+            type:
+              "replay" as const,
+            replay,
+          }),
+        ),
+      ],
+      [
+        followingLives,
+        followingReplays,
       ],
     );
 
@@ -265,11 +434,20 @@ export function NowScreen({
           setSelectedLiveId(
             item.live.id,
           );
+
+          setSelectedReplayId(
+            null,
+          );
+
           return;
         }
 
         setSelectedReplayId(
           item.replay.id,
+        );
+
+        setSelectedLiveId(
+          null,
         );
       },
       [],
@@ -382,11 +560,31 @@ export function NowScreen({
         />
       ) : activeSection ===
         "map" ? (
-        <View style={styles.mapSection}>
+        <View
+          style={
+            styles.mapSection
+          }
+        >
           <MapScreen />
         </View>
-      ) : (
+      ) : followingLoading ? (
+        <AlliveLoadingScreen />
+      ) : followingItems.length ===
+          0 &&
+        !followingError ? (
         <FollowingSection />
+      ) : (
+        <ContentGrid
+          items={
+            followingItems
+          }
+          error={
+            followingError
+          }
+          onItemPress={
+            openItem
+          }
+        />
       )}
     </View>
   );
@@ -411,7 +609,11 @@ function NowHeader({
         resizeMode="contain"
       />
 
-      <View style={styles.headerActions}>
+      <View
+        style={
+          styles.headerActions
+        }
+      >
         <NotificationButton
           unreadNotifications={
             unreadNotifications
@@ -459,7 +661,11 @@ function ContentGrid({
   if (error) {
     return (
       <View style={styles.state}>
-        <Text style={styles.stateTitle}>
+        <Text
+          style={
+            styles.stateTitle
+          }
+        >
           {error}
         </Text>
       </View>
@@ -469,12 +675,21 @@ function ContentGrid({
   if (items.length === 0) {
     return (
       <View style={styles.state}>
-        <Text style={styles.stateTitle}>
+        <Text
+          style={
+            styles.stateTitle
+          }
+        >
           No hay contenido ahora
         </Text>
 
-        <Text style={styles.stateSubtitle}>
-          Cuando haya directos o replays apareceran aqui.
+        <Text
+          style={
+            styles.stateSubtitle
+          }
+        >
+          Cuando haya directos o
+          replays aparecerán aquí.
         </Text>
       </View>
     );
@@ -482,7 +697,9 @@ function ContentGrid({
 
   return (
     <ScrollView
-      style={styles.gridScroller}
+      style={
+        styles.gridScroller
+      }
       contentContainerStyle={
         styles.grid
       }
@@ -494,8 +711,8 @@ function ContentGrid({
         <ContentCard
           key={
             item.type === "live"
-              ? item.live.id
-              : item.replay.id
+              ? `live-${item.live.id}`
+              : `replay-${item.replay.id}`
           }
           item={item}
           onPress={() =>
@@ -527,12 +744,12 @@ function ContentCard({
   const hasThumbnail =
     typeof thumbnailUrl ===
       "string" &&
-    thumbnailUrl.length >
-      0;
+    thumbnailUrl.length > 0;
 
   const place =
     source.placeName ||
-    source.creator?.displayName ||
+    source.creator
+      ?.displayName ||
     source.creator?.username ||
     "Allive";
 
@@ -558,7 +775,9 @@ function ContentCard({
           source={{
             uri: thumbnailUrl!,
           }}
-          style={StyleSheet.absoluteFill}
+          style={
+            StyleSheet.absoluteFill
+          }
           resizeMode="cover"
         />
       ) : (
@@ -585,26 +804,39 @@ function ContentCard({
         }
       />
 
-      <View style={styles.cardTop}>
+      <View
+        style={styles.cardTop}
+      >
         <View
           style={[
             styles.liveBadge,
-            item.type === "replay"
+            item.type ===
+            "replay"
               ? styles.replayBadge
               : undefined,
           ]}
         >
-          <Text style={styles.liveText}>
-            {item.type === "live"
+          <Text
+            style={
+              styles.liveText
+            }
+          >
+            {item.type ===
+            "live"
               ? "LIVE"
               : "REPLAY"}
           </Text>
         </View>
 
-        <View style={styles.viewerBadge}>
+        <View
+          style={
+            styles.viewerBadge
+          }
+        >
           <Ionicons
             name={
-              item.type === "live"
+              item.type ===
+              "live"
                 ? "person"
                 : "heart"
             }
@@ -613,23 +845,35 @@ function ContentCard({
           />
 
           <Text
-            style={styles.viewerText}
+            style={
+              styles.viewerText
+            }
           >
-            {formatCount(count)}
+            {formatCount(
+              count,
+            )}
           </Text>
         </View>
       </View>
 
-      <View style={styles.cardText}>
+      <View
+        style={
+          styles.cardText
+        }
+      >
         <Text
-          style={styles.cardPlace}
+          style={
+            styles.cardPlace
+          }
           numberOfLines={1}
         >
           {place}
         </Text>
 
         <Text
-          style={styles.cardTitle}
+          style={
+            styles.cardTitle
+          }
           numberOfLines={2}
         >
           {title}
@@ -642,12 +886,23 @@ function ContentCard({
 function FollowingSection() {
   return (
     <View style={styles.state}>
-      <Text style={styles.stateTitle}>
-        Siguiendo
+      <Text
+        style={
+          styles.stateTitle
+        }
+      >
+        No hay contenido nuevo
       </Text>
 
-      <Text style={styles.stateSubtitle}>
-        Los directos de las personas que sigues apareceran aqui.
+      <Text
+        style={
+          styles.stateSubtitle
+        }
+      >
+        Cuando las personas que
+        sigues hagan un directo o
+        guarden un replay,
+        aparecerá aquí.
       </Text>
     </View>
   );
@@ -712,7 +967,8 @@ const styles =
       height: 36,
 
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent:
+        "center",
     },
 
     pressed: {
@@ -757,10 +1013,10 @@ const styles =
 
       marginTop: 11,
 
-      borderRadius: 2,
+      borderRadius: 999,
 
       backgroundColor:
-        "#22F0DE",
+        "#FFFFFF",
     },
 
     gridScroller: {
@@ -770,125 +1026,126 @@ const styles =
     grid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 10,
 
-      paddingHorizontal: 22,
-      paddingTop: 8,
+      paddingHorizontal: 12,
+      paddingTop: 12,
       paddingBottom: 28,
+
+      gap: 8,
     },
 
     card: {
-      width: "48%",
-      aspectRatio: 0.75,
+      position: "relative",
+
+      width: "48.5%",
+      aspectRatio: 0.76,
 
       overflow: "hidden",
 
-      borderRadius: 10,
+      borderRadius: 16,
 
       backgroundColor:
-        colors.surface,
+        "#111820",
     },
 
     cardTop: {
       position: "absolute",
 
       top: 10,
-      left: 9,
-      right: 9,
+      left: 10,
+      right: 10,
 
       flexDirection: "row",
       alignItems: "center",
-
-      gap: 6,
+      justifyContent:
+        "space-between",
     },
 
     liveBadge: {
-      height: 27,
+      minHeight: 23,
 
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent:
+        "center",
 
       paddingHorizontal: 8,
 
-      borderRadius: 5,
+      borderRadius: 6,
 
       backgroundColor:
-        "#FF2F68",
+        "#FF2147",
     },
 
     replayBadge: {
       backgroundColor:
-        "#6E5CFF",
+        "rgba(0,0,0,0.72)",
     },
 
     liveText: {
       color: "#FFFFFF",
 
-      fontSize: 13,
+      fontSize: 10,
       fontWeight: "900",
+      letterSpacing: 0.6,
     },
 
     viewerBadge: {
-      height: 27,
+      minHeight: 23,
 
       flexDirection: "row",
       alignItems: "center",
 
       gap: 4,
 
-      paddingHorizontal: 8,
+      paddingHorizontal: 7,
 
-      borderRadius: 9,
+      borderRadius: 999,
 
       backgroundColor:
-        "rgba(94,99,111,0.82)",
+        "rgba(0,0,0,0.48)",
     },
 
     viewerText: {
       color: "#FFFFFF",
 
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "800",
     },
 
     cardText: {
       position: "absolute",
 
-      left: 10,
-      right: 10,
+      left: 12,
+      right: 12,
       bottom: 12,
     },
 
     cardPlace: {
       color: "#FFFFFF",
 
-      fontSize: 13,
-      fontWeight: "800",
+      fontSize: 14,
+      fontWeight: "900",
     },
 
     cardTitle: {
-      marginTop: 2,
+      marginTop: 3,
 
-      color: "#FFFFFF",
+      color:
+        "rgba(255,255,255,0.78)",
 
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: "600",
-      lineHeight: 17,
-    },
-
-    mapSection: {
-      flex: 1,
-
-      marginTop: 8,
+      lineHeight: 16,
     },
 
     state: {
       flex: 1,
 
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent:
+        "center",
 
-      paddingHorizontal: 32,
+      paddingHorizontal: 36,
     },
 
     stateTitle: {
@@ -901,17 +1158,20 @@ const styles =
     },
 
     stateSubtitle: {
-      maxWidth: 320,
+      maxWidth: 340,
 
       marginTop: 8,
 
       color:
-        "rgba(255,255,255,0.58)",
+        "rgba(255,255,255,0.5)",
 
       fontSize: 14,
-      fontWeight: "500",
       lineHeight: 20,
 
       textAlign: "center",
+    },
+
+    mapSection: {
+      flex: 1,
     },
   });
