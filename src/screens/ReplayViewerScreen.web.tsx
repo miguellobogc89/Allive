@@ -8,7 +8,6 @@ import {
 } from "react";
 
 import {
-  ActivityIndicator,
   StyleSheet,
   Text,
   View,
@@ -26,6 +25,10 @@ import {
 import {
   ReplayOverlay,
 } from "../components/live/replay";
+
+import {
+  AlliveLoadingScreen,
+} from "../components/loading/AlliveLoadingScreen";
 
 import type {
   Replay,
@@ -176,17 +179,7 @@ export function ReplayViewerScreen({
     !activeReplay
   ) {
     return (
-      <View
-        style={
-          styles.loading
-        }
-      >
-        <ActivityIndicator
-          color={
-            colors.accent
-          }
-        />
-      </View>
+      <AlliveLoadingScreen />
     );
   }
 

@@ -10,7 +10,7 @@ export type BottomNavItem = {
 };
 
 export const bottomNavItems: BottomNavItem[] = [
-  { id: "now", label: "NOW", icon: "play-circle-outline" },
+  { id: "now", label: "NOW", icon: "home" },
   { id: "map", label: "MAPA", icon: "map-outline" },
   { id: "emit", label: "EMITIR", icon: "radio-outline" },
   { id: "search", label: "BUSCAR", icon: "search-outline" },

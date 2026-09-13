@@ -2,20 +2,36 @@
 
 import {
   ActivityIndicator,
-  ImageBackground,
+  Image,
   StyleSheet,
+  View,
 } from "react-native";
+
+const loadScreenImage =
+  require("../../../public/icons/load-screen.png");
+
+const loadScreenUri =
+  Image.resolveAssetSource(
+    loadScreenImage,
+  ).uri;
+
+const webBackgroundStyle =
+  {
+    backgroundImage: `url(${loadScreenUri})`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+  } as Record<string, string>;
 
 export function AlliveLoadingScreen() {
   return (
-    <ImageBackground
-      source={{
-        uri: "/icons/load-screen.png",
-      }}
+    <View
       style={
-        styles.container
+        [
+          styles.container,
+          webBackgroundStyle,
+        ]
       }
-      resizeMode="cover"
     >
       <ActivityIndicator
         color="#FFFFFF"
@@ -24,7 +40,7 @@ export function AlliveLoadingScreen() {
           styles.spinner
         }
       />
-    </ImageBackground>
+    </View>
   );
 }
 

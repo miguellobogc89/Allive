@@ -11,7 +11,6 @@ import {
 } from "react";
 
 import {
-  ActivityIndicator,
   StyleSheet,
   Text,
   View,
@@ -33,6 +32,10 @@ import {
 import {
   LiveVideoSurface,
 } from "../components/live/LiveVideoSurface.web";
+
+import {
+  AlliveLoadingScreen,
+} from "../components/loading/AlliveLoadingScreen";
 
 import type {
   ActiveLive,
@@ -323,17 +326,7 @@ export function LiveViewerScreen({
     >
       {loadingLives &&
       !activeLive ? (
-        <View
-          style={
-            styles.loading
-          }
-        >
-          <ActivityIndicator
-            color={
-              colors.accent
-            }
-          />
-        </View>
+        <AlliveLoadingScreen />
       ) : activeLive ? (
         <LiveVideoSurface
           live={activeLive}
