@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   AppState,
   Platform,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -33,7 +32,14 @@ import {
   type AlliveNotificationTarget,
 } from "./src/api/notificationsApi";
 
-import { BottomNav } from "./src/components/BottomNav";
+import {
+  BottomNav,
+} from "./src/components/navigation/BottomNav";
+
+import {
+  useAppNavigation,
+} from "./src/navigation/useAppNavigation";
+
 import {
   addAlliveNotificationListeners,
   registerForAllivePushNotifications,
@@ -41,14 +47,41 @@ import {
   type NotificationNavigationTarget,
 } from "./src/notifications/alliveNotifications";
 
-import { AuthScreen } from "./src/screens/AuthScreen";
-import { EmitScreen } from "./src/screens/EmitScreen";
-import { MapScreen } from "./src/screens/MapScreen";
-import { NowScreen } from "./src/screens/NowScreen";
-import { NotificationsScreen } from "./src/screens/NotificationsScreen";
-import { ProfileScreen } from "./src/screens/ProfileScreen";
-import { SearchScreen } from "./src/screens/SearchScreen";
-import { UserProfileScreen } from "./src/screens/UserProfileScreen";
+import {
+  AuthScreen,
+} from "./src/screens/AuthScreen";
+
+import {
+  EmitScreen,
+} from "./src/screens/EmitScreen";
+
+import {
+  MapScreen,
+} from "./src/screens/MapScreen";
+
+import {
+  NowScreen,
+} from "./src/screens/NowScreen";
+
+import {
+  NotificationsScreen,
+} from "./src/screens/NotificationsScreen";
+
+import {
+  ProfileScreen,
+} from "./src/screens/ProfileScreen";
+
+import {
+  SearchScreen,
+} from "./src/screens/SearchScreen";
+
+import {
+  UserProfileScreen,
+} from "./src/screens/UserProfileScreen";
+
+import {
+  appStyles as styles,
+} from "./src/styles/app.styles";
 
 import {
   appFontFamily,
@@ -56,43 +89,70 @@ import {
 } from "./src/styles";
 
 function AppContent() {
-  const { identity, isLoading, token } =
-    useAuth();
+  const {
+    identity,
+    isLoading,
+    token,
+  } = useAuth();
 
-  const [activeTab, setActiveTab] = useState("now");
-  const [requestedLiveId, setRequestedLiveId] =
-    useState<string | null>(null);
-    const [requestedReplayId, setRequestedReplayId] =
-  useState<string | null>(null);
-  const [selectedUserId, setSelectedUserId] =
-    useState<string | null>(null);
-  const [
+  const {
+    activeTab,
+
+    selectedUserId,
+
     notificationsVisible,
-    setNotificationsVisible,
-  ] = useState(false);
+
+    requestedLiveId,
+
+    requestedReplayId,
+
+    changeTab,
+
+    openLive,
+
+    openReplay,
+
+    openUser,
+
+    openNotifications,
+
+    goBack,
+  } = useAppNavigation();
+
   const [
     unreadNotifications,
     setUnreadNotifications,
   ] = useState(0);
+
   const [
     notificationRefreshKey,
     setNotificationRefreshKey,
   ] = useState(0);
+
   const emitStartLiveRef =
-    useRef<(() => void) | null>(null);
-  const [emitIsLive, setEmitIsLive] =
-    useState(false);
+    useRef<
+      (() => void) | null
+    >(null);
+
+  const [
+    emitIsLive,
+    setEmitIsLive,
+  ] = useState(false);
+
   const [
     emitIsConnecting,
     setEmitIsConnecting,
   ] = useState(false);
+
   const [
     emitCameraReady,
     setEmitCameraReady,
   ] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS !== "web") {
+    if (
+      Platform.OS !== "web"
+    ) {
       return;
     }
 
@@ -104,7 +164,9 @@ function AppContent() {
     useCallback(async () => {
       if (!token) {
         setUnreadNotifications(0);
+
         setAlliveBadgeCount(0);
+
         return;
       }
 
@@ -117,6 +179,7 @@ function AppContent() {
         setUnreadNotifications(
           result.count,
         );
+
         setAlliveBadgeCount(
           result.count,
         );
@@ -128,36 +191,6 @@ function AppContent() {
       }
     }, [token]);
 
-const openLive = useCallback(
-  (liveId: string) => {
-    setRequestedLiveId(liveId);
-    setRequestedReplayId(null);
-    setSelectedUserId(null);
-    setNotificationsVisible(false);
-    setActiveTab("now");
-  },
-  [],
-);
-
-const openReplay = useCallback(
-  (replayId: string) => {
-    setRequestedReplayId(replayId);
-    setRequestedLiveId(null);
-    setSelectedUserId(null);
-    setNotificationsVisible(false);
-    setActiveTab("now");
-  },
-  [],
-);
-
-  const openUser = useCallback(
-    (userId: string) => {
-      setSelectedUserId(userId);
-      setNotificationsVisible(false);
-    },
-    [],
-  );
-
   const openNotificationTarget =
     useCallback(
       (
@@ -166,7 +199,8 @@ const openReplay = useCallback(
           | NotificationNavigationTarget,
       ) => {
         if (
-          "notificationId" in target &&
+          "notificationId" in
+            target &&
           target.notificationId &&
           token
         ) {
@@ -177,15 +211,24 @@ const openReplay = useCallback(
             .then(() =>
               refreshUnreadNotifications(),
             )
-            .catch(() => undefined);
+            .catch(
+              () => undefined,
+            );
         }
 
-        if (target.type === "LIVE") {
-          openLive(target.id);
+        if (
+          target.type === "LIVE"
+        ) {
+          openLive(
+            target.id,
+          );
+
           return;
         }
 
-        openUser(target.id);
+        openUser(
+          target.id,
+        );
       },
       [
         openLive,
@@ -198,7 +241,9 @@ const openReplay = useCallback(
   useEffect(() => {
     if (!token) {
       setUnreadNotifications(0);
+
       setAlliveBadgeCount(0);
+
       return;
     }
 
@@ -222,15 +267,15 @@ const openReplay = useCallback(
       return;
     }
 
-    const interval = setInterval(
-      () => {
+    const interval =
+      setInterval(() => {
         void refreshUnreadNotifications();
-      },
-      15000,
-    );
+      }, 15000);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(
+        interval,
+      );
     };
   }, [
     token,
@@ -246,7 +291,9 @@ const openReplay = useCallback(
       AppState.addEventListener(
         "change",
         (state) => {
-          if (state === "active") {
+          if (
+            state === "active"
+          ) {
             void refreshUnreadNotifications();
           }
         },
@@ -265,13 +312,21 @@ const openReplay = useCallback(
       {
         onReceived: () => {
           setNotificationRefreshKey(
-            (current) => current + 1,
+            (current) =>
+              current + 1,
           );
+
           void refreshUnreadNotifications();
         },
-        onResponse: (target) => {
+
+        onResponse: (
+          target,
+        ) => {
           void refreshUnreadNotifications();
-          openNotificationTarget(target);
+
+          openNotificationTarget(
+            target,
+          );
         },
       },
     );
@@ -282,56 +337,64 @@ const openReplay = useCallback(
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.loading}>
-        <ActivityIndicator color={colors.accent} />
+      <SafeAreaView
+        style={
+          styles.loading
+        }
+      >
+        <ActivityIndicator
+          color={
+            colors.accent
+          }
+        />
       </SafeAreaView>
     );
   }
 
   if (!identity) {
-    return <AuthScreen />;
+    return (
+      <AuthScreen />
+    );
   }
 
-  function changeTab(tab: string) {
-    setSelectedUserId(null);
-    setNotificationsVisible(false);
+  function handleEmitStatusChange(
+    status: {
+      isLive: boolean;
+      isConnecting: boolean;
+      cameraReady: boolean;
+    },
+  ) {
+    setEmitIsLive(
+      status.isLive,
+    );
 
-if (tab !== "now") {
-  setRequestedLiveId(null);
-  setRequestedReplayId(null);
-}
-
-    setActiveTab(tab);
-  }
-
-  function handleEmitStatusChange(status: {
-    isLive: boolean;
-    isConnecting: boolean;
-    cameraReady: boolean;
-  }) {
-    setEmitIsLive(status.isLive);
     setEmitIsConnecting(
       status.isConnecting,
     );
+
     setEmitCameraReady(
       status.cameraReady,
     );
   }
 
   function handleEmitStartReady(
-    startLive: (() => void) | null,
+    startLive:
+      | (() => void)
+      | null,
   ) {
     emitStartLiveRef.current =
       startLive;
   }
 
   function renderScreen() {
-    if (notificationsVisible) {
+    if (
+      notificationsVisible
+    ) {
       return (
         <NotificationsScreen
-          onBack={() => {
-            setNotificationsVisible(false);
-          }}
+          onBack={
+            goBack
+          }
           onOpenTarget={
             openNotificationTarget
           }
@@ -345,38 +408,50 @@ if (tab !== "now") {
       );
     }
 
-    if (selectedUserId) {
+    if (
+      selectedUserId
+    ) {
       return (
         <UserProfileScreen
-          userId={selectedUserId}
-          onBack={() => {
-            setSelectedUserId(null);
-          }}
+          userId={
+            selectedUserId
+          }
+          onBack={
+            goBack
+          }
         />
       );
     }
 
-    if (activeTab === "now") {
+    if (
+      activeTab === "now"
+    ) {
       return (
-<NowScreen
-  requestedLiveId={
-    requestedLiveId
-  }
-  requestedReplayId={
-    requestedReplayId
-  }
-  onOpenUser={
-    openUser
-  }
-/>
+        <NowScreen
+          requestedLiveId={
+            requestedLiveId
+          }
+          requestedReplayId={
+            requestedReplayId
+          }
+          onOpenUser={
+            openUser
+          }
+        />
       );
     }
 
-    if (activeTab === "map") {
-      return <MapScreen />;
+    if (
+      activeTab === "map"
+    ) {
+      return (
+        <MapScreen />
+      );
     }
 
-    if (activeTab === "emit") {
+    if (
+      activeTab === "emit"
+    ) {
       return (
         <EmitScreen
           onStatusChange={
@@ -389,68 +464,93 @@ if (tab !== "now") {
       );
     }
 
-    if (activeTab === "search") {
+    if (
+      activeTab === "search"
+    ) {
       return (
-<SearchScreen
-  onOpenLive={
-    openLive
-  }
-  onOpenReplay={
-    openReplay
-  }
-  onOpenUser={
-    openUser
-  }
-/>
+      <SearchScreen
+        onOpenLive={
+          openLive
+        }
+        onOpenReplay={
+          openReplay
+        }
+        onOpenUser={
+          openUser
+        }
+        onBack={
+          goBack
+        }
+      />
       );
     }
 
-    if (activeTab === "profile") {
+    if (
+      activeTab === "profile"
+    ) {
       return (
         <ProfileScreen
           unreadNotifications={
             unreadNotifications
           }
-          onOpenNotifications={() => {
-            setNotificationsVisible(true);
-          }}
+          onOpenNotifications={
+            openNotifications
+          }
         />
       );
     }
 
-    return <NowScreen
-  requestedLiveId={
-    requestedLiveId
-  }
-  requestedReplayId={
-    requestedReplayId
-  }
-  onOpenUser={
-    openUser
-  }
-/>;
+    return (
+      <NowScreen
+        requestedLiveId={
+          requestedLiveId
+        }
+        requestedReplayId={
+          requestedReplayId
+        }
+        onOpenUser={
+          openUser
+        }
+      />
+    );
   }
 
   return (
     <SafeAreaView
-      style={styles.container}
-      edges={["top"]}
+      style={
+        styles.container
+      }
+      edges={[
+        "top",
+      ]}
     >
-      <View style={styles.content}>
+      <View
+        style={
+          styles.content
+        }
+      >
         {renderScreen()}
       </View>
 
-      {activeTab === "emit" &&
+      {activeTab ===
+        "emit" &&
       emitIsLive ? null : (
         <BottomNav
-          activeTab={activeTab}
-          onTabPress={changeTab}
-          emitCanStart={emitCameraReady}
+          activeTab={
+            activeTab
+          }
+          onTabPress={
+            changeTab
+          }
+          emitCanStart={
+            emitCameraReady
+          }
           emitIsConnecting={
             emitIsConnecting
           }
           onEmitStart={
-            activeTab === "emit"
+            activeTab ===
+            "emit"
               ? () => {
                   emitStartLiveRef
                     .current?.();
@@ -471,6 +571,7 @@ function configureDefaultTypography() {
         allowFontScaling?: boolean;
       };
     };
+
   const defaultTextInput =
     TextInput as unknown as {
       defaultProps?: {
@@ -480,22 +581,34 @@ function configureDefaultTypography() {
     };
 
   defaultText.defaultProps =
-    defaultText.defaultProps ?? {};
-  defaultTextInput.defaultProps =
-    defaultTextInput.defaultProps ?? {};
+    defaultText.defaultProps ??
+    {};
 
-  defaultText.defaultProps.style = [
-    {
-      fontFamily: appFontFamily,
-    },
-    defaultText.defaultProps.style,
-  ];
-  defaultTextInput.defaultProps.style = [
-    {
-      fontFamily: appFontFamily,
-    },
-    defaultTextInput.defaultProps.style,
-  ];
+  defaultTextInput.defaultProps =
+    defaultTextInput.defaultProps ??
+    {};
+
+  defaultText.defaultProps.style =
+    [
+      {
+        fontFamily:
+          appFontFamily,
+      },
+
+      defaultText
+        .defaultProps.style,
+    ];
+
+  defaultTextInput.defaultProps.style =
+    [
+      {
+        fontFamily:
+          appFontFamily,
+      },
+
+      defaultTextInput
+        .defaultProps.style,
+    ];
 }
 
 configureDefaultTypography();
@@ -509,19 +622,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flex: 1,
-  },
-  loading: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-});

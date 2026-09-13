@@ -43,6 +43,11 @@ import {
   colors,
 } from "../styles";
 
+type NowNavigation = {
+  previous: () => void;
+  next: () => void;
+};
+
 type ReplayViewerScreenProps = {
   requestedReplayId?:
     | string
@@ -51,11 +56,17 @@ type ReplayViewerScreenProps = {
   onOpenUser?: (
     userId: string,
   ) => void;
+
+  onNavigationReady?: (
+    navigation:
+      NowNavigation,
+  ) => void;
 };
 
 export function ReplayViewerScreen({
   requestedReplayId = null,
   onOpenUser,
+  onNavigationReady,
 }: ReplayViewerScreenProps) {
   const {
     identity,
@@ -109,6 +120,19 @@ export function ReplayViewerScreen({
     }, [
       replays.length,
     ]);
+
+  useEffect(() => {
+    onNavigationReady?.({
+      previous:
+        goToPreviousReplay,
+      next:
+        goToNextReplay,
+    });
+  }, [
+    goToNextReplay,
+    goToPreviousReplay,
+    onNavigationReady,
+  ]);
 
   useEffect(() => {
     const controller =
@@ -298,6 +322,11 @@ function ReplayContent({
 
   onOpenUser,
 }: ReplayContentProps) {
+  const [
+    paused,
+    setPaused,
+  ] = useState(false);
+
   const {
     liked,
     likeCount,
@@ -326,6 +355,27 @@ function ReplayContent({
       },
     );
 
+  useEffect(() => {
+    setPaused(false);
+  }, [
+    replay.id,
+  ]);
+
+  const togglePlayback =
+    useCallback(() => {
+      if (paused) {
+        player.play();
+        setPaused(false);
+        return;
+      }
+
+      player.pause();
+      setPaused(true);
+    }, [
+      paused,
+      player,
+    ]);
+
   const creatorId =
     replay.creator?.id;
 
@@ -346,7 +396,9 @@ function ReplayContent({
           styles.video
         }
         contentFit="cover"
-        nativeControls
+        nativeControls={
+          false
+        }
       />
 
       <ReplayOverlay
@@ -385,6 +437,15 @@ function ReplayContent({
                 );
               }
             : undefined
+        }
+        showNavigation={
+          false
+        }
+        playbackPaused={
+          paused
+        }
+        onPlaybackToggle={
+          togglePlayback
         }
       />
     </View>

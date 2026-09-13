@@ -1,6 +1,7 @@
 // src/screens/SearchScreen.tsx
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -10,7 +11,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Platform,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -35,6 +38,10 @@ import {
 } from "../auth/AuthContext";
 
 import {
+  BackButton,
+} from "../components/navigation/BackButton";
+
+import {
   SearchResultCard,
 } from "../components/search/result-card/SearchResultCard";
 
@@ -55,6 +62,8 @@ type SearchScreenProps = {
   onOpenUser: (
     userId: string,
   ) => void;
+
+  onBack?: () => void;
 };
 
 const EMPTY_RESPONSE:
@@ -133,6 +142,7 @@ export function SearchScreen({
   onOpenLive,
   onOpenReplay,
   onOpenUser,
+  onBack,
 }: SearchScreenProps) {
   const {
     width,
@@ -171,6 +181,11 @@ export function SearchScreen({
   ] = useState(true);
 
   const [
+    refreshing,
+    setRefreshing,
+  ] = useState(false);
+
+  const [
     error,
     setError,
   ] =
@@ -180,6 +195,46 @@ export function SearchScreen({
 
   const columns =
     getColumnCount(width);
+
+  const loadSearch =
+    useCallback(
+      async (
+        signal?: AbortSignal,
+      ) => {
+        if (!token) {
+          setResponse(
+            EMPTY_RESPONSE,
+          );
+
+          return;
+        }
+
+        const result =
+          await searchAll(
+            query,
+            token,
+            signal,
+          );
+
+        setResponse({
+          ...result,
+
+          users:
+            result.users.filter(
+              (
+                resultUser,
+              ) =>
+                resultUser.id !==
+                user?.id,
+            ),
+        });
+      },
+      [
+        query,
+        token,
+        user?.id,
+      ],
+    );
 
   useEffect(() => {
     if (!token) {
@@ -202,25 +257,9 @@ export function SearchScreen({
             setLoading(true);
             setError(null);
 
-            const result =
-              await searchAll(
-                query,
-                token,
-                controller.signal,
-              );
-
-            setResponse({
-              ...result,
-
-              users:
-                result.users.filter(
-                  (
-                    resultUser,
-                  ) =>
-                    resultUser.id !==
-                    user?.id,
-                ),
-            });
+            await loadSearch(
+              controller.signal,
+            );
           } catch (
             caughtError
           ) {
@@ -263,9 +302,8 @@ export function SearchScreen({
       controller.abort();
     };
   }, [
-    query,
+    loadSearch,
     token,
-    user?.id,
   ]);
 
   useEffect(() => {
@@ -281,6 +319,43 @@ export function SearchScreen({
       },
     );
   }, []);
+
+  const handleRefresh =
+    useCallback(
+      async () => {
+        if (
+          !token ||
+          refreshing
+        ) {
+          return;
+        }
+
+        try {
+          setRefreshing(true);
+          setError(null);
+
+          await loadSearch();
+        } catch (
+          caughtError
+        ) {
+          console.error(
+            "Error refrescando Search:",
+            caughtError,
+          );
+
+          setError(
+            "No se pudo actualizar la búsqueda.",
+          );
+        } finally {
+          setRefreshing(false);
+        }
+      },
+      [
+        loadSearch,
+        refreshing,
+        token,
+      ],
+    );
 
   const users =
     useMemo(
@@ -338,6 +413,20 @@ export function SearchScreen({
   const showPeople =
     activeTab ===
     "people";
+
+  const refreshControl =
+    Platform.OS !== "web"
+      ? (
+          <RefreshControl
+            refreshing={
+              refreshing
+            }
+            onRefresh={
+              handleRefresh
+            }
+          />
+        )
+      : undefined;
 
   function renderState() {
     if (loading) {
@@ -522,6 +611,20 @@ export function SearchScreen({
           styles.header
         }
       >
+        {onBack ? (
+          <View
+            style={
+              styles.backRow
+            }
+          >
+            <BackButton
+              onPress={
+                onBack
+              }
+            />
+          </View>
+        ) : null}
+
         <View
           style={
             styles.searchBox
@@ -574,6 +677,9 @@ export function SearchScreen({
           showsVerticalScrollIndicator={
             false
           }
+          refreshControl={
+            refreshControl
+          }
           contentContainerStyle={
             users.length ===
             0
@@ -614,13 +720,15 @@ export function SearchScreen({
           keyExtractor={(
             item,
           ) =>
-            `${item.contentType}-${item.id}`
-          }
+            `${item.contentType}-${item.id}`}
           numColumns={
             columns
           }
           showsVerticalScrollIndicator={
             false
+          }
+          refreshControl={
+            refreshControl
           }
           contentContainerStyle={
             contents.length ===
@@ -647,10 +755,19 @@ const styles =
     },
 
     header: {
-      paddingTop: 16,
+      paddingTop: 8,
 
       backgroundColor:
         "#F7F7F5",
+    },
+
+    backRow: {
+      height: 44,
+
+      paddingHorizontal: 6,
+
+      justifyContent:
+        "center",
     },
 
     searchBox: {

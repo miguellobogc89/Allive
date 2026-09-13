@@ -45,6 +45,10 @@ import {
 } from "../header/LiveViewerHeader";
 
 import {
+  LiveViewerIdentity as LiveViewerHeaderIdentity,
+} from "../header/LiveViewerIdentity";
+
+import {
   useLiveViewerComments,
 } from "../hooks/useLiveViewerComments";
 
@@ -76,13 +80,14 @@ type Props = {
   currentIndex: number;
   totalLives: number;
 
-
   onPrevious: () => void;
   onNext: () => void;
 
   onOpenUser?: (
     userId: string,
   ) => void;
+
+  showNavigation?: boolean;
 };
 
 export function LiveViewerOverlay({
@@ -96,6 +101,7 @@ export function LiveViewerOverlay({
   onPrevious,
   onNext,
   onOpenUser,
+  showNavigation = true,
 }: Props) {
   const creatorId =
     live.creator?.id;
@@ -138,16 +144,16 @@ export function LiveViewerOverlay({
     authToken,
   });
 
-const {
-  liked,
-  likeCount,
-  likeLoading,
-  toggleLike,
-} = useLiveViewerLikes({
-  liveId: live.id,
-  viewerIdentity,
-  authToken,
-});
+  const {
+    liked,
+    likeCount,
+    likeLoading,
+    toggleLike,
+  } = useLiveViewerLikes({
+    liveId: live.id,
+    viewerIdentity,
+    authToken,
+  });
 
   const {
     followingCreator,
@@ -308,14 +314,18 @@ const {
       >
         <View
           pointerEvents="box-none"
-          style={styles.permanentHeader}
+          style={
+            styles.permanentHeader
+          }
         >
-<LiveViewerHeader
-  viewers={
-    audience.total
-  }
-  likes={likeCount}
-/>
+          <LiveViewerHeader
+            viewers={
+              audience.total
+            }
+            likes={
+              likeCount
+            }
+          />
         </View>
       </View>
 
@@ -412,18 +422,22 @@ const {
         </Animated.View>
       ) : null}
 
-      <LiveViewerNavigation
-        currentIndex={
-          currentIndex
-        }
-        total={totalLives}
-        onPrevious={
-          onPrevious
-        }
-        onNext={
-          onNext
-        }
-      />
+      {showNavigation ? (
+        <LiveViewerNavigation
+          currentIndex={
+            currentIndex
+          }
+          total={
+            totalLives
+          }
+          onPrevious={
+            onPrevious
+          }
+          onNext={
+            onNext
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -465,10 +479,6 @@ function LiveViewerIdentityLayer({
     />
   );
 }
-
-import {
-  LiveViewerIdentity as LiveViewerHeaderIdentity,
-} from "../header/LiveViewerIdentity";
 
 const styles =
   StyleSheet.create({

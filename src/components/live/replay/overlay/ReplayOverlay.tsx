@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import {
   LinearGradient,
 } from "expo-linear-gradient";
 
@@ -61,6 +65,11 @@ type ReplayOverlayProps = {
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
   onOpenLives?: () => void;
+
+  showNavigation?: boolean;
+
+  playbackPaused?: boolean;
+  onPlaybackToggle?: () => void;
 };
 
 export function ReplayOverlay({
@@ -83,7 +92,11 @@ export function ReplayOverlay({
 
   onFollowPress,
   onOpenCreator,
-  onOpenLives,
+
+  showNavigation = true,
+
+  playbackPaused = false,
+  onPlaybackToggle,
 }: ReplayOverlayProps) {
   const [
     contentVisible,
@@ -169,6 +182,22 @@ export function ReplayOverlay({
     ]).start();
   }
 
+  function handleSurfacePress() {
+    if (
+      onPlaybackToggle
+    ) {
+      onPlaybackToggle();
+      return;
+    }
+
+    toggleContent();
+  }
+
+  const nativePlaybackMode =
+    Boolean(
+      onPlaybackToggle,
+    );
+
   return (
     <View
       style={styles.overlay}
@@ -194,33 +223,40 @@ export function ReplayOverlay({
       />
 
       <Pressable
-        style={styles.tapSurface}
-        onPress={toggleContent}
+        style={
+          styles.tapSurface
+        }
+        onPress={
+          handleSurfacePress
+        }
       />
 
-<ReplayHeader
-  likes={likes}
-/>
+      <ReplayHeader
+        likes={likes}
+      />
 
       <Animated.View
         pointerEvents={
+          nativePlaybackMode ||
           contentVisible
             ? "box-none"
             : "none"
         }
         style={[
           styles.identityLayer,
-          {
-            opacity:
-              topOpacity,
+          nativePlaybackMode
+            ? undefined
+            : {
+                opacity:
+                  topOpacity,
 
-            transform: [
-              {
-                translateY:
-                  topTranslateY,
+                transform: [
+                  {
+                    translateY:
+                      topTranslateY,
+                  },
+                ],
               },
-            ],
-          },
         ]}
       >
         <LiveViewerIdentity
@@ -242,23 +278,26 @@ export function ReplayOverlay({
 
       <Animated.View
         pointerEvents={
+          nativePlaybackMode ||
           contentVisible
             ? "auto"
             : "none"
         }
         style={[
           styles.likeLayer,
-          {
-            opacity:
-              bottomOpacity,
+          nativePlaybackMode
+            ? undefined
+            : {
+                opacity:
+                  bottomOpacity,
 
-            transform: [
-              {
-                translateY:
-                  bottomTranslateY,
+                transform: [
+                  {
+                    translateY:
+                      bottomTranslateY,
+                  },
+                ],
               },
-            ],
-          },
         ]}
       >
         <ReplayLikeButton
@@ -272,20 +311,37 @@ export function ReplayOverlay({
         />
       </Animated.View>
 
-      <LiveViewerNavigation
-        currentIndex={
-          currentIndex
-        }
-        total={
-          totalReplays
-        }
-        onPrevious={
-          onPrevious
-        }
-        onNext={
-          onNext
-        }
-      />
+      {playbackPaused ? (
+        <View
+          style={
+            styles.playIndicator
+          }
+          pointerEvents="none"
+        >
+          <Ionicons
+            name="play"
+            size={34}
+            color="#FFFFFF"
+          />
+        </View>
+      ) : null}
+
+      {showNavigation ? (
+        <LiveViewerNavigation
+          currentIndex={
+            currentIndex
+          }
+          total={
+            totalReplays
+          }
+          onPrevious={
+            onPrevious
+          }
+          onNext={
+            onNext
+          }
+        />
+      ) : null}
     </View>
   );
 }
@@ -326,5 +382,28 @@ const styles =
       bottom: 28,
 
       zIndex: 30,
+    },
+
+    playIndicator: {
+      position: "absolute",
+
+      left: "50%",
+      top: "50%",
+
+      width: 68,
+      height: 68,
+
+      marginLeft: -34,
+      marginTop: -34,
+
+      borderRadius: 34,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      backgroundColor:
+        "rgba(0,0,0,0.56)",
+
+      zIndex: 40,
     },
   });

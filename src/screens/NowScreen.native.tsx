@@ -1,6 +1,7 @@
 // src/screens/NowScreen.native.tsx
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -15,6 +16,10 @@ import {
 } from "../components/live/shared";
 
 import {
+  NowSwipeSurface,
+} from "../components/live/shared/NowSwipeSurface.native";
+
+import {
   LiveViewerScreen,
 } from "./LiveViewerScreen.native";
 
@@ -25,6 +30,11 @@ import {
 type NowMode =
   | "live"
   | "replay";
+
+type NowNavigation = {
+  previous: () => void;
+  next: () => void;
+};
 
 type NowScreenProps = {
   requestedLiveId?:
@@ -55,6 +65,14 @@ export function NowScreen({
         : "live",
     );
 
+  const [
+    navigation,
+    setNavigation,
+  ] =
+    useState<NowNavigation | null>(
+      null,
+    );
+
   useEffect(() => {
     if (
       requestedReplayId
@@ -78,32 +96,76 @@ export function NowScreen({
     requestedReplayId,
   ]);
 
+  useEffect(() => {
+    setNavigation(
+      null,
+    );
+  }, [mode]);
+
+  const handleNavigationReady =
+    useCallback(
+      (
+        nextNavigation:
+          NowNavigation,
+      ) => {
+        setNavigation(
+          nextNavigation,
+        );
+      },
+      [],
+    );
+
+  const handleSwipeUp =
+    useCallback(() => {
+      navigation?.next();
+    }, [navigation]);
+
+  const handleSwipeDown =
+    useCallback(() => {
+      navigation?.previous();
+    }, [navigation]);
+
   return (
     <View
       style={
         styles.container
       }
     >
-      {mode ===
-      "live" ? (
-        <LiveViewerScreen
-          requestedLiveId={
-            requestedLiveId
-          }
-          onOpenUser={
-            onOpenUser
-          }
-        />
-      ) : (
-        <ReplayViewerScreen
-          requestedReplayId={
-            requestedReplayId
-          }
-          onOpenUser={
-            onOpenUser
-          }
-        />
-      )}
+      <NowSwipeSurface
+        onSwipeUp={
+          handleSwipeUp
+        }
+        onSwipeDown={
+          handleSwipeDown
+        }
+      >
+        {mode ===
+        "live" ? (
+          <LiveViewerScreen
+            requestedLiveId={
+              requestedLiveId
+            }
+            onOpenUser={
+              onOpenUser
+            }
+            onNavigationReady={
+              handleNavigationReady
+            }
+          />
+        ) : (
+          <ReplayViewerScreen
+            requestedReplayId={
+              requestedReplayId
+            }
+            onOpenUser={
+              onOpenUser
+            }
+            onNavigationReady={
+              handleNavigationReady
+            }
+          />
+        )}
+      </NowSwipeSurface>
 
       <View
         style={

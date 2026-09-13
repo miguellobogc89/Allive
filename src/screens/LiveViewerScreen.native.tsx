@@ -49,6 +49,11 @@ import {
 const REFRESH_INTERVAL_MS =
   5000;
 
+type NowNavigation = {
+  previous: () => void;
+  next: () => void;
+};
+
 type LiveViewerScreenProps = {
   requestedLiveId?:
     | string
@@ -57,11 +62,17 @@ type LiveViewerScreenProps = {
   onOpenUser?: (
     userId: string,
   ) => void;
+
+  onNavigationReady?: (
+    navigation:
+      NowNavigation,
+  ) => void;
 };
 
 export function LiveViewerScreen({
   requestedLiveId = null,
   onOpenUser,
+  onNavigationReady,
 }: LiveViewerScreenProps) {
   const {
     identity,
@@ -329,6 +340,19 @@ export function LiveViewerScreen({
       lives.length,
     ]);
 
+  useEffect(() => {
+    onNavigationReady?.({
+      previous:
+        goToPreviousLive,
+      next:
+        goToNextLive,
+    });
+  }, [
+    goToNextLive,
+    goToPreviousLive,
+    onNavigationReady,
+  ]);
+
   return (
     <View
       style={
@@ -424,6 +448,9 @@ export function LiveViewerScreen({
           }
           onOpenUser={
             onOpenUser
+          }
+          showNavigation={
+            false
           }
         />
       ) : null}
