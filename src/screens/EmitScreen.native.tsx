@@ -5,18 +5,17 @@ import {
 } from "@expo/vector-icons";
 
 import {
-  CameraType,
-  CameraView,
+  type CameraType,
   useCameraPermissions,
 } from "expo-camera";
 
 import {
+  useEffect,
   useState,
 } from "react";
 
 import {
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -26,17 +25,45 @@ import {
 } from "../auth/AuthContext";
 
 import {
-  colors,
-  controls,
-  layout,
-  spacing,
+  LiveBroadcastStage,
+} from "../components/live/broadcast";
+
+import {
+  LiveBroadcastSurface,
+} from "../components/live/broadcast/LiveBroadcastSurface.native";
+
+import {
+  CameraSwitchControl,
+} from "../components/live/broadcast/bottom-nav/CameraSwitchControl";
+
+import {
+  tokens,
 } from "../styles";
+
+import {
+  emitScreenStyles as styles,
+} from "./EmitScreen.styles";
 
 import {
   LiveBroadcastScreen,
 } from "./LiveBroadcastScreen";
 
-export function EmitScreen() {
+type EmitScreenProps = {
+  onStatusChange?: (status: {
+    isLive: boolean;
+    isConnecting: boolean;
+    cameraReady: boolean;
+  }) => void;
+
+  onStartLiveReady?: (
+    startLive: (() => void) | null,
+  ) => void;
+};
+
+export function EmitScreen({
+  onStatusChange,
+  onStartLiveReady,
+}: EmitScreenProps) {
   const {
     token,
     isAuthenticated,
@@ -59,6 +86,21 @@ export function EmitScreen() {
     setIsLive,
   ] = useState(false);
 
+  const [
+    title,
+    setTitle,
+  ] = useState("");
+
+  const [
+    eventName,
+    setEventName,
+  ] = useState("");
+
+  const cameraReady =
+    Boolean(
+      permission?.granted,
+    );
+
   function toggleCamera() {
     setFacing((current) =>
       current === "back"
@@ -67,7 +109,46 @@ export function EmitScreen() {
     );
   }
 
-  if (!isAuthenticated || !token) {
+  useEffect(() => {
+    onStatusChange?.({
+      isLive,
+      isConnecting: false,
+      cameraReady,
+    });
+  }, [
+    cameraReady,
+    isLive,
+    onStatusChange,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      !token ||
+      !cameraReady
+    ) {
+      onStartLiveReady?.(null);
+      return;
+    }
+
+    onStartLiveReady?.(() => {
+      setIsLive(true);
+    });
+
+    return () => {
+      onStartLiveReady?.(null);
+    };
+  }, [
+    cameraReady,
+    isAuthenticated,
+    onStartLiveReady,
+    token,
+  ]);
+
+  if (
+    !isAuthenticated ||
+    !token
+  ) {
     return (
       <View
         style={
@@ -82,7 +163,10 @@ export function EmitScreen() {
           <Ionicons
             name="person-outline"
             size={34}
-            color={colors.text}
+            color={
+              tokens.color.text
+                .primary
+            }
           />
         </View>
 
@@ -141,7 +225,10 @@ export function EmitScreen() {
           <Ionicons
             name="videocam-outline"
             size={34}
-            color={colors.text}
+            color={
+              tokens.color.text
+                .primary
+            }
           />
         </View>
 
@@ -187,6 +274,8 @@ export function EmitScreen() {
       <LiveBroadcastScreen
         facing={facing}
         authToken={token}
+        title={title}
+        eventName={eventName}
         onFinish={() =>
           setIsLive(false)
         }
@@ -195,390 +284,50 @@ export function EmitScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        style={
-          StyleSheet.absoluteFill
-        }
-        facing={facing}
-      />
-
+    <LiveBroadcastStage
+      media={
+        <LiveBroadcastSurface
+          facing={facing}
+        />
+      }
+      overlay={{
+        isLive: false,
+        isConnecting: false,
+        cameraReady: true,
+        viewers: 0,
+        likes: 0,
+        comments: [],
+        error: null,
+        title,
+        eventName,
+        locationName: null,
+        onChangeTitle: setTitle,
+        onChangeEventName:
+          setEventName,
+        onStartLive: () => {
+          setIsLive(true);
+        },
+        onFinishLive: () => {
+          setIsLive(false);
+        },
+        onToggleMicrophone:
+          () => {},
+        onOpenFilters: () => {},
+        onSwitchCamera:
+          toggleCamera,
+      }}
+    >
       <View
         style={
-          styles.cameraShade
-        }
-      />
-
-      <View style={styles.top}>
-        <Pressable
-          style={
-            styles.circleButton
-          }
-        >
-          <Ionicons
-            name="close"
-            size={25}
-            color={colors.text}
-          />
-        </Pressable>
-
-        <View
-          style={
-            styles.readyBadge
-          }
-        >
-          <View
-            style={
-              styles.readyDot
-            }
-          />
-
-          <Text
-            style={
-              styles.readyText
-            }
-          >
-            LISTO
-          </Text>
-        </View>
-
-        <Pressable
-          style={
-            styles.circleButton
-          }
-          onPress={toggleCamera}
-        >
-          <Ionicons
-            name="camera-reverse-outline"
-            size={23}
-            color={colors.text}
-          />
-        </Pressable>
-      </View>
-
-      <View
-        style={
-          styles.bottom
+          styles.previewCameraSwitch
         }
       >
-        <View
-          style={
-            styles.context
+        <CameraSwitchControl
+          onPress={
+            toggleCamera
           }
-        >
-          <View
-            style={
-              styles.locationRow
-            }
-          >
-            <Ionicons
-              name="location"
-              size={17}
-              color={
-                colors.text
-              }
-            />
-
-            <Text
-              style={
-                styles.location
-              }
-            >
-              Ubicación actual
-            </Text>
-          </View>
-
-          <Text
-            style={
-              styles.contextText
-            }
-          >
-            Allive detectará dónde estás y
-            qué está pasando cerca.
-          </Text>
-        </View>
-
-        <Pressable
-          style={
-            styles.goLiveButton
-          }
-          onPress={() =>
-            setIsLive(true)
-          }
-        >
-          <View
-            style={
-              styles.goLiveDot
-            }
-          />
-
-          <Text
-            style={
-              styles.goLiveText
-            }
-          >
-            EMPEZAR LIVE
-          </Text>
-        </Pressable>
-
-        <Text style={styles.hint}>
-          Estarás en directo
-          inmediatamente
-        </Text>
+        />
       </View>
-    </View>
+    </LiveBroadcastStage>
   );
 }
-
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-
-      backgroundColor:
-        colors.cameraBackground,
-    },
-
-    cameraShade: {
-      ...StyleSheet.absoluteFill,
-
-      backgroundColor:
-        colors.cameraShade,
-    },
-
-    permissionScreen: {
-      flex: 1,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      paddingHorizontal:
-        spacing.xxl,
-
-      backgroundColor:
-        colors.background,
-    },
-
-    permissionIcon: {
-      width: 68,
-      height: 68,
-
-      borderRadius: 34,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      marginBottom: 18,
-
-      backgroundColor:
-        colors.surfaceElevated,
-    },
-
-    permissionTitle: {
-      color: colors.text,
-
-      fontSize: 20,
-      fontWeight: "900",
-
-      textAlign: "center",
-    },
-
-    permissionText: {
-      marginTop: spacing.xs,
-
-      color:
-        colors.textSecondary,
-
-      fontSize: 13,
-      lineHeight: 19,
-
-      textAlign: "center",
-    },
-
-    permissionButton: {
-      height: 50,
-
-      marginTop: spacing.xl,
-
-      paddingHorizontal: 24,
-
-      borderRadius: 16,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      backgroundColor:
-        colors.live,
-    },
-
-    permissionButtonText: {
-      color: colors.text,
-
-      fontSize: 12,
-      fontWeight: "900",
-    },
-
-    top: {
-      position: "absolute",
-
-      top: layout.overlayTop,
-      left:
-        layout.overlayHorizontal,
-      right:
-        layout.overlayHorizontal,
-
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-    },
-
-    circleButton: {
-      width:
-        controls.circleButtonSize,
-
-      height:
-        controls.circleButtonSize,
-
-      borderRadius:
-        controls.circleButtonSize /
-        2,
-
-      alignItems: "center",
-      justifyContent: "center",
-
-      backgroundColor:
-        colors.overlayChrome,
-    },
-
-    readyBadge: {
-      height:
-        controls.liveBadgeHeight,
-
-      flexDirection: "row",
-      alignItems: "center",
-
-      gap: 6,
-
-      paddingHorizontal: 11,
-
-      borderRadius: 10,
-
-      backgroundColor:
-        colors.overlayChrome,
-    },
-
-    readyDot: {
-      width:
-        controls.badgeDotSize,
-
-      height:
-        controls.badgeDotSize,
-
-      borderRadius: 4,
-
-      backgroundColor:
-        colors.live,
-    },
-
-    readyText: {
-      color: colors.text,
-
-      fontSize: 11,
-      fontWeight: "800",
-    },
-
-    bottom: {
-      position: "absolute",
-
-      left: 22,
-      right: 22,
-
-      bottom:
-        layout.nativeBroadcastBottom,
-
-      alignItems: "center",
-    },
-
-    context: {
-      width: "100%",
-
-      marginBottom: 22,
-
-      padding: 14,
-
-      borderRadius: 14,
-
-      backgroundColor:
-        colors.overlayChrome,
-    },
-
-    locationRow: {
-      flexDirection: "row",
-      alignItems: "center",
-
-      gap: 5,
-    },
-
-    location: {
-      color: colors.text,
-
-      fontSize: 15,
-      fontWeight: "800",
-    },
-
-    contextText: {
-      marginTop: 5,
-
-      color:
-        colors.textOnOverlayMuted,
-
-      fontSize: 12,
-      lineHeight: 17,
-    },
-
-    goLiveButton: {
-      height:
-        controls.primaryButtonHeight,
-
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-
-      gap: 9,
-
-      paddingHorizontal: 28,
-
-      borderRadius: 18,
-
-      backgroundColor:
-        colors.live,
-    },
-
-    goLiveDot: {
-      width: 10,
-      height: 10,
-
-      borderRadius: 5,
-
-      backgroundColor:
-        colors.text,
-    },
-
-    goLiveText: {
-      color: colors.text,
-
-      fontSize: 15,
-      fontWeight: "900",
-    },
-
-    hint: {
-      marginTop: 9,
-
-      color:
-        colors.textOnOverlayPlaceholder,
-
-      fontSize: 10,
-      fontWeight: "500",
-    },
-  });

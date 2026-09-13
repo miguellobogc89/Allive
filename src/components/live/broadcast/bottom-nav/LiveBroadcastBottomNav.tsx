@@ -31,6 +31,10 @@ type LiveBroadcastBottomNavProps = {
   isConnecting: boolean;
   cameraReady: boolean;
   microphoneEnabled: boolean;
+  moreEnabled?: boolean;
+  microphoneControlEnabled?: boolean;
+  filtersEnabled?: boolean;
+  cameraSwitchEnabled?: boolean;
 
   onOpenMore: () => void;
   onToggleMicrophone: () => void;
@@ -75,6 +79,10 @@ export function LiveBroadcastBottomNav(
           onPress={
             props.onOpenMore
           }
+          disabled={
+            props.moreEnabled ===
+            false
+          }
         />
 
         <MicrophoneControl
@@ -83,6 +91,10 @@ export function LiveBroadcastBottomNav(
           }
           onPress={
             props.onToggleMicrophone
+          }
+          disabled={
+            props.microphoneControlEnabled ===
+            false
           }
         />
 
@@ -96,11 +108,19 @@ export function LiveBroadcastBottomNav(
           onPress={
             props.onOpenFilters
           }
+          disabled={
+            props.filtersEnabled ===
+            false
+          }
         />
 
         <CameraSwitchControl
           onPress={
             props.onSwitchCamera
+          }
+          disabled={
+            props.cameraSwitchEnabled ===
+            false
           }
         />
       </View>

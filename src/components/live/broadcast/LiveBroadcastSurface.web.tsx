@@ -1,9 +1,11 @@
 // src/components/live/broadcast/LiveBroadcastSurface.web.tsx
 
 import { forwardRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
-import { colors } from "../../../styles";
+import {
+  liveBroadcastSurfaceStyles as styles,
+} from "./LiveBroadcastSurface.styles";
 
 type LiveBroadcastSurfaceProps = {
   cameraReady: boolean;
@@ -50,27 +52,3 @@ const videoContainerStyle = {
   height: "100%",
   overflow: "hidden" as const,
 };
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: colors.cameraBackground,
-  },
-  status: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  statusText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  errorText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-});

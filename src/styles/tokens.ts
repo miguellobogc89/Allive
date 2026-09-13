@@ -70,6 +70,8 @@ export const tokens = {
         "rgba(255,255,255,0.5)",
       liveViewerEmptyDescription:
         "rgba(255,255,255,0.58)",
+      replayViewerEmptyDescription:
+        "rgba(255,255,255,0.58)",
       searchPrimary: "#292927",
       searchMuted: "#858580",
     },
@@ -203,6 +205,17 @@ export const tokens = {
         fontWeight: "400" as const,
       },
     },
+
+    replayViewer: {
+      emptyTitle: {
+        fontSize: 17,
+        fontWeight: "600" as const,
+      },
+      emptyDescription: {
+        fontSize: 14,
+        fontWeight: "400" as const,
+      },
+    },
   },
 
   space: {
@@ -224,6 +237,10 @@ export const tokens = {
       emptyDescriptionTop: 8,
     },
     liveViewer: {
+      emptyHorizontal: 32,
+      emptyDescriptionTop: 6,
+    },
+    replayViewer: {
       emptyHorizontal: 32,
       emptyDescriptionTop: 6,
     },

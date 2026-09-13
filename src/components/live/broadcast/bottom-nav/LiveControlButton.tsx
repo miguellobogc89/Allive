@@ -26,6 +26,7 @@ type LiveControlButtonProps = {
   onPress: () => void;
 
   danger?: boolean;
+  disabled?: boolean;
 };
 
 export function LiveControlButton({
@@ -33,6 +34,7 @@ export function LiveControlButton({
   accessibilityLabel,
   onPress,
   danger = false,
+  disabled = false,
 }: LiveControlButtonProps) {
   return (
     <Pressable
@@ -40,6 +42,7 @@ export function LiveControlButton({
         accessibilityLabel
       }
       accessibilityRole="button"
+      disabled={disabled}
       hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [
@@ -49,7 +52,11 @@ export function LiveControlButton({
           ? styles.danger
           : null,
 
-        pressed
+        disabled
+          ? styles.disabled
+          : null,
+
+        pressed && !disabled
           ? styles.pressed
           : null,
       ]}
@@ -93,6 +100,10 @@ const styles = StyleSheet.create({
       "rgba(255,90,107,0.65)",
   },
 
+  disabled: {
+    opacity: 0.38,
+  },
+
   pressed: {
     opacity: 0.72,
 
@@ -102,4 +113,4 @@ const styles = StyleSheet.create({
       },
     ],
   },
-}); 
+});

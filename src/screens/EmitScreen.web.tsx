@@ -6,11 +6,6 @@ import {
   useState,
 } from "react";
 import {
-  StyleSheet,
-  View,
-} from "react-native";
-
-import {
   Room,
   RoomEvent,
 } from "livekit-client";
@@ -24,13 +19,12 @@ import {
 } from "../auth/AuthContext";
 
 import {
-  LiveBroadcastOverlay,
-  LiveBroadcastSurface,
+  LiveBroadcastStage,
 } from "../components/live/broadcast";
 
 import {
-  LiveFinishModal,
-} from "../components/live/broadcast/finish";
+  LiveBroadcastSurface,
+} from "../components/live/broadcast/LiveBroadcastSurface.web";
 
 import type {
   LiveCommentModel,
@@ -70,10 +64,6 @@ import {
 import {
   useViewerCounter,
 } from "../components/live/useViewerCounter";
-
-import {
-  colors,
-} from "../styles";
 
 function createLiveRoomName() {
   return `live-${Date.now()}`;
@@ -927,38 +917,41 @@ async function handleSaveReplay() {
   }
 
   return (
-    <View style={styles.container}>
-      <LiveBroadcastSurface
-        ref={localVideoRef}
-        cameraReady={cameraReady}
-        cameraError={cameraError}
-      />
-
-      <LiveBroadcastOverlay
-        isLive={isLive}
-        isConnecting={isConnecting}
-        cameraReady={cameraReady}
-        viewers={viewers}
-        likes={likes}
-        comments={comments}
-        error={error}
-        title={title}
-        eventName={eventName}
-        locationName={
-          location?.placeName ?? null
-        }
-        onChangeTitle={setTitle}
-        onChangeEventName={
-          setEventName
-        }
-        onSaveMetadata={() => {
+    <LiveBroadcastStage
+      media={
+        <LiveBroadcastSurface
+          ref={localVideoRef}
+          cameraReady={
+            cameraReady
+          }
+          cameraError={
+            cameraError
+          }
+        />
+      }
+      overlay={{
+        isLive,
+        isConnecting,
+        cameraReady,
+        viewers,
+        likes,
+        comments,
+        error,
+        title,
+        eventName,
+        locationName:
+          location?.placeName ?? null,
+        onChangeTitle: setTitle,
+        onChangeEventName:
+          setEventName,
+        onSaveMetadata: () => {
           void saveLiveMetadata(
             title,
             eventName,
           );
-        }}
-        onStartLive={startLive}
-        onFinishLive={() => {
+        },
+        onStartLive: startLive,
+        onFinishLive: () => {
   const finishPromise =
     finishLive();
 
@@ -974,34 +967,24 @@ async function handleSaveReplay() {
         null;
     }
   });
-}}
-      />
-
-      <LiveFinishModal
-        visible={finishModalVisible}
-        saving={isSavingReplay}
-        discarding={false}
-        onSave={() => {
+},
+      }}
+      finishModal={{
+        visible:
+          finishModalVisible,
+        saving:
+          isSavingReplay,
+        discarding: false,
+        onSave: () => {
           void handleSaveReplay();
-        }}
-
-        onDiscard={() => {
+        },
+        onDiscard: () => {
           finishedLiveSessionIdRef.current =
             null;
 
           setFinishModalVisible(false);
-        }}
-
-      />
-    </View>
+        },
+      }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    position: "relative",
-    backgroundColor:
-      colors.cameraBackground,
-  },
-});

@@ -1,4 +1,4 @@
 // src/components/live/broadcast/index.ts
 
-export { LiveBroadcastSurface } from "./LiveBroadcastSurface.web";
+export { LiveBroadcastStage } from "./LiveBroadcastStage";
 export { LiveBroadcastOverlay } from "./overlay/LiveBroadcastOverlay";

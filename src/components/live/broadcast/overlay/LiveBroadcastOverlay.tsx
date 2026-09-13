@@ -37,6 +37,11 @@ type LiveBroadcastOverlayProps = {
   eventName?: string;
   locationName?: string | null;
   microphoneEnabled?: boolean;
+  initialStartMetadataVisible?: boolean;
+  moreEnabled?: boolean;
+  microphoneControlEnabled?: boolean;
+  filtersEnabled?: boolean;
+  cameraSwitchEnabled?: boolean;
 
   onChangeTitle?: (
     value: string,
@@ -72,6 +77,11 @@ export function LiveBroadcastOverlay({
   locationName = null,
 
   microphoneEnabled = true,
+  initialStartMetadataVisible = true,
+  moreEnabled = true,
+  microphoneControlEnabled = true,
+  filtersEnabled = true,
+  cameraSwitchEnabled = true,
 
   onChangeTitle,
   onChangeEventName,
@@ -93,7 +103,9 @@ export function LiveBroadcastOverlay({
   const [
     startMetadataVisible,
     setStartMetadataVisible,
-  ] = useState(true);
+  ] = useState(
+    initialStartMetadataVisible,
+  );
 
   const [
     moreMenuVisible,
@@ -387,6 +399,18 @@ function toggleComments() {
     cameraReady={cameraReady}
     microphoneEnabled={
       microphoneEnabled
+    }
+    moreEnabled={
+      moreEnabled
+    }
+    microphoneControlEnabled={
+      microphoneControlEnabled
+    }
+    filtersEnabled={
+      filtersEnabled
+    }
+    cameraSwitchEnabled={
+      cameraSwitchEnabled
     }
     onOpenMore={
       toggleMoreMenu
