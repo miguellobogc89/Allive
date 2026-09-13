@@ -51,11 +51,11 @@ import {
 } from "../components/live/liveRealtime";
 
 import {
-  attachLiveCamera,
-  attachPreviewStream,
-  detachLiveVideo,
-  getAttachedVideoTrack,
-  stopPreviewStream,
+attachLiveCamera,
+attachPreviewStream,
+detachLiveVideo,
+getLiveCameraTrack,
+stopPreviewStream,
 } from "../components/live/liveBroadcastVideo.web";
 
 import {
@@ -705,19 +705,20 @@ export function EmitScreen({
         liveSessionIdRef.current;
 
       if (currentLiveSessionId) {
-        const liveVideoElement =
-          liveVideoElementRef.current;
+const liveCameraTrack =
+  getLiveCameraTrack(room);
 
-        if (!liveVideoElement) {
-          throw new Error(
-            "No se ha encontrado el preview activo del LIVE.",
-          );
-        }
+const mediaStreamTrack =
+  liveCameraTrack.mediaStreamTrack;
 
-        const mediaStreamTrack =
-          getAttachedVideoTrack(
-            liveVideoElement,
-          );
+if (
+  !mediaStreamTrack ||
+  mediaStreamTrack.readyState !== "live"
+) {
+  throw new Error(
+    "La pista publicada de cámara del LIVE no está activa.",
+  );
+}
 
         stopThumbnailCapture();
 

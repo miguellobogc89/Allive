@@ -49,6 +49,15 @@ export function NowContentCard({
   const thumbnailUrl =
     source.thumbnailUrl;
 
+    if (isLive) {
+  console.log(
+    "[NOW CARD LIVE]",
+    source.id,
+    "thumbnail:",
+    thumbnailUrl,
+  );
+}
+
   const hasThumbnail =
     typeof thumbnailUrl ===
       "string" &&
@@ -106,16 +115,22 @@ export function NowContentCard({
       ]}
     >
       {hasThumbnail ? (
-        <Image
-          source={{
-            uri:
-              thumbnailUrl!,
-          }}
-          style={
-            styles.image
-          }
-          resizeMode="cover"
-        />
+<Image
+  key={thumbnailUrl}
+  source={{
+    uri: thumbnailUrl!,
+    cache: "reload",
+  }}
+  style={styles.image}
+  resizeMode="cover"
+  onError={(event) => {
+    console.error(
+      "NOW thumbnail error:",
+      thumbnailUrl,
+      event.nativeEvent.error,
+    );
+  }}
+/>
       ) : (
         <LinearGradient
           colors={[
