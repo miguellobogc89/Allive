@@ -1,14 +1,17 @@
 // src/components/navigation/BottomNav/BottomNavTab.tsx
 
-import { Ionicons } from "@expo/vector-icons";
 import {
   Pressable,
-  Text,
   View,
 } from "react-native";
-import { colors } from "../../../styles";
-import { type BottomNavItem } from "./bottomNav.config";
-import { styles } from "./bottomNav.styles";
+
+import {
+  type BottomNavItem,
+} from "./bottomNav.config";
+
+import {
+  styles,
+} from "./bottomNav.styles";
 
 type BottomNavTabProps = {
   item: BottomNavItem;
@@ -23,48 +26,65 @@ export function BottomNavTab({
   compact,
   onPress,
 }: BottomNavTabProps) {
+  const {
+    Icon,
+  } = item;
+
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={item.label}
-      accessibilityState={{ selected: isActive }}
-      hitSlop={4}
+      accessibilityLabel={
+        item.label
+      }
+      accessibilityState={{
+        selected: isActive,
+      }}
+      hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [
         styles.tab,
-        compact && styles.tabCompact,
-        pressed && styles.itemPressed,
+        compact &&
+          styles.tabCompact,
+        pressed &&
+          styles.itemPressed,
       ]}
     >
       <View
         style={[
           styles.tabIcon,
-          isActive && styles.tabIconActive,
-          compact && styles.tabIconCompact,
+          compact &&
+            styles.tabIconCompact,
         ]}
       >
-        <Ionicons
-          name={isActive ? item.activeIcon : item.icon}
-          size={compact ? 23 : 24}
+        {isActive ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.tabIconActiveBackground,
+              compact &&
+                styles.tabIconActiveBackgroundCompact,
+            ]}
+          />
+        ) : null}
+
+        <Icon
+          size={
+            compact
+              ? 21
+              : 23
+          }
           color={
             isActive
-              ? colors.text
-              : colors.textOnOverlayMuted
+              ? "#FFFFFF"
+              : "#AEB2B8"
+          }
+          strokeWidth={
+            isActive
+              ? 2.5
+              : 2.2
           }
         />
       </View>
-
-      {!compact && (
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.label,
-            isActive && styles.activeLabel,
-          ]}
-        >
-          {item.label}
-        </Text>
-      )}
     </Pressable>
   );
 }

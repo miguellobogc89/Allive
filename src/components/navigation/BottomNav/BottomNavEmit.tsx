@@ -1,13 +1,27 @@
 // src/components/navigation/BottomNav/BottomNavEmit.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  CircleDot,
+  LoaderCircle,
+  Video,
+} from "lucide-react-native";
+
 import {
   Pressable,
-  Text,
   View,
 } from "react-native";
-import { colors } from "../../../styles";
-import { styles } from "./bottomNav.styles";
+
+import {
+  colors,
+} from "../../../styles";
+
+import {
+  styles,
+} from "./bottomNav.styles";
+
+import {
+  BottomNavEmitBorder,
+} from "./BottomNavEmitBorder";
 
 type BottomNavEmitProps = {
   startMode: boolean;
@@ -25,62 +39,70 @@ export function BottomNavEmit({
   onPress,
 }: BottomNavEmitProps) {
   const disabled =
-    startMode && (!canStart || isConnecting);
+    startMode &&
+    (!canStart ||
+      isConnecting);
 
-  const label = startMode
-    ? isConnecting
-      ? "INICIANDO"
-      : canStart
-        ? "INICIAR"
-        : "PREPARANDO"
-    : "EMITIR";
+  const accessibilityLabel =
+    startMode
+      ? isConnecting
+        ? "Iniciando directo"
+        : canStart
+          ? "Iniciar directo"
+          : "Preparando directo"
+      : "Emitir";
+
+  const EmitIcon =
+    isConnecting
+      ? LoaderCircle
+      : startMode
+        ? CircleDot
+        : Video;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled }}
+      accessibilityLabel={
+        accessibilityLabel
+      }
+      accessibilityState={{
+        disabled,
+      }}
       disabled={disabled}
-      hitSlop={4}
+      hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [
         styles.emitWrapper,
-        compact && styles.emitWrapperCompact,
-        disabled && styles.emitDisabled,
-        pressed && !disabled && styles.itemPressed,
+        compact &&
+          styles.emitWrapperCompact,
+        disabled &&
+          styles.emitDisabled,
+        pressed &&
+          !disabled &&
+          styles.itemPressed,
       ]}
     >
       <View
         style={[
           styles.emitButton,
-          startMode && styles.emitButtonStart,
-          compact && styles.emitButtonCompact,
+          startMode &&
+            styles.emitButtonStart,
+          compact &&
+            styles.emitButtonCompact,
         ]}
       >
-        <Ionicons
-          name={
-            isConnecting
-              ? "ellipsis-horizontal"
-              : startMode
-                ? "radio"
-                : "videocam"
+        <BottomNavEmitBorder />
+
+        <EmitIcon
+          size={
+            compact
+              ? 21
+              : 23
           }
-          size={compact ? 24 : 26}
           color={colors.text}
+          strokeWidth={2.4}
         />
       </View>
-
-      {!compact && (
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.emitLabel,
-            startMode && styles.emitLabelActive,
-          ]}
-        >
-          {label}
-        </Text>
-      )}
     </Pressable>
   );
 }

@@ -3,7 +3,8 @@
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { type AppTab } from "../../../navigation/navigation.types";
-import { spacing, surfaces } from "../../../styles";
+import { spacing } from "../../../styles";
+import { LiquidSurface } from "../../ui/LiquidSurface";
 import { bottomNavItems } from "./bottomNav.config";
 import { BottomNavEmit } from "./BottomNavEmit";
 import { BottomNavTab } from "./BottomNavTab";
@@ -26,68 +27,105 @@ export function BottomNav({
   onEmitStart,
   compact = false,
 }: BottomNavProps) {
-  const insets = useSafeAreaInsets();
-  const pillHeight = compact ? 54 : 64;
+  const insets =
+    useSafeAreaInsets();
+
+  const pillHeight =
+    compact
+      ? 50
+      : 58;
 
   return (
     <View
       pointerEvents="box-none"
       style={[
         styles.container,
-        compact && styles.containerCompact,
+        compact &&
+          styles.containerCompact,
         {
           height:
             pillHeight +
             insets.bottom +
             spacing.md,
           paddingBottom:
-            insets.bottom + spacing.xs,
+            insets.bottom +
+            spacing.xs,
         },
       ]}
     >
-      <View
+      <LiquidSurface
+        variant="dark"
         style={[
-          surfaces.liquidDark,
           styles.pill,
-          compact && styles.pillCompact,
+          compact &&
+            styles.pillCompact,
         ]}
       >
-        {bottomNavItems.map((item) => {
-          if (item.id === "emit") {
-            const startMode =
-              activeTab === "emit" &&
-              Boolean(onEmitStart);
+        {bottomNavItems.map(
+          (item) => {
+            if (
+              item.id === "emit"
+            ) {
+              const startMode =
+                activeTab ===
+                  "emit" &&
+                Boolean(
+                  onEmitStart,
+                );
+
+              return (
+                <BottomNavEmit
+                  key={item.id}
+                  startMode={
+                    startMode
+                  }
+                  canStart={
+                    emitCanStart
+                  }
+                  isConnecting={
+                    emitIsConnecting
+                  }
+                  compact={
+                    compact
+                  }
+                  onPress={() => {
+                    if (
+                      startMode
+                    ) {
+                      onEmitStart?.();
+
+                      return;
+                    }
+
+                    onTabPress(
+                      "emit",
+                    );
+                  }}
+                />
+              );
+            }
 
             return (
-              <BottomNavEmit
+              <BottomNavTab
                 key={item.id}
-                startMode={startMode}
-                canStart={emitCanStart}
-                isConnecting={emitIsConnecting}
-                compact={compact}
-                onPress={() => {
-                  if (startMode) {
-                    onEmitStart?.();
-                    return;
-                  }
-
-                  onTabPress("emit");
-                }}
+                item={item}
+                isActive={
+                  activeTab ===
+                  item.id
+                }
+                compact={
+                  compact
+                }
+                onPress={() =>
+                  onTabPress(
+                    item.id,
+                  )
+                }
               />
             );
-          }
-
-          return (
-            <BottomNavTab
-              key={item.id}
-              item={item}
-              isActive={activeTab === item.id}
-              compact={compact}
-              onPress={() => onTabPress(item.id)}
-            />
-          );
-        })}
-      </View>
+          },
+        )}
+      </LiquidSurface>
     </View>
   );
 }

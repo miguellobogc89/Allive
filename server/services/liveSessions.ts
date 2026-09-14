@@ -9,6 +9,14 @@ import {
   notifyLiveStarted,
 } from "./notifications";
 
+const DEV_LIVE_PREFIX =
+  "allive_dev_";
+
+const showDevMockLives =
+  process.env
+    .SHOW_DEV_MOCK_LIVES ===
+  "true";
+
 export class ActiveLiveExistsError extends Error {
   liveId: string;
   roomName: string;
@@ -109,8 +117,24 @@ export async function reconcileActiveLives() {
 
   const activeLives = [];
 
-  for (const live of dbLives) {
-    const broadcasterActive =
+for (const live of dbLives) {
+  if (
+    showDevMockLives &&
+    live.roomName.startsWith(
+      DEV_LIVE_PREFIX,
+    )
+  ) {
+    activeLives.push(
+      live,
+    );
+
+    continue;
+  }
+
+  const broadcasterActive =
+    await hasBroadcaster(
+      live.roomName,
+    );
       await hasBroadcaster(
         live.roomName,
       );

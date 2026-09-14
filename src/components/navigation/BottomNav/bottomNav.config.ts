@@ -1,47 +1,46 @@
 // src/components/navigation/BottomNav/bottomNav.config.ts
 
-import { Ionicons } from "@expo/vector-icons";
-import { type ComponentProps } from "react";
-import { type AppTab } from "../../../navigation/navigation.types";
+import {
+  House,
+  MapPin,
+  Search,
+  UserRound,
+  Video,
+  type LucideIcon,
+} from "lucide-react-native";
 
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
+import { type AppTab } from "../../../navigation/navigation.types";
 
 export type BottomNavItem = {
   id: AppTab;
   label: string;
-  icon: IoniconName;
-  activeIcon: IoniconName;
+  Icon: LucideIcon;
 };
 
 export const bottomNavItems: BottomNavItem[] = [
   {
     id: "now",
-    label: "NOW",
-    icon: "home-outline",
-    activeIcon: "home",
+    label: "Inicio",
+    Icon: House,
   },
   {
     id: "map",
-    label: "MAPA",
-    icon: "map-outline",
-    activeIcon: "map",
+    label: "Mapa",
+    Icon: MapPin,
   },
   {
     id: "emit",
-    label: "EMITIR",
-    icon: "videocam-outline",
-    activeIcon: "videocam",
+    label: "Emitir",
+    Icon: Video,
   },
   {
     id: "search",
-    label: "BUSCAR",
-    icon: "search-outline",
-    activeIcon: "search",
+    label: "Buscar",
+    Icon: Search,
   },
   {
     id: "profile",
-    label: "TÚ",
-    icon: "person-outline",
-    activeIcon: "person",
+    label: "Perfil",
+    Icon: UserRound,
   },
 ];

@@ -27,6 +27,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "expo": "^57.0.0",
+    "expo-blur": "~57.0.3",
     "expo-camera": "~57.0.4",
     "expo-constants": "~57.0.17",
     "expo-dev-client": "~57.0.18",
@@ -40,12 +41,14 @@
     "jose": "^6.2.12",
     "livekit-client": "^2.22.3",
     "livekit-server-sdk": "^2.18.0",
+    "lucide-react-native": "1.44.0",
     "pg": "^8.23.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-maps": "1.27.2",
     "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {

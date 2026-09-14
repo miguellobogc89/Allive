@@ -126,7 +126,6 @@ export function NowContentCard({
   key={thumbnailUrl}
   source={{
     uri: thumbnailUrl!,
-    cache: "reload",
   }}
   style={styles.image}
   resizeMode="cover"
