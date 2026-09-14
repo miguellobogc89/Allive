@@ -95,14 +95,25 @@ import {
 } from "./src/styles";
 
 function AppContent() {
-  const {
-    identity,
-    isLoading,
-    token,
-  } = useAuth();
+const {
+  identity,
+  isLoading,
+  token,
+} = useAuth();
 
-  const {
-    activeTab,
+const [
+  initialBootstrapComplete,
+  setInitialBootstrapComplete,
+] = useState(false);
+
+useEffect(() => {
+  if (!isLoading) {
+    setInitialBootstrapComplete(true);
+  }
+}, [isLoading]);
+
+const {
+  activeTab,
 
     selectedUserId,
 
@@ -344,11 +355,11 @@ function AppContent() {
     refreshUnreadNotifications,
   ]);
 
-  if (isLoading) {
-    return (
-      <AlliveLoadingScreen />
-    );
-  }
+if (!initialBootstrapComplete) {
+  return (
+    <AlliveLoadingScreen />
+  );
+}
 
   if (!identity) {
     return (
