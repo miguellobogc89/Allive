@@ -11,14 +11,12 @@ import { ProfileCoverImage } from "./ProfileCoverImage";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { ProfileHeroMask } from "./ProfileHeroMask";
 import { ProfileIdentity } from "./ProfileIdentity";
-import { ProfileLocation } from "./ProfileLocation";
 
 type Props = {
   displayName: string;
   username: string;
   coverUrl: string | null;
   description: string;
-  location: string;
   verified?: boolean;
   action?: ReactNode;
   onPressEditProfile?: () => void;
@@ -29,7 +27,6 @@ export function ProfileHero({
   username,
   coverUrl,
   description,
-  location,
   verified = false,
   action,
   onPressEditProfile,
@@ -61,10 +58,6 @@ export function ProfileHero({
             displayName={displayName}
             username={username}
             verified={verified}
-          />
-
-          <ProfileLocation
-            location={location}
           />
 
           <ProfileBio

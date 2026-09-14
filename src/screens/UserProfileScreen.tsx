@@ -303,7 +303,6 @@ export function UserProfileScreen({
           username={profile.user.username}
           coverUrl={profile.user.avatarUrl}
           description=""
-          location=""
           action={
             isOwnProfile ? null : (
               <Pressable

@@ -471,26 +471,23 @@ const {
       );
     }
 
-    if (
-      activeTab === "search"
-    ) {
-      return (
-      <SearchScreen
-        onOpenLive={
-          openLive
-        }
-        onOpenReplay={
-          openReplay
-        }
-        onOpenUser={
-          openUser
-        }
-        onBack={
-          goBack
-        }
-      />
-      );
-    }
+if (
+  activeTab === "search"
+) {
+  return (
+    <SearchScreen
+      onOpenLive={
+        openLive
+      }
+      onOpenReplay={
+        openReplay
+      }
+      onOpenUser={
+        openUser
+      }
+    />
+  );
+}
 
     if (
       activeTab === "profile"

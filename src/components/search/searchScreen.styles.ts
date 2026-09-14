@@ -8,6 +8,9 @@ import {
   colors,
 } from "../../styles";
 
+const searchBorder =
+  "rgba(255,255,255,0.16)";
+
 export const searchScreenStyles =
   StyleSheet.create({
     container: {
@@ -18,19 +21,10 @@ export const searchScreenStyles =
     },
 
     header: {
-      paddingTop: 8,
+      paddingTop: 12,
 
       backgroundColor:
         colors.background,
-    },
-
-    backRow: {
-      height: 44,
-
-      paddingHorizontal: 6,
-
-      justifyContent:
-        "center",
     },
 
     searchBox: {
@@ -51,7 +45,7 @@ export const searchScreenStyles =
       borderWidth: 1,
 
       borderColor:
-        colors.border,
+        searchBorder,
 
       borderRadius: 13,
 
@@ -127,6 +121,11 @@ export const searchScreenStyles =
 
       backgroundColor:
         colors.surfaceElevated,
+
+      borderWidth: 1,
+
+      borderColor:
+        searchBorder,
     },
 
     avatarLetter: {
@@ -177,14 +176,12 @@ export const searchScreenStyles =
     gridCell: {
       minWidth: 0,
 
-      borderRightWidth:
-        StyleSheet.hairlineWidth,
+      borderRightWidth: 1,
 
-      borderBottomWidth:
-        StyleSheet.hairlineWidth,
+      borderBottomWidth: 1,
 
       borderColor:
-        colors.border,
+        searchBorder,
     },
 
     emptyList: {

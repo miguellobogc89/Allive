@@ -16,6 +16,11 @@ import {
 } from "../auth/AuthContext";
 
 import {
+  getMyProfileStats,
+  type ProfileStatsData,
+} from "../api/profileApi";
+
+import {
   ProfileEditPanel,
   ProfileHero,
   ProfileSettingsPanel,
@@ -31,9 +36,6 @@ import {
 const MOCK_DESCRIPTION =
   "Vivo el presente, grabo lo real. Gente bonita, planes locos y buenas vibras.";
 
-const MOCK_LOCATION =
-  "Sevilla, España";
-
 const BOTTOM_NAV_SPACE = 92;
 
 type Props = {
@@ -47,6 +49,7 @@ export function ProfileScreen({
 }: Props) {
   const {
     user,
+    token,
     updateUsername,
     updateProfile,
     uploadAvatar,
@@ -81,54 +84,70 @@ export function ProfileScreen({
   );
 
   const [
-    mockDisplayName,
-    setMockDisplayName,
-  ] = useState(
-    user?.displayName ||
-      user?.username ||
-      "Invitado",
-  );
-
-  const [
-    mockDescription,
-    setMockDescription,
-  ] = useState(
-    MOCK_DESCRIPTION,
-  );
-
-  const [
-    mockLocation,
-    setMockLocation,
-  ] = useState(
-    MOCK_LOCATION,
-  );
-
-  const [
-    mockAvatarUrl,
-    setMockAvatarUrl,
-  ] = useState<string | null>(
-    user?.avatarUrl ?? null,
-  );
-
-  useEffect(() => {
-    setMockDisplayName(
-      user?.displayName ||
-        user?.username ||
-        "Invitado",
-    );
-
-    setMockAvatarUrl(
-      user?.avatarUrl ?? null,
-    );
-  }, [
-    user?.displayName,
-    user?.username,
-    user?.avatarUrl,
-  ]);
+    stats,
+    setStats,
+  ] = useState<ProfileStatsData>({
+    followers: 0,
+    emissions: 0,
+    averageViewers: null,
+  });
 
   const username =
     user?.username ||
     "invitado";
+
+  const displayName =
+    user?.displayName ||
+    user?.username ||
+    "Invitado";
+
+  const avatarUrl =
+    user?.avatarUrl ?? null;
+
+  useEffect(() => {
+    if (!token) {
+      setStats({
+        followers: 0,
+        emissions: 0,
+        averageViewers: null,
+      });
+
+      return;
+    }
+
+    const controller =
+      new AbortController();
+
+    async function loadStats() {
+      if (!token) {
+        return;
+      }
+
+      try {
+        const nextStats =
+          await getMyProfileStats(
+            token,
+            controller.signal,
+          );
+
+        setStats(nextStats);
+      } catch (loadError) {
+        if (
+          loadError instanceof Error &&
+          loadError.name ===
+            "AbortError"
+        ) {
+          return;
+        }
+      }
+    }
+
+    void loadStats();
+
+    return () => {
+      controller.abort();
+    };
+  }, [token]);
 
   async function handleSaveUsername(
     nextUsername: string,
@@ -216,6 +235,24 @@ export function ProfileScreen({
     );
   }
 
+let liveAreaStyle:
+  | typeof styles.liveArea
+  | typeof styles.liveAreaExpanded =
+  styles.liveArea;
+
+let highlightsStyle:
+  | typeof styles.highlightsFooter
+  | typeof styles.highlightsExpanded =
+  styles.highlightsFooter;
+
+if (highlightsExpanded) {
+  liveAreaStyle =
+    styles.liveAreaExpanded;
+
+  highlightsStyle =
+    styles.highlightsExpanded;
+}
+
   const profileContent = (
     <>
       <ProfileTopBar
@@ -235,17 +272,14 @@ export function ProfileScreen({
 
       <ProfileHero
         displayName={
-          mockDisplayName
+          displayName
         }
         username={username}
         coverUrl={
-          mockAvatarUrl
+          avatarUrl
         }
         description={
-          mockDescription
-        }
-        location={
-          mockLocation
+          MOCK_DESCRIPTION
         }
         verified
         onPressEditProfile={
@@ -253,24 +287,23 @@ export function ProfileScreen({
         }
       />
 
-      <ProfileMockStats />
+      <ProfileMockStats
+        followers={
+          stats.followers
+        }
+        emissions={
+          stats.emissions
+        }
+      />
 
       <View
-        style={
-          highlightsExpanded
-            ? styles.liveAreaExpanded
-            : styles.liveArea
-        }
+        style={liveAreaStyle}
       >
         <ProfileMockLatestLive />
       </View>
 
       <View
-        style={
-          highlightsExpanded
-            ? styles.highlightsExpanded
-            : styles.highlightsFooter
-        }
+        style={highlightsStyle}
       >
         <ProfileMockHighlights
           expanded={
@@ -331,20 +364,16 @@ export function ProfileScreen({
         visible={
           editVisible
         }
-        username={
-          username
-        }
+        username={username}
         displayName={
-          mockDisplayName
+          displayName
         }
         description={
-          mockDescription
+          MOCK_DESCRIPTION
         }
-        location={
-          mockLocation
-        }
+        location=""
         avatarUrl={
-          mockAvatarUrl
+          avatarUrl
         }
         isSavingUsername={
           isSavingUsername
@@ -366,24 +395,7 @@ export function ProfileScreen({
         onSaveProfile={
           handleSaveProfile
         }
-        onChangeMockProfile={(
-          value,
-        ) => {
-          setMockDisplayName(
-            value.displayName,
-          );
-
-          setMockDescription(
-            value.description,
-          );
-
-          setMockLocation(
-            value.location,
-          );
-
-          setMockAvatarUrl(
-            value.avatarUrl,
-          );
+        onChangeMockProfile={() => {
         }}
       />
     </View>

@@ -7,30 +7,58 @@ import {
   View,
 } from "react-native";
 
-const stats = [
-  {
-    icon: "people-outline" as const,
-    value: "12.4K",
-    label: "Seguidores",
-  },
-  {
-    icon: "videocam-outline" as const,
-    value: "320",
-    label: "Emisiones",
-  },
-  {
-    icon: "eye-outline" as const,
-    value: "1.2M",
-    label: "Vistas totales",
-  },
-  {
-    icon: "flash-outline" as const,
-    value: "4.9",
-    label: "Live score",
-  },
-];
+type Props = {
+  followers: number;
+  emissions: number;
+};
 
-export function ProfileMockStats() {
+function formatStat(
+  value: number,
+) {
+  if (value >= 1000000) {
+    const formatted =
+      value / 1000000;
+
+    return `${formatted.toFixed(1)}M`;
+  }
+
+  if (value >= 1000) {
+    const formatted =
+      value / 1000;
+
+    return `${formatted.toFixed(1)}K`;
+  }
+
+  return String(value);
+}
+
+export function ProfileMockStats({
+  followers,
+  emissions,
+}: Props) {
+  const stats = [
+    {
+      icon: "people-outline" as const,
+      value: formatStat(followers),
+      label: "Seguidores",
+    },
+    {
+      icon: "videocam-outline" as const,
+      value: formatStat(emissions),
+      label: "Emisiones",
+    },
+    {
+      icon: "eye-outline" as const,
+      value: "—",
+      label: "Vistas totales",
+    },
+    {
+      icon: "flash-outline" as const,
+      value: "—",
+      label: "Live score",
+    },
+  ];
+
   return (
     <View style={styles.row}>
       {stats.map((stat) => (
