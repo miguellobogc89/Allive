@@ -9,7 +9,7 @@ import {
 } from "../../styles";
 
 const searchBorder =
-  "rgba(255,255,255,0.16)";
+  "rgba(255,255,255,0.28)";
 
 export const searchScreenStyles =
   StyleSheet.create({
