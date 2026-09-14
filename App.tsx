@@ -40,10 +40,6 @@ import {
 } from "./src/components/navigation/BottomNav";
 
 import {
-  AlliveLoadingScreen,
-} from "./src/components/loading/AlliveLoadingScreen";
-
-import {
   useAppNavigation,
 } from "./src/navigation/useAppNavigation";
 
@@ -100,17 +96,6 @@ const {
   isLoading,
   token,
 } = useAuth();
-
-const [
-  initialBootstrapComplete,
-  setInitialBootstrapComplete,
-] = useState(false);
-
-useEffect(() => {
-  if (!isLoading) {
-    setInitialBootstrapComplete(true);
-  }
-}, [isLoading]);
 
 const {
   activeTab,
@@ -355,11 +340,7 @@ const {
     refreshUnreadNotifications,
   ]);
 
-if (!initialBootstrapComplete) {
-  return (
-    <AlliveLoadingScreen />
-  );
-}
+
 
   if (!identity) {
     return (

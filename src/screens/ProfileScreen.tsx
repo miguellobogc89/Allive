@@ -43,30 +43,6 @@ type Props = {
   onOpenNotifications?: () => void;
 };
 
-function formatHours(
-  value:
-    | number
-    | null
-    | undefined,
-) {
-  if (
-    typeof value !== "number" ||
-    !Number.isFinite(value)
-  ) {
-    return "—";
-  }
-
-  if (value < 10) {
-    return value
-      .toFixed(1)
-      .replace(".", ",");
-  }
-
-  return Math.round(
-    value,
-  ).toString();
-}
-
 function formatCompactNumber(
   value:
     | number
@@ -74,38 +50,55 @@ function formatCompactNumber(
     | undefined,
 ) {
   if (
-    typeof value !== "number" ||
-    !Number.isFinite(value)
+    typeof value !==
+      "number" ||
+    !Number.isFinite(
+      value,
+    )
   ) {
     return "—";
   }
 
-  if (value >= 1_000_000) {
+  if (
+    value >=
+    1_000_000
+  ) {
     const formatted =
-      (value / 1_000_000)
-        .toFixed(1)
-        .replace(".", ",");
-
-    return `${
-      formatted.replace(
-        ",0",
-        "",
+      (
+        value /
+        1_000_000
       )
-    }M`;
+        .toFixed(1)
+        .replace(
+          ".",
+          ",",
+        );
+
+    return `${formatted.replace(
+      ",0",
+      "",
+    )}M`;
   }
 
-  if (value >= 1_000) {
+  if (
+    value >=
+    1_000
+  ) {
     const formatted =
-      (value / 1_000)
-        .toFixed(1)
-        .replace(".", ",");
-
-    return `${
-      formatted.replace(
-        ",0",
-        "",
+      (
+        value /
+        1_000
       )
-    }K`;
+        .toFixed(1)
+        .replace(
+          ".",
+          ",",
+        );
+
+    return `${formatted.replace(
+      ",0",
+      "",
+    )}K`;
   }
 
   return value.toString();
@@ -189,7 +182,9 @@ export function ProfileScreen({
     mockAvatarUrl,
     setMockAvatarUrl,
   ] =
-    useState<string | null>(
+    useState<
+      string | null
+    >(
       user?.avatarUrl ??
         null,
     );
@@ -211,17 +206,13 @@ export function ProfileScreen({
     user?.avatarUrl,
   ]);
 
-  /*
-   * Carga independiente de
-   * emisiones + estadísticas.
-   *
-   * Si una falla, no rompe
-   * la otra ni la pantalla.
-   */
   useEffect(() => {
     if (!token) {
       setRealLives([]);
-      setProfileStats(null);
+      setProfileStats(
+        null,
+      );
+
       return;
     }
 
@@ -233,17 +224,19 @@ export function ProfileScreen({
         livesResult,
         statsResult,
       ] =
-        await Promise.allSettled([
-          getMyLives(
-            token!,
-            controller.signal,
-          ),
+        await Promise.allSettled(
+          [
+            getMyLives(
+              token!,
+              controller.signal,
+            ),
 
-          getMyProfileStats(
-            token!,
-            controller.signal,
-          ),
-        ]);
+            getMyProfileStats(
+              token!,
+              controller.signal,
+            ),
+          ],
+        );
 
       if (
         controller.signal
@@ -256,37 +249,51 @@ export function ProfileScreen({
         livesResult.status ===
         "fulfilled"
       ) {
-        setRealLives(
+        const videos =
           livesResult.value.map(
-            (live) => ({
-              id:
-                live.id,
+            (live) => {
+              let title =
+                live.title;
 
-              title:
-                live.title ||
-                "LIVE sin título",
+              if (!title) {
+                title =
+                  "LIVE sin título";
+              }
 
-              placeName:
-                live.placeName ||
-                "Sin ubicación",
+              let placeName =
+                live.placeName;
 
-              startedAt:
-                live.startedAt,
+              if (
+                !placeName
+              ) {
+                placeName =
+                  "Sin ubicación";
+              }
 
-              endedAt:
-                live.endedAt,
+              return {
+                id:
+                  live.id,
 
-              thumbnailUrl:
-                live.thumbnailUrl,
-            }),
-          ),
+                title,
+
+                placeName,
+
+                startedAt:
+                  live.startedAt,
+
+                endedAt:
+                  live.endedAt,
+
+                thumbnailUrl:
+                  live.thumbnailUrl,
+              };
+            },
+          );
+
+        setRealLives(
+          videos,
         );
       } else {
-        console.error(
-          "Error cargando emisiones del perfil:",
-          livesResult.reason,
-        );
-
         setRealLives([]);
       }
 
@@ -298,12 +305,9 @@ export function ProfileScreen({
           statsResult.value,
         );
       } else {
-        console.error(
-          "Error cargando estadísticas del perfil:",
-          statsResult.reason,
+        setProfileStats(
+          null,
         );
-
-        setProfileStats(null);
       }
     }
 
@@ -322,7 +326,10 @@ export function ProfileScreen({
     nextUsername: string,
   ) {
     if (!user) {
-      setEditVisible(false);
+      setEditVisible(
+        false,
+      );
+
       return;
     }
 
@@ -331,13 +338,26 @@ export function ProfileScreen({
         .trim()
         .toLowerCase();
 
-    if (
-      !normalized ||
-      normalized ===
-        user.username
-    ) {
-      setEditVisible(false);
+    if (!normalized) {
+      setEditVisible(
+        false,
+      );
+
       setError(null);
+
+      return;
+    }
+
+    if (
+      normalized ===
+      user.username
+    ) {
+      setEditVisible(
+        false,
+      );
+
+      setError(null);
+
       return;
     }
 
@@ -352,14 +372,24 @@ export function ProfileScreen({
         normalized,
       );
 
-      setEditVisible(false);
-    } catch (saveError) {
-      setError(
-        saveError
-          instanceof Error
-          ? saveError.message
-          : "No se pudo actualizar el perfil",
+      setEditVisible(
+        false,
       );
+    } catch (
+      saveError
+    ) {
+      if (
+        saveError instanceof
+        Error
+      ) {
+        setError(
+          saveError.message,
+        );
+      } else {
+        setError(
+          "No se pudo actualizar el perfil",
+        );
+      }
     } finally {
       setIsSavingUsername(
         false,
@@ -382,7 +412,9 @@ export function ProfileScreen({
 
   async function handleSaveProfile(
     value: {
-      displayName: string;
+      displayName:
+        string;
+
       avatarUrl:
         | string
         | null;
@@ -394,9 +426,15 @@ export function ProfileScreen({
   }
 
   function openEditProfile() {
-    setSettingsVisible(false);
+    setSettingsVisible(
+      false,
+    );
+
     setError(null);
-    setEditVisible(true);
+
+    setEditVisible(
+      true,
+    );
   }
 
   return (
@@ -454,35 +492,23 @@ export function ProfileScreen({
         />
 
         <ProfileStats
-          hoursLive={
-            formatHours(
-              profileStats
-                ?.hoursLive,
-            )
-          }
-          community={
+          followers={
             formatCompactNumber(
               profileStats
-                ?.community,
+                ?.followers,
             )
           }
-          totalViews={
+          emissions={
             formatCompactNumber(
               profileStats
-                ?.totalViews,
+                ?.emissions,
             )
           }
-          liveScore={
-            typeof profileStats
-              ?.liveScore ===
-            "number"
-              ? profileStats.liveScore
-                  .toFixed(1)
-                  .replace(
-                    ".",
-                    ",",
-                  )
-              : "—"
+          averageViewers={
+            formatCompactNumber(
+              profileStats
+                ?.averageViewers,
+            )
           }
         />
 
@@ -557,7 +583,9 @@ export function ProfileScreen({
             false,
           );
 
-          setError(null);
+          setError(
+            null,
+          );
         }}
         onSaveUsername={
           handleSaveUsername
@@ -596,20 +624,26 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
+
       backgroundColor:
         "#06101A",
     },
 
     content: {
-      width: "100%",
-      maxWidth: 560,
+      width:
+        "100%",
+
+      maxWidth:
+        560,
+
       alignSelf:
         "center",
 
       paddingHorizontal:
         18,
 
-      paddingTop: 12,
+      paddingTop:
+        12,
 
       paddingBottom:
         140,

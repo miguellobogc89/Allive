@@ -1,42 +1,43 @@
 // src/components/profile/stats/ProfileStats.tsx
 
-import { StyleSheet, View } from "react-native";
-import { ProfileStatCard } from "./ProfileStatCard";
+import {
+  StyleSheet,
+  View,
+} from "react-native";
+
+import {
+  ProfileStatCard,
+} from "./ProfileStatCard";
 
 type Props = {
-  hoursLive: string;
-  community: string;
-  totalViews: string;
-  liveScore: string;
+  followers: string;
+  emissions: string;
+  averageViewers: string;
 };
 
 export function ProfileStats({
-  hoursLive,
-  community,
-  totalViews,
-  liveScore,
+  followers,
+  emissions,
+  averageViewers,
 }: Props) {
   return (
     <View style={styles.container}>
       <ProfileStatCard
-        icon="time-outline"
-        value={hoursLive}
-        label="Horas en directo"
-      />
-      <ProfileStatCard
         icon="people-outline"
-        value={community}
-        label="Comunidad"
+        value={followers}
+        label="Seguidores"
       />
+
+      <ProfileStatCard
+        icon="time-outline"
+        value={emissions}
+        label="Emisiones"
+      />
+
       <ProfileStatCard
         icon="eye-outline"
-        value={totalViews}
-        label="Vistas totales"
-      />
-      <ProfileStatCard
-        icon="flash-outline"
-        value={liveScore}
-        label="Live Score"
+        value={averageViewers}
+        label="Media espectadores"
       />
     </View>
   );

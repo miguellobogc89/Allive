@@ -10,14 +10,17 @@ export type ProfileLive = {
   placeName: string | null;
   startedAt: string;
   endedAt: string | null;
-  thumbnailUrl: string | null;
+  thumbnailUrl:
+    | string
+    | null;
 };
 
 export type ProfileStatsData = {
-  hoursLive: number;
-  community: number;
-  totalViews: number | null;
-  liveScore: number | null;
+  followers: number;
+  emissions: number;
+  averageViewers:
+    | number
+    | null;
 };
 
 export class ProfileApiError
@@ -33,7 +36,8 @@ export class ProfileApiError
     this.name =
       "ProfileApiError";
 
-    this.status = status;
+    this.status =
+      status;
   }
 }
 
@@ -41,7 +45,8 @@ async function readProfileApiError(
   response: Response,
   fallback: string,
 ): Promise<never> {
-  let message = fallback;
+  let message =
+    fallback;
 
   try {
     const body =
@@ -50,10 +55,11 @@ async function readProfileApiError(
       };
 
     if (body.error) {
-      message = body.error;
+      message =
+        body.error;
     }
   } catch {
-    // Respuesta sin JSON válido.
+    // Sin JSON válido.
   }
 
   throw new ProfileApiError(
@@ -88,11 +94,9 @@ export async function getMyLives(
     );
   }
 
-  return (
-    response.json() as Promise<
-      ProfileLive[]
-    >
-  );
+  return response.json() as Promise<
+    ProfileLive[]
+  >;
 }
 
 export async function getMyProfileStats(
@@ -121,9 +125,7 @@ export async function getMyProfileStats(
     );
   }
 
-  return (
-    response.json() as Promise<
-      ProfileStatsData
-    >
-  );
+  return response.json() as Promise<
+    ProfileStatsData
+  >;
 }

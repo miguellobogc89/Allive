@@ -1,4 +1,9 @@
-import type { Express } from "express";
+// server/routes/profile.ts
+
+import type {
+  Express,
+} from "express";
+
 import express from "express";
 
 import {
@@ -6,7 +11,9 @@ import {
   type AuthenticatedRequest,
 } from "../auth";
 
-import { prisma } from "../db";
+import {
+  prisma,
+} from "../db";
 
 import {
   uploadProfileAvatarToR2,
@@ -16,7 +23,8 @@ import {
   getProfileStats,
 } from "../services/profile/profile-stats.service";
 
-const MAX_AVATAR_SIZE = 4_000_000;
+const MAX_AVATAR_SIZE =
+  4_000_000;
 
 const AVATAR_CONTENT_TYPES = [
   "image/jpeg",
@@ -27,10 +35,6 @@ const AVATAR_CONTENT_TYPES = [
 export function registerProfileRoutes(
   app: Express,
 ) {
-  /*
-   * Estadísticas reales
-   * del usuario autenticado.
-   */
   app.get(
     "/api/profile/me/stats",
     requireAuth,
@@ -44,7 +48,9 @@ export function registerProfileRoutes(
             req.authUser!.id,
           );
 
-        return res.json(stats);
+        return res.json(
+          stats,
+        );
       } catch (error) {
         console.error(
           "Error obteniendo estadísticas de perfil:",
@@ -61,12 +67,6 @@ export function registerProfileRoutes(
     },
   );
 
-  /*
-   * Emisiones reales del perfil.
-   *
-   * Esta ruta queda aislada del feed
-   * general de LIVE y Replays.
-   */
   app.get(
     "/api/profile/me/lives",
     requireAuth,
@@ -81,11 +81,14 @@ export function registerProfileRoutes(
               creatorId:
                 req.authUser!.id,
 
-              status: "ENDED",
+              endedAt: {
+                not: null,
+              },
             },
 
             orderBy: {
-              endedAt: "desc",
+              endedAt:
+                "desc",
             },
 
             select: {
@@ -98,7 +101,9 @@ export function registerProfileRoutes(
             },
           });
 
-        return res.json(lives);
+        return res.json(
+          lives,
+        );
       } catch (error) {
         console.error(
           "Error obteniendo emisiones del perfil:",
@@ -115,9 +120,6 @@ export function registerProfileRoutes(
     },
   );
 
-  /*
-   * Editar perfil.
-   */
   app.patch(
     "/api/profile/me",
     requireAuth,
@@ -128,23 +130,59 @@ export function registerProfileRoutes(
       const userId =
         req.authUser!.id;
 
-      const displayName =
-        typeof req.body.displayName ===
-        "string"
-          ? req.body.displayName
-              .trim()
-              .slice(0, 60) ||
-            null
-          : undefined;
+      let displayName:
+        | string
+        | null
+        | undefined;
 
-      const avatarUrl =
-        typeof req.body.avatarUrl ===
+      if (
+        typeof req.body
+          .displayName ===
         "string"
-          ? req.body.avatarUrl.trim() ||
-            null
-          : req.body.avatarUrl === null
-            ? null
-            : undefined;
+      ) {
+        const normalized =
+          req.body.displayName
+            .trim()
+            .slice(
+              0,
+              60,
+            );
+
+        if (normalized) {
+          displayName =
+            normalized;
+        } else {
+          displayName =
+            null;
+        }
+      }
+
+      let avatarUrl:
+        | string
+        | null
+        | undefined;
+
+      if (
+        typeof req.body
+          .avatarUrl ===
+        "string"
+      ) {
+        const normalized =
+          req.body.avatarUrl.trim();
+
+        if (normalized) {
+          avatarUrl =
+            normalized;
+        } else {
+          avatarUrl =
+            null;
+        }
+      } else if (
+        req.body.avatarUrl ===
+        null
+      ) {
+        avatarUrl = null;
+      }
 
       const user =
         await prisma.user.update({
@@ -172,17 +210,17 @@ export function registerProfileRoutes(
     },
   );
 
-  /*
-   * Subir avatar.
-   */
   app.put(
     "/api/profile/me/avatar",
 
     requireAuth,
 
     express.raw({
-      type: AVATAR_CONTENT_TYPES,
-      limit: MAX_AVATAR_SIZE,
+      type:
+        AVATAR_CONTENT_TYPES,
+
+      limit:
+        MAX_AVATAR_SIZE,
     }),
 
     async (
@@ -214,7 +252,8 @@ export function registerProfileRoutes(
           !Buffer.isBuffer(
             req.body,
           ) ||
-          req.body.length === 0
+          req.body.length ===
+            0
         ) {
           return res
             .status(400)
@@ -230,7 +269,8 @@ export function registerProfileRoutes(
               userId:
                 req.authUser!.id,
 
-              image: req.body,
+              image:
+                req.body,
 
               contentType,
             },
