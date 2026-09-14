@@ -8,6 +8,10 @@ import {
   View,
 } from "react-native";
 
+import {
+  colors,
+} from "../../styles";
+
 export type SearchTab =
   | "for-you"
   | "live"
@@ -16,6 +20,7 @@ export type SearchTab =
 
 type Props = {
   activeTab: SearchTab;
+
   onChange: (
     tab: SearchTab,
   ) => void;
@@ -73,6 +78,7 @@ export function SearchTabs({
               <Text
                 style={[
                   styles.label,
+
                   active &&
                     styles.labelActive,
                 ]}
@@ -83,6 +89,7 @@ export function SearchTabs({
               <View
                 style={[
                   styles.indicator,
+
                   active &&
                     styles.indicatorActive,
                 ]}
@@ -95,54 +102,65 @@ export function SearchTabs({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#F7F7F5",
+const styles =
+  StyleSheet.create({
+    container: {
+      backgroundColor:
+        colors.background,
 
-    borderBottomWidth:
-      StyleSheet.hairlineWidth,
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
 
-    borderBottomColor: "#DDDCD8",
-  },
+      borderBottomColor:
+        colors.border,
+    },
 
-  content: {
-    paddingHorizontal: 18,
+    content: {
+      paddingHorizontal: 18,
 
-    gap: 28,
-  },
+      gap: 28,
+    },
 
-  tab: {
-    minHeight: 43,
+    tab: {
+      minHeight: 43,
 
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
+      justifyContent:
+        "flex-end",
 
-  label: {
-    paddingBottom: 11,
+      alignItems:
+        "center",
+    },
 
-    color: "#858581",
+    label: {
+      paddingBottom: 11,
 
-    fontSize: 14,
+      color:
+        colors.textSecondary,
 
-    fontWeight: "400",
-  },
+      fontSize: 14,
 
-  labelActive: {
-    color: "#292927",
+      fontWeight:
+        "400",
+    },
 
-    fontWeight: "500",
-  },
+    labelActive: {
+      color:
+        colors.text,
 
-  indicator: {
-    width: "100%",
-    height: 2,
+      fontWeight:
+        "500",
+    },
 
-    backgroundColor:
-      "transparent",
-  },
+    indicator: {
+      width: "100%",
+      height: 2,
 
-  indicatorActive: {
-    backgroundColor: "#FF6B5F",
-  },
-});
+      backgroundColor:
+        "transparent",
+    },
+
+    indicatorActive: {
+      backgroundColor:
+        colors.accent,
+    },
+  });

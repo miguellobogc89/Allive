@@ -4,17 +4,26 @@ import {
   StyleSheet,
 } from "react-native";
 
+import {
+  colors,
+} from "../../../styles";
+
 export const styles =
   StyleSheet.create({
     liveCard: {
       width: "100%",
+
       aspectRatio: 9 / 14,
+
       overflow: "hidden",
-      backgroundColor: "#E8E8E5",
+
+      backgroundColor:
+        colors.surface,
     },
 
     placeholder: {
       position: "absolute",
+
       top: 0,
       right: 0,
       bottom: 0,
@@ -23,12 +32,16 @@ export const styles =
 
     metrics: {
       position: "absolute",
+
       top: 9,
       left: 9,
       right: 9,
 
       flexDirection: "row",
-      justifyContent: "space-between",
+
+      justifyContent:
+        "space-between",
+
       alignItems: "center",
     },
 
@@ -36,9 +49,11 @@ export const styles =
       minHeight: 25,
 
       flexDirection: "row",
+
       alignItems: "center",
 
       paddingHorizontal: 8,
+
       paddingVertical: 4,
 
       borderRadius: 13,
@@ -50,25 +65,31 @@ export const styles =
     likeIcon: {
       marginRight: 5,
 
-      color: "#FFFFFF",
+      color:
+        colors.text,
 
       fontSize: 11,
+
       lineHeight: 14,
     },
 
     viewerIcon: {
       marginRight: 5,
 
-      color: "#FFFFFF",
+      color:
+        colors.text,
 
       fontSize: 10,
+
       lineHeight: 14,
     },
 
     metricText: {
-      color: "#FFFFFF",
+      color:
+        colors.text,
 
       fontSize: 11,
+
       lineHeight: 14,
 
       fontWeight: "500",
@@ -76,6 +97,7 @@ export const styles =
 
     liveInfo: {
       position: "absolute",
+
       left: 11,
       right: 11,
       bottom: 12,
@@ -85,22 +107,26 @@ export const styles =
       marginBottom: 4,
 
       color:
-        "rgba(255,255,255,0.72)",
+        colors.textOnOverlaySecondary,
 
       fontSize: 10,
+
       lineHeight: 13,
 
       fontWeight: "500",
 
-      textTransform: "uppercase",
+      textTransform:
+        "uppercase",
 
       letterSpacing: 0.45,
     },
 
     liveTitle: {
-      color: "#FFFFFF",
+      color:
+        colors.text,
 
       fontSize: 15,
+
       lineHeight: 19,
 
       fontWeight: "600",
@@ -110,6 +136,7 @@ export const styles =
       marginTop: 9,
 
       flexDirection: "row",
+
       alignItems: "center",
     },
 
@@ -121,15 +148,19 @@ export const styles =
     },
 
     avatarFallback: {
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
 
       backgroundColor:
         "rgba(255,255,255,0.18)",
     },
 
     avatarLetter: {
-      color: "#FFFFFF",
+      color:
+        colors.text,
 
       fontSize: 10,
 
@@ -142,9 +173,10 @@ export const styles =
       flexShrink: 1,
 
       color:
-        "rgba(255,255,255,0.92)",
+        colors.textOnOverlay,
 
       fontSize: 11,
+
       lineHeight: 14,
 
       fontWeight: "500",
@@ -154,12 +186,15 @@ export const styles =
       minHeight: 82,
 
       flexDirection: "row",
+
       alignItems: "center",
 
       paddingHorizontal: 14,
+
       paddingVertical: 12,
 
-      backgroundColor: "#FFFFFF",
+      backgroundColor:
+        colors.background,
 
       borderRightWidth:
         StyleSheet.hairlineWidth,
@@ -167,7 +202,8 @@ export const styles =
       borderBottomWidth:
         StyleSheet.hairlineWidth,
 
-      borderColor: "#E3E3E0",
+      borderColor:
+        colors.border,
     },
 
     personAvatar: {
@@ -178,14 +214,19 @@ export const styles =
     },
 
     personAvatarFallback: {
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent:
+        "center",
 
-      backgroundColor: "#EEEDEA",
+      alignItems:
+        "center",
+
+      backgroundColor:
+        colors.surfaceElevated,
     },
 
     personInitial: {
-      color: "#5B5B58",
+      color:
+        colors.textSecondary,
 
       fontSize: 16,
 
@@ -199,7 +240,8 @@ export const styles =
     },
 
     personName: {
-      color: "#252523",
+      color:
+        colors.text,
 
       fontSize: 14,
 
@@ -209,7 +251,8 @@ export const styles =
     personUsername: {
       marginTop: 3,
 
-      color: "#8A8985",
+      color:
+        colors.textSecondary,
 
       fontSize: 12,
 

@@ -12,25 +12,21 @@ import {
 } from "react";
 
 import {
-  getMyLives,
-  getMyProfileStats,
-  type ProfileStatsData,
-} from "../api/profileApi";
-
-import {
   useAuth,
 } from "../auth/AuthContext";
 
 import {
   ProfileEditPanel,
   ProfileHero,
-  ProfileHighlightsSection,
-  ProfileLatestLiveSection,
   ProfileSettingsPanel,
-  ProfileStats,
   ProfileTopBar,
-  type ProfileVideoItem,
 } from "../components/profile";
+
+import {
+  ProfileMockHighlights,
+  ProfileMockLatestLive,
+  ProfileMockStats,
+} from "../components/profile/mock";
 
 const MOCK_DESCRIPTION =
   "Vivo el presente, grabo lo real. Gente bonita, planes locos y buenas vibras.";
@@ -38,71 +34,12 @@ const MOCK_DESCRIPTION =
 const MOCK_LOCATION =
   "Sevilla, España";
 
+const BOTTOM_NAV_SPACE = 92;
+
 type Props = {
   unreadNotifications?: number;
   onOpenNotifications?: () => void;
 };
-
-function formatCompactNumber(
-  value:
-    | number
-    | null
-    | undefined,
-) {
-  if (
-    typeof value !==
-      "number" ||
-    !Number.isFinite(
-      value,
-    )
-  ) {
-    return "—";
-  }
-
-  if (
-    value >=
-    1_000_000
-  ) {
-    const formatted =
-      (
-        value /
-        1_000_000
-      )
-        .toFixed(1)
-        .replace(
-          ".",
-          ",",
-        );
-
-    return `${formatted.replace(
-      ",0",
-      "",
-    )}M`;
-  }
-
-  if (
-    value >=
-    1_000
-  ) {
-    const formatted =
-      (
-        value /
-        1_000
-      )
-        .toFixed(1)
-        .replace(
-          ".",
-          ",",
-        );
-
-    return `${formatted.replace(
-      ",0",
-      "",
-    )}K`;
-  }
-
-  return value.toString();
-}
 
 export function ProfileScreen({
   unreadNotifications = 0,
@@ -110,27 +47,11 @@ export function ProfileScreen({
 }: Props) {
   const {
     user,
-    token,
     updateUsername,
     updateProfile,
     uploadAvatar,
     logout,
   } = useAuth();
-
-  const [
-    realLives,
-    setRealLives,
-  ] = useState<
-    ProfileVideoItem[]
-  >([]);
-
-  const [
-    profileStats,
-    setProfileStats,
-  ] =
-    useState<
-      ProfileStatsData | null
-    >(null);
 
   const [
     settingsVisible,
@@ -143,6 +64,11 @@ export function ProfileScreen({
   ] = useState(false);
 
   const [
+    highlightsExpanded,
+    setHighlightsExpanded,
+  ] = useState(false);
+
+  const [
     isSavingUsername,
     setIsSavingUsername,
   ] = useState(false);
@@ -150,10 +76,9 @@ export function ProfileScreen({
   const [
     error,
     setError,
-  ] =
-    useState<string | null>(
-      null,
-    );
+  ] = useState<string | null>(
+    null,
+  );
 
   const [
     mockDisplayName,
@@ -181,13 +106,9 @@ export function ProfileScreen({
   const [
     mockAvatarUrl,
     setMockAvatarUrl,
-  ] =
-    useState<
-      string | null
-    >(
-      user?.avatarUrl ??
-        null,
-    );
+  ] = useState<string | null>(
+    user?.avatarUrl ?? null,
+  );
 
   useEffect(() => {
     setMockDisplayName(
@@ -197,126 +118,13 @@ export function ProfileScreen({
     );
 
     setMockAvatarUrl(
-      user?.avatarUrl ??
-        null,
+      user?.avatarUrl ?? null,
     );
   }, [
     user?.displayName,
     user?.username,
     user?.avatarUrl,
   ]);
-
-  useEffect(() => {
-    if (!token) {
-      setRealLives([]);
-      setProfileStats(
-        null,
-      );
-
-      return;
-    }
-
-    const controller =
-      new AbortController();
-
-    async function loadProfileData() {
-      const [
-        livesResult,
-        statsResult,
-      ] =
-        await Promise.allSettled(
-          [
-            getMyLives(
-              token!,
-              controller.signal,
-            ),
-
-            getMyProfileStats(
-              token!,
-              controller.signal,
-            ),
-          ],
-        );
-
-      if (
-        controller.signal
-          .aborted
-      ) {
-        return;
-      }
-
-      if (
-        livesResult.status ===
-        "fulfilled"
-      ) {
-        const videos =
-          livesResult.value.map(
-            (live) => {
-              let title =
-                live.title;
-
-              if (!title) {
-                title =
-                  "LIVE sin título";
-              }
-
-              let placeName =
-                live.placeName;
-
-              if (
-                !placeName
-              ) {
-                placeName =
-                  "Sin ubicación";
-              }
-
-              return {
-                id:
-                  live.id,
-
-                title,
-
-                placeName,
-
-                startedAt:
-                  live.startedAt,
-
-                endedAt:
-                  live.endedAt,
-
-                thumbnailUrl:
-                  live.thumbnailUrl,
-              };
-            },
-          );
-
-        setRealLives(
-          videos,
-        );
-      } else {
-        setRealLives([]);
-      }
-
-      if (
-        statsResult.status ===
-        "fulfilled"
-      ) {
-        setProfileStats(
-          statsResult.value,
-        );
-      } else {
-        setProfileStats(
-          null,
-        );
-      }
-    }
-
-    void loadProfileData();
-
-    return () => {
-      controller.abort();
-    };
-  }, [token]);
 
   const username =
     user?.username ||
@@ -326,10 +134,7 @@ export function ProfileScreen({
     nextUsername: string,
   ) {
     if (!user) {
-      setEditVisible(
-        false,
-      );
-
+      setEditVisible(false);
       return;
     }
 
@@ -339,12 +144,8 @@ export function ProfileScreen({
         .toLowerCase();
 
     if (!normalized) {
-      setEditVisible(
-        false,
-      );
-
+      setEditVisible(false);
       setError(null);
-
       return;
     }
 
@@ -352,35 +153,23 @@ export function ProfileScreen({
       normalized ===
       user.username
     ) {
-      setEditVisible(
-        false,
-      );
-
+      setEditVisible(false);
       setError(null);
-
       return;
     }
 
     try {
-      setIsSavingUsername(
-        true,
-      );
-
+      setIsSavingUsername(true);
       setError(null);
 
       await updateUsername(
         normalized,
       );
 
-      setEditVisible(
-        false,
-      );
-    } catch (
-      saveError
-    ) {
+      setEditVisible(false);
+    } catch (saveError) {
       if (
-        saveError instanceof
-        Error
+        saveError instanceof Error
       ) {
         setError(
           saveError.message,
@@ -391,9 +180,7 @@ export function ProfileScreen({
         );
       }
     } finally {
-      setIsSavingUsername(
-        false,
-      );
+      setIsSavingUsername(false);
     }
   }
 
@@ -405,132 +192,119 @@ export function ProfileScreen({
         image,
       );
 
-    return (
-      updatedUser.avatarUrl
-    );
+    return updatedUser.avatarUrl;
   }
 
   async function handleSaveProfile(
     value: {
-      displayName:
-        string;
-
-      avatarUrl:
-        | string
-        | null;
+      displayName: string;
+      avatarUrl: string | null;
     },
   ) {
-    await updateProfile(
-      value,
-    );
+    await updateProfile(value);
   }
 
   function openEditProfile() {
-    setSettingsVisible(
-      false,
-    );
-
+    setSettingsVisible(false);
     setError(null);
+    setEditVisible(true);
+  }
 
-    setEditVisible(
-      true,
+  function handleToggleHighlights() {
+    setHighlightsExpanded(
+      !highlightsExpanded,
     );
   }
 
-  return (
-    <View
-      style={
-        styles.container
-      }
-    >
-      <ScrollView
-        contentContainerStyle={
-          styles.content
+  const profileContent = (
+    <>
+      <ProfileTopBar
+        username={username}
+        unreadNotifications={
+          unreadNotifications
         }
-        showsVerticalScrollIndicator={
-          false
+        onPressNotifications={
+          onOpenNotifications
         }
-        keyboardShouldPersistTaps="handled"
+        onPressSettings={() => {
+          setSettingsVisible(
+            true,
+          );
+        }}
+      />
+
+      <ProfileHero
+        displayName={
+          mockDisplayName
+        }
+        username={username}
+        coverUrl={
+          mockAvatarUrl
+        }
+        description={
+          mockDescription
+        }
+        location={
+          mockLocation
+        }
+        verified
+        onPressEditProfile={
+          openEditProfile
+        }
+      />
+
+      <ProfileMockStats />
+
+      <View
+        style={
+          highlightsExpanded
+            ? styles.liveAreaExpanded
+            : styles.liveArea
+        }
       >
-        <ProfileTopBar
-          username={
-            username
-          }
-          unreadNotifications={
-            unreadNotifications
-          }
-          onPressNotifications={
-            onOpenNotifications
-          }
-          onPressSettings={() => {
-            setSettingsVisible(
-              true,
-            );
-          }}
-        />
+        <ProfileMockLatestLive />
+      </View>
 
-        <ProfileHero
-          displayName={
-            mockDisplayName
+      <View
+        style={
+          highlightsExpanded
+            ? styles.highlightsExpanded
+            : styles.highlightsFooter
+        }
+      >
+        <ProfileMockHighlights
+          expanded={
+            highlightsExpanded
           }
-          username={
-            username
-          }
-          coverUrl={
-            mockAvatarUrl
-          }
-          description={
-            mockDescription
-          }
-          location={
-            mockLocation
-          }
-          verified
-          onPressEditProfile={
-            openEditProfile
+          onPressViewAll={
+            handleToggleHighlights
           }
         />
+      </View>
+    </>
+  );
 
-        <ProfileStats
-          followers={
-            formatCompactNumber(
-              profileStats
-                ?.followers,
-            )
+  return (
+    <View style={styles.container}>
+      {highlightsExpanded && (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={
+            styles.expandedContent
           }
-          emissions={
-            formatCompactNumber(
-              profileStats
-                ?.emissions,
-            )
+          showsVerticalScrollIndicator={
+            false
           }
-          averageViewers={
-            formatCompactNumber(
-              profileStats
-                ?.averageViewers,
-            )
-          }
-        />
+        >
+          {profileContent}
+        </ScrollView>
+      )}
 
-        {realLives.length >
-        0 ? (
-          <>
-            <ProfileLatestLiveSection
-              video={
-                realLives[0]
-              }
-            />
-
-            <ProfileHighlightsSection
-              videos={
-                realLives.slice(
-                  1,
-                )
-              }
-            />
-          </>
-        ) : null}
-      </ScrollView>
+      {!highlightsExpanded && (
+        <View style={styles.content}>
+          {profileContent}
+        </View>
+      )}
 
       <ProfileSettingsPanel
         visible={
@@ -575,17 +349,13 @@ export function ProfileScreen({
         isSavingUsername={
           isSavingUsername
         }
-        error={
-          error
-        }
+        error={error}
         onClose={() => {
           setEditVisible(
             false,
           );
 
-          setError(
-            null,
-          );
+          setError(null);
         }}
         onSaveUsername={
           handleSaveUsername
@@ -620,35 +390,52 @@ export function ProfileScreen({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#06101A",
+  },
 
-      backgroundColor:
-        "#06101A",
-    },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: BOTTOM_NAV_SPACE,
+    backgroundColor: "#06101A",
+  },
 
-    content: {
-      width:
-        "100%",
+  scroll: {
+    flex: 1,
+  },
 
-      maxWidth:
-        560,
+  expandedContent: {
+    width: "100%",
+    maxWidth: 560,
+    alignSelf: "center",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom:
+      BOTTOM_NAV_SPACE + 20,
+    backgroundColor: "#06101A",
+  },
 
-      alignSelf:
-        "center",
+  liveArea: {
+    flex: 1,
+    minHeight: 0,
+  },
 
-      paddingHorizontal:
-        18,
+  liveAreaExpanded: {
+    height: 245,
+  },
 
-      paddingTop:
-        12,
+  highlightsFooter: {
+    flexShrink: 0,
+  },
 
-      paddingBottom:
-        140,
-
-      backgroundColor:
-        "#06101A",
-    },
-  });
+  highlightsExpanded: {
+    flexShrink: 0,
+  },
+});

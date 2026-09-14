@@ -1,4 +1,4 @@
-// src/components/search/result-card/LiveSearchCard.tsx
+// src/components/search/result-card/ReplaySearchCard.tsx
 
 import {
   Image,
@@ -14,7 +14,6 @@ import type {
   SearchContent,
 } from "../../../api/searchApi";
 
-import { LiveMetrics } from "./LiveMetrics";
 import { LiveThumbnail } from "./LiveThumbnail";
 import { styles } from "./searchResultCard.styles";
 
@@ -34,10 +33,10 @@ function getTitle(
     return content.eventName;
   }
 
-  return "En directo";
+  return "Replay";
 }
 
-export function LiveSearchCard({
+export function ReplaySearchCard({
   content,
   onPress,
 }: Props) {
@@ -65,15 +64,6 @@ export function LiveSearchCard({
         ]}
         pointerEvents="none"
         style={StyleSheet.absoluteFill}
-      />
-
-      <LiveMetrics
-        likeCount={
-          content.likeCount
-        }
-        viewerCount={
-          content.viewerCount
-        }
       />
 
       <View style={styles.liveInfo}>

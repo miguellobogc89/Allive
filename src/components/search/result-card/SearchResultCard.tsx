@@ -1,17 +1,18 @@
 // src/components/search/result-card/SearchResultCard.tsx
 
 import type {
-  SearchLive,
+  SearchContent,
   SearchUser,
 } from "../../../api/searchApi";
 
 import { LiveSearchCard } from "./LiveSearchCard";
 import { PersonSearchCard } from "./PersonSearchCard";
+import { ReplaySearchCard } from "./ReplaySearchCard";
 
 type Props =
   | {
-      type: "live";
-      live: SearchLive;
+      type: "content";
+      content: SearchContent;
       onPress?: () => void;
     }
   | {
@@ -23,18 +24,30 @@ type Props =
 export function SearchResultCard(
   props: Props,
 ) {
-  if (props.type === "live") {
+  if (props.type === "user") {
+    return (
+      <PersonSearchCard
+        user={props.user}
+        onPress={props.onPress}
+      />
+    );
+  }
+
+  if (
+    props.content.contentType ===
+    "live"
+  ) {
     return (
       <LiveSearchCard
-        live={props.live}
+        content={props.content}
         onPress={props.onPress}
       />
     );
   }
 
   return (
-    <PersonSearchCard
-      user={props.user}
+    <ReplaySearchCard
+      content={props.content}
       onPress={props.onPress}
     />
   );

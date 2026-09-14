@@ -31,7 +31,7 @@ export function ProfileStats({
       <ProfileStatCard
         icon="time-outline"
         value={emissions}
-        label="Emisiones"
+        label="Directos"
       />
 
       <ProfileStatCard

@@ -79,13 +79,6 @@ export type SearchContent = {
   creator: SearchUser;
 };
 
-/*
- * Alias temporal para no romper
- * las tarjetas existentes.
- */
-export type SearchLive =
-  SearchContent;
-
 export type SearchResponse = {
   query: string;
 
