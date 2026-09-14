@@ -7,6 +7,7 @@ export { iconSizes } from "./icons";
 export { layout } from "./layout";
 export { radius } from "./radius";
 export { spacing } from "./spacing";
+export { surfaces } from "./surfaces";
 export { tokens } from "./tokens";
 export {
   appFontFamily,
