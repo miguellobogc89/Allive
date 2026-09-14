@@ -1,6 +1,8 @@
 // src/api/profileApi.ts
 
-import { API_URL } from "./apiConfig";
+import {
+  API_URL,
+} from "./apiConfig";
 
 export type ProfileLive = {
   id: string;
@@ -11,7 +13,15 @@ export type ProfileLive = {
   thumbnailUrl: string | null;
 };
 
-export class ProfileApiError extends Error {
+export type ProfileStatsData = {
+  hoursLive: number;
+  community: number;
+  totalViews: number | null;
+  liveScore: number | null;
+};
+
+export class ProfileApiError
+  extends Error {
   status: number;
 
   constructor(
@@ -20,49 +30,100 @@ export class ProfileApiError extends Error {
   ) {
     super(message);
 
-    this.name = "ProfileApiError";
+    this.name =
+      "ProfileApiError";
+
     this.status = status;
   }
+}
+
+async function readProfileApiError(
+  response: Response,
+  fallback: string,
+): Promise<never> {
+  let message = fallback;
+
+  try {
+    const body =
+      (await response.json()) as {
+        error?: string;
+      };
+
+    if (body.error) {
+      message = body.error;
+    }
+  } catch {
+    // Respuesta sin JSON válido.
+  }
+
+  throw new ProfileApiError(
+    message,
+    response.status,
+  );
 }
 
 export async function getMyLives(
   token: string,
   signal?: AbortSignal,
 ): Promise<ProfileLive[]> {
-  const response = await fetch(
-    `${API_URL}/api/lives/mine`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
+  const response =
+    await fetch(
+      `${API_URL}/api/profile/me/lives`,
+      {
+        method: "GET",
+
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        signal,
       },
-      signal,
-    },
-  );
+    );
 
   if (!response.ok) {
-    let message =
-      "No se pudieron obtener tus emisiones";
-
-    try {
-      const body = (await response.json()) as {
-        error?: string;
-      };
-
-      if (body.error) {
-        message = body.error;
-      }
-    } catch {
-      // La respuesta no contiene JSON válido.
-    }
-
-    throw new ProfileApiError(
-      message,
-      response.status,
+    await readProfileApiError(
+      response,
+      "No se pudieron obtener tus emisiones",
     );
   }
 
-  return response.json() as Promise<
-    ProfileLive[]
-  >;
+  return (
+    response.json() as Promise<
+      ProfileLive[]
+    >
+  );
+}
+
+export async function getMyProfileStats(
+  token: string,
+  signal?: AbortSignal,
+): Promise<ProfileStatsData> {
+  const response =
+    await fetch(
+      `${API_URL}/api/profile/me/stats`,
+      {
+        method: "GET",
+
+        headers: {
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        signal,
+      },
+    );
+
+  if (!response.ok) {
+    await readProfileApiError(
+      response,
+      "No se pudieron obtener las estadísticas del perfil",
+    );
+  }
+
+  return (
+    response.json() as Promise<
+      ProfileStatsData
+    >
+  );
 }

@@ -5,14 +5,21 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
-import { getMyLives } from "../api/profileApi";
-import { useAuth } from "../auth/AuthContext";
+import {
+  getMyLives,
+  getMyProfileStats,
+  type ProfileStatsData,
+} from "../api/profileApi";
+
+import {
+  useAuth,
+} from "../auth/AuthContext";
 
 import {
   ProfileEditPanel,
@@ -28,85 +35,81 @@ import {
 const MOCK_DESCRIPTION =
   "Vivo el presente, grabo lo real. Gente bonita, planes locos y buenas vibras.";
 
-const MOCK_LOCATION = "Sevilla, España";
-
-const MOCK_VIDEOS: ProfileVideoItem[] = [
-  {
-    id: "mock-1",
-    title: "Atardeceres que sanan",
-    placeName: "Madrid",
-    startedAt: new Date(
-      Date.now() - 2 * 60 * 60 * 1000,
-    ).toISOString(),
-    endedAt: new Date(
-      Date.now() - 90 * 60 * 1000,
-    ).toISOString(),
-    thumbnailUrl: null,
-    viewerCount: 412000,
-    isMock: true,
-  },
-  {
-    id: "mock-2",
-    title: "Mi equipo",
-    placeName: "Sevilla",
-    startedAt: new Date(
-      Date.now() - 5 * 60 * 60 * 1000,
-    ).toISOString(),
-    endedAt: new Date(
-      Date.now() - 4 * 60 * 60 * 1000,
-    ).toISOString(),
-    thumbnailUrl: null,
-    viewerCount: 287000,
-    isMock: true,
-  },
-  {
-    id: "mock-3",
-    title: "Workout & mindset",
-    placeName: "Sevilla",
-    startedAt: new Date(
-      Date.now() - 8 * 60 * 60 * 1000,
-    ).toISOString(),
-    endedAt: new Date(
-      Date.now() - 7 * 60 * 60 * 1000,
-    ).toISOString(),
-    thumbnailUrl: null,
-    viewerCount: 180000,
-    isMock: true,
-  },
-  {
-    id: "mock-4",
-    title: "Noche en Madrid",
-    placeName: "Madrid",
-    startedAt: new Date(
-      Date.now() - 12 * 60 * 60 * 1000,
-    ).toISOString(),
-    endedAt: new Date(
-      Date.now() - 11 * 60 * 60 * 1000,
-    ).toISOString(),
-    thumbnailUrl: null,
-    viewerCount: 310000,
-    isMock: true,
-  },
-  {
-    id: "mock-5",
-    title: "Q&A real",
-    placeName: "Sevilla",
-    startedAt: new Date(
-      Date.now() - 18 * 60 * 60 * 1000,
-    ).toISOString(),
-    endedAt: new Date(
-      Date.now() - 17 * 60 * 60 * 1000,
-    ).toISOString(),
-    thumbnailUrl: null,
-    viewerCount: 220000,
-    isMock: true,
-  },
-];
+const MOCK_LOCATION =
+  "Sevilla, España";
 
 type Props = {
   unreadNotifications?: number;
   onOpenNotifications?: () => void;
 };
+
+function formatHours(
+  value:
+    | number
+    | null
+    | undefined,
+) {
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value)
+  ) {
+    return "—";
+  }
+
+  if (value < 10) {
+    return value
+      .toFixed(1)
+      .replace(".", ",");
+  }
+
+  return Math.round(
+    value,
+  ).toString();
+}
+
+function formatCompactNumber(
+  value:
+    | number
+    | null
+    | undefined,
+) {
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value)
+  ) {
+    return "—";
+  }
+
+  if (value >= 1_000_000) {
+    const formatted =
+      (value / 1_000_000)
+        .toFixed(1)
+        .replace(".", ",");
+
+    return `${
+      formatted.replace(
+        ",0",
+        "",
+      )
+    }M`;
+  }
+
+  if (value >= 1_000) {
+    const formatted =
+      (value / 1_000)
+        .toFixed(1)
+        .replace(".", ",");
+
+    return `${
+      formatted.replace(
+        ",0",
+        "",
+      )
+    }K`;
+  }
+
+  return value.toString();
+}
 
 export function ProfileScreen({
   unreadNotifications = 0,
@@ -121,8 +124,20 @@ export function ProfileScreen({
     logout,
   } = useAuth();
 
-  const [realLives, setRealLives] =
-    useState<ProfileVideoItem[]>([]);
+  const [
+    realLives,
+    setRealLives,
+  ] = useState<
+    ProfileVideoItem[]
+  >([]);
+
+  const [
+    profileStats,
+    setProfileStats,
+  ] =
+    useState<
+      ProfileStatsData | null
+    >(null);
 
   const [
     settingsVisible,
@@ -139,8 +154,13 @@ export function ProfileScreen({
     setIsSavingUsername,
   ] = useState(false);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
   const [
     mockDisplayName,
@@ -154,19 +174,25 @@ export function ProfileScreen({
   const [
     mockDescription,
     setMockDescription,
-  ] = useState(MOCK_DESCRIPTION);
+  ] = useState(
+    MOCK_DESCRIPTION,
+  );
 
   const [
     mockLocation,
     setMockLocation,
-  ] = useState(MOCK_LOCATION);
+  ] = useState(
+    MOCK_LOCATION,
+  );
 
   const [
     mockAvatarUrl,
     setMockAvatarUrl,
-  ] = useState<string | null>(
-    user?.avatarUrl ?? null,
-  );
+  ] =
+    useState<string | null>(
+      user?.avatarUrl ??
+        null,
+    );
 
   useEffect(() => {
     setMockDisplayName(
@@ -176,7 +202,8 @@ export function ProfileScreen({
     );
 
     setMockAvatarUrl(
-      user?.avatarUrl ?? null,
+      user?.avatarUrl ??
+        null,
     );
   }, [
     user?.displayName,
@@ -184,79 +211,112 @@ export function ProfileScreen({
     user?.avatarUrl,
   ]);
 
+  /*
+   * Carga independiente de
+   * emisiones + estadísticas.
+   *
+   * Si una falla, no rompe
+   * la otra ni la pantalla.
+   */
   useEffect(() => {
     if (!token) {
       setRealLives([]);
+      setProfileStats(null);
       return;
     }
 
     const controller =
       new AbortController();
 
-    async function loadLives() {
-      try {
-        const result =
-          await getMyLives(
+    async function loadProfileData() {
+      const [
+        livesResult,
+        statsResult,
+      ] =
+        await Promise.allSettled([
+          getMyLives(
             token!,
             controller.signal,
-          );
+          ),
 
+          getMyProfileStats(
+            token!,
+            controller.signal,
+          ),
+        ]);
+
+      if (
+        controller.signal
+          .aborted
+      ) {
+        return;
+      }
+
+      if (
+        livesResult.status ===
+        "fulfilled"
+      ) {
         setRealLives(
-          result.map((live) => ({
-            id: live.id,
-            title:
-              live.title ||
-              "LIVE sin título",
-            placeName:
-              live.placeName ||
-              "Sin ubicación",
-            startedAt:
-              live.startedAt,
-            endedAt:
-              live.endedAt,
-            thumbnailUrl:
-              live.thumbnailUrl,
-          })),
+          livesResult.value.map(
+            (live) => ({
+              id:
+                live.id,
+
+              title:
+                live.title ||
+                "LIVE sin título",
+
+              placeName:
+                live.placeName ||
+                "Sin ubicación",
+
+              startedAt:
+                live.startedAt,
+
+              endedAt:
+                live.endedAt,
+
+              thumbnailUrl:
+                live.thumbnailUrl,
+            }),
+          ),
         );
-      } catch (loadError) {
-        if (
-          loadError instanceof Error &&
-          loadError.name === "AbortError"
-        ) {
-          return;
-        }
+      } else {
+        console.error(
+          "Error cargando emisiones del perfil:",
+          livesResult.reason,
+        );
 
         setRealLives([]);
       }
+
+      if (
+        statsResult.status ===
+        "fulfilled"
+      ) {
+        setProfileStats(
+          statsResult.value,
+        );
+      } else {
+        console.error(
+          "Error cargando estadísticas del perfil:",
+          statsResult.reason,
+        );
+
+        setProfileStats(null);
+      }
     }
 
-    void loadLives();
+    void loadProfileData();
 
     return () => {
       controller.abort();
     };
   }, [token]);
 
-  const videos = useMemo(() => {
-    if (realLives.length === 0) {
-      return MOCK_VIDEOS;
-    }
-
-    if (realLives.length >= 5) {
-      return realLives;
-    }
-
-    return [
-      ...realLives,
-      ...MOCK_VIDEOS.slice(
-        0,
-        5 - realLives.length,
-      ),
-    ];
-  }, [realLives]);
-
   const username =
-    user?.username || "invitado";
+    user?.username ||
+    "invitado";
 
   async function handleSaveUsername(
     nextUsername: string,
@@ -273,7 +333,8 @@ export function ProfileScreen({
 
     if (
       !normalized ||
-      normalized === user.username
+      normalized ===
+        user.username
     ) {
       setEditVisible(false);
       setError(null);
@@ -281,7 +342,10 @@ export function ProfileScreen({
     }
 
     try {
-      setIsSavingUsername(true);
+      setIsSavingUsername(
+        true,
+      );
+
       setError(null);
 
       await updateUsername(
@@ -291,12 +355,15 @@ export function ProfileScreen({
       setEditVisible(false);
     } catch (saveError) {
       setError(
-        saveError instanceof Error
+        saveError
+          instanceof Error
           ? saveError.message
           : "No se pudo actualizar el perfil",
       );
     } finally {
-      setIsSavingUsername(false);
+      setIsSavingUsername(
+        false,
+      );
     }
   }
 
@@ -304,16 +371,26 @@ export function ProfileScreen({
     image: Blob,
   ) {
     const updatedUser =
-      await uploadAvatar(image);
+      await uploadAvatar(
+        image,
+      );
 
-    return updatedUser.avatarUrl;
+    return (
+      updatedUser.avatarUrl
+    );
   }
 
-  async function handleSaveProfile(value: {
-    displayName: string;
-    avatarUrl: string | null;
-  }) {
-    await updateProfile(value);
+  async function handleSaveProfile(
+    value: {
+      displayName: string;
+      avatarUrl:
+        | string
+        | null;
+    },
+  ) {
+    await updateProfile(
+      value,
+    );
   }
 
   function openEditProfile() {
@@ -323,7 +400,11 @@ export function ProfileScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={
+        styles.container
+      }
+    >
       <ScrollView
         contentContainerStyle={
           styles.content
@@ -334,7 +415,9 @@ export function ProfileScreen({
         keyboardShouldPersistTaps="handled"
       >
         <ProfileTopBar
-          username={username}
+          username={
+            username
+          }
           unreadNotifications={
             unreadNotifications
           }
@@ -342,7 +425,9 @@ export function ProfileScreen({
             onOpenNotifications
           }
           onPressSettings={() => {
-            setSettingsVisible(true);
+            setSettingsVisible(
+              true,
+            );
           }}
         />
 
@@ -350,7 +435,9 @@ export function ProfileScreen({
           displayName={
             mockDisplayName
           }
-          username={username}
+          username={
+            username
+          }
           coverUrl={
             mockAvatarUrl
           }
@@ -367,19 +454,56 @@ export function ProfileScreen({
         />
 
         <ProfileStats
-          hoursLive="320"
-          community="12,4K"
-          totalViews="1,2M"
-          liveScore="8,4"
+          hoursLive={
+            formatHours(
+              profileStats
+                ?.hoursLive,
+            )
+          }
+          community={
+            formatCompactNumber(
+              profileStats
+                ?.community,
+            )
+          }
+          totalViews={
+            formatCompactNumber(
+              profileStats
+                ?.totalViews,
+            )
+          }
+          liveScore={
+            typeof profileStats
+              ?.liveScore ===
+            "number"
+              ? profileStats.liveScore
+                  .toFixed(1)
+                  .replace(
+                    ".",
+                    ",",
+                  )
+              : "—"
+          }
         />
 
-        <ProfileLatestLiveSection
-          video={videos[0]}
-        />
+        {realLives.length >
+        0 ? (
+          <>
+            <ProfileLatestLiveSection
+              video={
+                realLives[0]
+              }
+            />
 
-<ProfileHighlightsSection
-  videos={videos.slice(1)}
-/>
+            <ProfileHighlightsSection
+              videos={
+                realLives.slice(
+                  1,
+                )
+              }
+            />
+          </>
+        ) : null}
       </ScrollView>
 
       <ProfileSettingsPanel
@@ -387,20 +511,29 @@ export function ProfileScreen({
           settingsVisible
         }
         onClose={() => {
-          setSettingsVisible(false);
+          setSettingsVisible(
+            false,
+          );
         }}
         onEditProfile={
           openEditProfile
         }
         onLogout={() => {
-          setSettingsVisible(false);
+          setSettingsVisible(
+            false,
+          );
+
           void logout();
         }}
       />
 
       <ProfileEditPanel
-        visible={editVisible}
-        username={username}
+        visible={
+          editVisible
+        }
+        username={
+          username
+        }
         displayName={
           mockDisplayName
         }
@@ -416,9 +549,14 @@ export function ProfileScreen({
         isSavingUsername={
           isSavingUsername
         }
-        error={error}
+        error={
+          error
+        }
         onClose={() => {
-          setEditVisible(false);
+          setEditVisible(
+            false,
+          );
+
           setError(null);
         }}
         onSaveUsername={
@@ -436,12 +574,15 @@ export function ProfileScreen({
           setMockDisplayName(
             value.displayName,
           );
+
           setMockDescription(
             value.description,
           );
+
           setMockLocation(
             value.location,
           );
+
           setMockAvatarUrl(
             value.avatarUrl,
           );
@@ -451,21 +592,29 @@ export function ProfileScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#06101A",
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#06101A",
+    },
 
-  content: {
-    width: "100%",
-    maxWidth: 560,
-    alignSelf: "center",
+    content: {
+      width: "100%",
+      maxWidth: 560,
+      alignSelf:
+        "center",
 
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 140,
+      paddingHorizontal:
+        18,
 
-    backgroundColor: "#06101A",
-  },
-});
+      paddingTop: 12,
+
+      paddingBottom:
+        140,
+
+      backgroundColor:
+        "#06101A",
+    },
+  });
