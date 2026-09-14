@@ -2,6 +2,7 @@
 
 import type {
   ReactNode,
+  RefObject,
 } from "react";
 
 import {
@@ -27,18 +28,22 @@ type LiquidSurfaceProps = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: "dark" | "light";
+  blurTarget?: RefObject<View | null>;
 };
 
 export function LiquidSurface({
   children,
   style,
   variant = "dark",
+  blurTarget,
 }: LiquidSurfaceProps) {
   const isDark =
     variant === "dark";
 
   return (
     <BlurView
+      blurTarget={blurTarget}
+      blurMethod="dimezisBlurView"
       intensity={
         isDark
           ? 55
@@ -49,7 +54,6 @@ export function LiquidSurface({
           ? "dark"
           : "light"
       }
-      experimentalBlurMethod="dimezisBlurView"
       style={[
         isDark
           ? surfaces.liquidDark

@@ -16,6 +16,10 @@ import {
 } from "react-native";
 
 import {
+  BlurTargetView,
+} from "expo-blur";
+
+import {
   SafeAreaProvider,
   SafeAreaView,
 } from "react-native-safe-area-context";
@@ -120,6 +124,9 @@ function AppContent() {
 
     goBack,
   } = useAppNavigation();
+
+  const blurTargetRef =
+  useRef<View | null>(null);
 
   const [
     unreadNotifications,
@@ -541,21 +548,23 @@ function AppContent() {
         "top",
       ]}
     >
-      <View
-        style={
-          styles.content
-        }
-      >
-        {renderScreen()}
-      </View>
+<BlurTargetView
+  ref={blurTargetRef}
+  style={
+    styles.content
+  }
+>
+  {renderScreen()}
+</BlurTargetView>
 
       {activeTab ===
         "emit" &&
       emitIsLive ? null : (
-        <BottomNav
-          activeTab={
-            activeTab
-          }
+<BottomNav
+  blurTarget={blurTargetRef}
+  activeTab={
+    activeTab
+  }
           onTabPress={
             changeTab
           }

@@ -1,22 +1,55 @@
 // src/components/navigation/BottomNav/BottomNav.tsx
 
-import { View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { type AppTab } from "../../../navigation/navigation.types";
-import { spacing } from "../../../styles";
-import { LiquidSurface } from "../../ui/LiquidSurface";
-import { bottomNavItems } from "./bottomNav.config";
-import { BottomNavEmit } from "./BottomNavEmit";
-import { BottomNavTab } from "./BottomNavTab";
-import { styles } from "./bottomNav.styles";
+import type {
+  RefObject,
+} from "react";
+
+import {
+  View,
+} from "react-native";
+
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+import {
+  type AppTab,
+} from "../../../navigation/navigation.types";
+
+import {
+  spacing,
+} from "../../../styles";
+
+import {
+  LiquidSurface,
+} from "../../ui/LiquidSurface";
+
+import {
+  bottomNavItems,
+} from "./bottomNav.config";
+
+import {
+  BottomNavEmit,
+} from "./BottomNavEmit";
+
+import {
+  BottomNavTab,
+} from "./BottomNavTab";
+
+import {
+  styles,
+} from "./bottomNav.styles";
 
 type BottomNavProps = {
   activeTab: AppTab;
-  onTabPress: (tab: AppTab) => void;
+  onTabPress: (
+    tab: AppTab,
+  ) => void;
   emitCanStart?: boolean;
   emitIsConnecting?: boolean;
   onEmitStart?: () => void;
   compact?: boolean;
+  blurTarget?: RefObject<View | null>;
 };
 
 export function BottomNav({
@@ -26,6 +59,7 @@ export function BottomNav({
   emitIsConnecting = false,
   onEmitStart,
   compact = false,
+  blurTarget,
 }: BottomNavProps) {
   const insets =
     useSafeAreaInsets();
@@ -55,6 +89,7 @@ export function BottomNav({
     >
       <LiquidSurface
         variant="dark"
+        blurTarget={blurTarget}
         style={[
           styles.pill,
           compact &&
