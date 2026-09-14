@@ -7,25 +7,54 @@ import {
   Text,
   View,
 } from "react-native";
+import {
+  useState,
+} from "react";
 
 import type { ProfileVideoItem } from "../profileTypes";
 import { ProfileHighlightCard } from "./ProfileHighlightCard";
 
 type Props = {
   videos: ProfileVideoItem[];
-  onPressViewAll?: () => void;
 };
 
 export function ProfileHighlightsSection({
   videos,
-  onPressViewAll,
 }: Props) {
+  const [
+    expanded,
+    setExpanded,
+  ] = useState(false);
+
   if (videos.length === 0) {
     return null;
   }
 
-  const visibleVideos = videos.slice(0, 3);
-  const canViewAll = videos.length > 3;
+  let visibleVideos =
+    videos.slice(0, 3);
+
+  if (expanded) {
+    visibleVideos = videos;
+  }
+
+  const canExpand =
+    videos.length > 3;
+
+  let actionText =
+    "Ver todos";
+
+  let actionIcon:
+    "chevron-down" |
+    "chevron-up" =
+      "chevron-down";
+
+  if (expanded) {
+    actionText =
+      "Ver menos";
+
+    actionIcon =
+      "chevron-up";
+  }
 
   return (
     <View style={styles.section}>
@@ -34,55 +63,47 @@ export function ProfileHighlightsSection({
           Momentos destacados
         </Text>
 
-        <Pressable
-          disabled={!canViewAll}
-          onPress={
-            canViewAll
-              ? onPressViewAll
-              : undefined
-          }
-          style={({ pressed }) => [
-            styles.action,
-            !canViewAll &&
-              styles.actionDisabled,
-            pressed &&
-              canViewAll &&
-              styles.actionPressed,
-          ]}
-        >
-          <Text
-            style={[
-              styles.actionText,
-              !canViewAll &&
-                styles.actionTextDisabled,
+        {canExpand && (
+          <Pressable
+            onPress={() => {
+              setExpanded(
+                !expanded,
+              );
+            }}
+            style={({ pressed }) => [
+              styles.action,
+              pressed &&
+                styles.actionPressed,
             ]}
           >
-            Ver todos
-          </Text>
+            <Text
+              style={styles.actionText}
+            >
+              {actionText}
+            </Text>
 
-          <Ionicons
-            name="chevron-forward"
-            size={12}
-            color={
-              canViewAll
-                ? "#38AFFF"
-                : "#526171"
-            }
-          />
-        </Pressable>
+            <Ionicons
+              name={actionIcon}
+              size={12}
+              color="#38AFFF"
+            />
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.grid}>
-        {visibleVideos.map((video) => (
-          <View
-            key={video.id}
-            style={styles.gridItem}
-          >
-            <ProfileHighlightCard
-              video={video}
-            />
-          </View>
-        ))}
+        {visibleVideos.map(
+          (video) => (
+            <View
+              key={video.id}
+              style={styles.gridItem}
+            >
+              <ProfileHighlightCard
+                video={video}
+              />
+            </View>
+          ),
+        )}
       </View>
     </View>
   );
@@ -95,30 +116,23 @@ const styles = StyleSheet.create({
 
   header: {
     marginBottom: 7,
-
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
   },
 
   heading: {
     color: "#FFFFFF",
-
     fontSize: 14,
     lineHeight: 17,
-
     fontWeight: "800",
   },
 
   action: {
     flexDirection: "row",
     alignItems: "center",
-
     gap: 2,
-  },
-
-  actionDisabled: {
-    opacity: 0.55,
   },
 
   actionPressed: {
@@ -127,26 +141,18 @@ const styles = StyleSheet.create({
 
   actionText: {
     color: "#38AFFF",
-
     fontSize: 9,
-
     fontWeight: "600",
-  },
-
-  actionTextDisabled: {
-    color: "#526171",
   },
 
   grid: {
     width: "100%",
-
     flexDirection: "row",
-
+    flexWrap: "wrap",
     gap: 8,
   },
 
   gridItem: {
-    flex: 1,
-    maxWidth: "33.333%",
+    width: "31.8%",
   },
 });

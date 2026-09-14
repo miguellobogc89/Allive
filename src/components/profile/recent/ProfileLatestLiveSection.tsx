@@ -1,8 +1,6 @@
 // src/components/profile/recent/ProfileLatestLiveSection.tsx
 
-import { Ionicons } from "@expo/vector-icons";
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -30,17 +28,6 @@ export function ProfileLatestLiveSection({
         <Text style={styles.heading}>
           {title}
         </Text>
-
-        <Pressable style={styles.action}>
-          <Text style={styles.actionText}>
-            Ver todos
-          </Text>
-          <Ionicons
-            name="chevron-forward"
-            size={13}
-            color="#C7D4E2"
-          />
-        </Pressable>
       </View>
 
       <LatestLiveCard video={video} />
@@ -55,26 +42,11 @@ const styles = StyleSheet.create({
 
   header: {
     marginBottom: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
 
   heading: {
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "900",
-  },
-
-  action: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-
-  actionText: {
-    color: "#C7D4E2",
-    fontSize: 10,
-    fontWeight: "600",
   },
 });

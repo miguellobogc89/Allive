@@ -18,8 +18,6 @@ export {
   ProfileStats,
 } from "./stats";
 
-export { ProfileNowSection } from "./now";
-
 export {
   LatestLiveCard,
   ProfileLatestLiveSection,
