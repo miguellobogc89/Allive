@@ -446,7 +446,14 @@ function AppContent() {
       activeTab === "map"
     ) {
       return (
-        <MapScreen />
+        <MapScreen
+          onOpenLive={
+            openLive
+          }
+          onOpenReplay={
+            openReplay
+          }
+        />
       );
     }
 

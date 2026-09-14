@@ -1,61 +1,93 @@
 // src/maps/components/MapActivityPulse.web.tsx
 
-import { useEffect, useRef } from "react";
+import {
+  useEffect,
+  useRef,
+} from "react";
 
 import type {
   LeafletGlobal,
   LeafletMap,
   LeafletMarker,
 } from "../web/leafletTypes";
-import type { MappedLive } from "../types/mapTypes";
+
+import type {
+  MapContentGroup,
+} from "../types/mapTypes";
 
 type MapActivityPulseProps = {
   leaflet: LeafletGlobal | null;
   map: LeafletMap | null;
-  live: MappedLive;
-  onPress: (live: MappedLive) => void;
+  group: MapContentGroup;
+  onPress: (
+    group: MapContentGroup,
+  ) => void;
 };
 
 export function MapActivityPulse({
   leaflet,
   map,
-  live,
+  group,
   onPress,
 }: MapActivityPulseProps) {
-  const markerRef = useRef<LeafletMarker | null>(null);
+  const markerRef =
+    useRef<LeafletMarker | null>(
+      null,
+    );
 
   useEffect(() => {
     if (!leaflet || !map) {
       return;
     }
 
-    const icon = leaflet.divIcon({
-      className: "allive-map-pulse-icon",
-      html: '<div class="allive-map-pulse"></div>',
-      iconSize: [34, 34],
-      iconAnchor: [17, 17],
-    });
+    const hasLive =
+      group.items.some(
+        (item) =>
+          item.kind === "live",
+      );
 
-    const marker = leaflet
-      .marker(
-        [live.latitude, live.longitude],
-        { icon },
-      )
-      .addTo(map)
-      .on("click", () => onPress(live));
+    const icon =
+      leaflet.divIcon({
+        className:
+          "allive-map-content-icon",
+        html:
+          `<div class="allive-map-content-marker ${
+            hasLive
+              ? "is-live"
+              : "is-replay"
+          }">${group.items.length}</div>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
+      });
 
-    markerRef.current = marker;
+    const marker =
+      leaflet
+        .marker(
+          [
+            group.latitude,
+            group.longitude,
+          ],
+          {
+            icon,
+          },
+        )
+        .addTo(map)
+        .on("click", () =>
+          onPress(group),
+        );
+
+    markerRef.current =
+      marker;
 
     return () => {
       marker.remove();
-      markerRef.current = null;
+      markerRef.current =
+        null;
     };
   }, [
     leaflet,
     map,
-    live.id,
-    live.latitude,
-    live.longitude,
+    group,
     onPress,
   ]);
 

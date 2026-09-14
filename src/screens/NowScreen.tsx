@@ -253,7 +253,28 @@ export function NowScreen({
             styles.section
           }
         >
-          <NowMapSection />
+          <NowMapSection
+            onOpenLive={(
+              liveId,
+            ) => {
+              setSelectedLiveId(
+                liveId,
+              );
+              setSelectedReplayId(
+                null,
+              );
+            }}
+            onOpenReplay={(
+              replayId,
+            ) => {
+              setSelectedReplayId(
+                replayId,
+              );
+              setSelectedLiveId(
+                null,
+              );
+            }}
+          />
         </View>
       ) : followingLoading ? (
         <View

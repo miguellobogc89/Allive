@@ -4,8 +4,23 @@ import {
   MapScreen,
 } from "../../maps/MapScreen.web";
 
-export function NowMapSection() {
+type NowMapSectionProps = {
+  onOpenLive?: (
+    liveId: string,
+  ) => void;
+  onOpenReplay?: (
+    replayId: string,
+  ) => void;
+};
+
+export function NowMapSection({
+  onOpenLive,
+  onOpenReplay,
+}: NowMapSectionProps) {
   return (
-    <MapScreen />
+    <MapScreen
+      onOpenLive={onOpenLive}
+      onOpenReplay={onOpenReplay}
+    />
   );
 }

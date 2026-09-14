@@ -1,60 +1,178 @@
 // src/maps/MapScreen.native.tsx
 
-import { useCallback, useState } from "react";
-import { View } from "react-native";
+import {
+  useCallback,
+  useState,
+} from "react";
 
-import { MapControls } from "./components/MapControls";
-import { MapIndicators } from "./components/MapIndicators";
-import { MapLivePreview } from "./components/MapLivePreview";
-import { MapStatus } from "./components/MapStatus";
-import { MapSurface } from "./components/MapSurface.native";
-import { useMapLives } from "./hooks/useMapLives";
-import { mapStyles } from "./styles/mapStyles";
-import type { MappedLive } from "./types/mapTypes";
+import {
+  View,
+} from "react-native";
 
-export function MapScreen() {
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+import {
+  MapContentCarousel,
+} from "./components/MapContentCarousel";
+
+import {
+  MapControls,
+} from "./components/MapControls";
+
+import {
+  MapIndicators,
+} from "./components/MapIndicators";
+
+import {
+  MapStatus,
+} from "./components/MapStatus";
+
+import {
+  MapSurface,
+} from "./components/MapSurface.native";
+
+import {
+  useMapContent,
+} from "./hooks/useMapContent";
+
+import {
+  mapStyles,
+} from "./styles/mapStyles";
+
+import type {
+  MapContentGroup,
+  MapContentItem,
+} from "./types/mapTypes";
+
+type MapScreenProps = {
+  onOpenLive?: (
+    liveId: string,
+  ) => void;
+  onOpenReplay?: (
+    replayId: string,
+  ) => void;
+};
+
+export function MapScreen({
+  onOpenLive,
+  onOpenReplay,
+}: MapScreenProps) {
+  const insets =
+    useSafeAreaInsets();
+
   const {
-    lives,
-    mappedLives,
+    liveCount,
+    replayCount,
+    itemCount,
+    groups,
     isLoading,
     error,
     refresh,
-  } = useMapLives();
+  } = useMapContent();
 
-  const [selectedLive, setSelectedLive] =
-    useState<MappedLive | null>(null);
+  const [
+    selectedGroupId,
+    setSelectedGroupId,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
-  const handleLivePress = useCallback((live: MappedLive) => {
-    setSelectedLive(live);
-  }, []);
+  const selectedGroup =
+    groups.find(
+      (group) =>
+        group.id ===
+        selectedGroupId,
+    ) ?? null;
+
+  const handleGroupPress =
+    useCallback(
+      (
+        group: MapContentGroup,
+      ) => {
+        setSelectedGroupId(
+          group.id,
+        );
+      },
+      [],
+    );
+
+  const handleOpenItem =
+    useCallback(
+      (
+        item: MapContentItem,
+      ) => {
+        if (item.kind === "live") {
+          onOpenLive?.(item.id);
+          return;
+        }
+
+        onOpenReplay?.(item.id);
+      },
+      [
+        onOpenLive,
+        onOpenReplay,
+      ],
+    );
 
   return (
     <View style={mapStyles.screen}>
       <MapSurface
-        lives={mappedLives}
-        onLivePress={handleLivePress}
+        groups={groups}
+        onGroupPress={
+          handleGroupPress
+        }
       />
 
       <View style={mapStyles.header}>
         <MapIndicators
-          activeCount={lives.length}
-          mappedCount={mappedLives.length}
+          liveCount={liveCount}
+          replayCount={
+            replayCount
+          }
+          mappedCount={
+            itemCount
+          }
         />
 
-        <MapControls onRefresh={() => void refresh()} />
+        <MapControls
+          onRefresh={() =>
+            void refresh()
+          }
+        />
       </View>
 
       <MapStatus
         isLoading={isLoading}
         error={error}
-        isEmpty={!isLoading && mappedLives.length === 0}
+        isEmpty={
+          !isLoading &&
+          itemCount === 0
+        }
       />
 
-      {selectedLive ? (
-        <View style={mapStyles.statusContainer}>
-          <MapLivePreview
-            live={selectedLive}
-            onClose={() => setSelectedLive(null)}
+      {selectedGroup ? (
+        <View
+          style={[
+            mapStyles.statusContainer,
+            {
+              bottom:
+                mapStyles.statusContainer
+                  .bottom +
+                insets.bottom,
+            },
+          ]}
+        >
+          <MapContentCarousel
+            group={selectedGroup}
+            onClose={() =>
+              setSelectedGroupId(null)
+            }
+            onOpenItem={
+              handleOpenItem
+            }
           />
         </View>
       ) : null}

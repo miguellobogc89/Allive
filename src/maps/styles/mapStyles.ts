@@ -89,7 +89,7 @@ export const mapStyles = StyleSheet.create({
     position: "absolute",
     left: layout.overlayHorizontal,
     right: layout.overlayHorizontal,
-    bottom: spacing.lg,
+    bottom: 92,
     alignItems: "center",
     pointerEvents: "box-none",
   },
@@ -188,5 +188,127 @@ export const mapStyles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.text,
     backgroundColor: colors.live,
+  },
+
+  contentMarker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.borderOnOverlay,
+    backgroundColor: colors.overlayMapCluster,
+  },
+
+  contentMarkerLive: {
+    backgroundColor: colors.live,
+  },
+
+  contentMarkerReplay: {
+    backgroundColor: "#168CFF",
+  },
+
+  contentMarkerText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  carouselPanel: {
+    width: "100%",
+    maxWidth: 560,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.overlayMapChrome,
+    pointerEvents: "auto",
+  },
+
+  carouselHeader: {
+    minHeight: 30,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  carouselTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  carouselContent: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+  },
+
+  contentCard: {
+    width: 245,
+    minHeight: 104,
+    flexDirection: "row",
+    overflow: "hidden",
+    borderRadius: radius.md,
+    backgroundColor: colors.overlayRaisedStrong,
+  },
+
+  contentThumbnail: {
+    width: 92,
+    height: "100%",
+    minHeight: 104,
+    backgroundColor: colors.surfaceElevated,
+  },
+
+  contentThumbnailFallback: {
+    width: 92,
+    minHeight: 104,
+    backgroundColor: colors.surfaceElevated,
+  },
+
+  contentCardBody: {
+    flex: 1,
+    gap: 6,
+    padding: spacing.sm,
+  },
+
+  contentCardTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xs,
+  },
+
+  contentBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+
+  liveContentBadge: {
+    backgroundColor: colors.live,
+  },
+
+  replayContentBadge: {
+    backgroundColor: "#168CFF",
+  },
+
+  contentBadgeText: {
+    color: colors.text,
+    fontSize: 10,
+    fontWeight: "900",
+  },
+
+  contentTitle: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "700",
+  },
+
+  contentMeta: {
+    color: colors.textOnOverlaySecondary,
+    fontSize: 11,
+    fontWeight: "600",
   },
 });

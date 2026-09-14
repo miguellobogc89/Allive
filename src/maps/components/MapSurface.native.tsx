@@ -3,17 +3,41 @@
 import MapView from "react-native-maps";
 
 import { mapStyles } from "../styles/mapStyles";
-import type { MappedLive } from "../types/mapTypes";
+import type {
+  MapContentGroup,
+} from "../types/mapTypes";
 import { MapActivityPulse } from "./MapActivityPulse.native";
 
 type MapSurfaceProps = {
-  lives: MappedLive[];
-  onLivePress: (live: MappedLive) => void;
+  groups: MapContentGroup[];
+  onGroupPress: (
+    group: MapContentGroup,
+  ) => void;
 };
 
+function getMarkerRenderKey(
+  group: MapContentGroup,
+) {
+  const hasLive =
+    group.items.some(
+      (item) =>
+        item.kind === "live",
+    );
+
+  const itemSignature =
+    group.items
+      .map(
+        (item) =>
+          `${item.kind}:${item.id}:${item.thumbnailUrl ?? ""}:${item.title ?? ""}:${item.viewerCount ?? ""}`,
+      )
+      .join("|");
+
+  return `${group.id}:${hasLive ? "live" : "replay"}:${group.items.length}:${itemSignature}`;
+}
+
 export function MapSurface({
-  lives,
-  onLivePress,
+  groups,
+  onGroupPress,
 }: MapSurfaceProps) {
   return (
     <MapView
@@ -25,11 +49,15 @@ export function MapSurface({
         longitudeDelta: 9,
       }}
     >
-      {lives.map((live) => (
+      {groups.map((group) => (
         <MapActivityPulse
-          key={live.id}
-          live={live}
-          onPress={onLivePress}
+          key={
+            getMarkerRenderKey(
+              group,
+            )
+          }
+          group={group}
+          onPress={onGroupPress}
         />
       ))}
     </MapView>

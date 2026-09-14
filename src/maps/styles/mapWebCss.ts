@@ -14,6 +14,35 @@ export const mapWebCss = `
     border: 0;
   }
 
+  .allive-map-content-icon {
+    background: transparent;
+    border: 0;
+  }
+
+  .allive-map-content-marker {
+    width: 38px;
+    height: 38px;
+    border-radius: 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid rgba(255,255,255,0.92);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    background: rgba(10,10,10,0.90);
+    box-shadow: 0 2px 14px rgba(0,0,0,0.38);
+  }
+
+  .allive-map-content-marker.is-live {
+    background: #FF3B30;
+  }
+
+  .allive-map-content-marker.is-replay {
+    background: #168CFF;
+  }
+
   .allive-map-pulse {
     position: relative;
     width: 34px;

@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 
 import { mapStyles } from "../styles/mapStyles";
-import type { MappedLive } from "../types/mapTypes";
+import type {
+  MapContentGroup,
+} from "../types/mapTypes";
 import { loadLeaflet } from "../web/loadLeaflet";
 import type {
   LeafletGlobal,
@@ -13,8 +15,10 @@ import type {
 import { MapActivityPulse } from "./MapActivityPulse.web";
 
 type MapSurfaceProps = {
-  lives: MappedLive[];
-  onLivePress: (live: MappedLive) => void;
+  groups: MapContentGroup[];
+  onGroupPress: (
+    group: MapContentGroup,
+  ) => void;
   onReady?: (
     map: LeafletMap,
     leaflet: LeafletGlobal,
@@ -22,8 +26,8 @@ type MapSurfaceProps = {
 };
 
 export function MapSurface({
-  lives,
-  onLivePress,
+  groups,
+  onGroupPress,
   onReady,
 }: MapSurfaceProps) {
   const hostRef = useRef<HTMLElement | null>(null);
@@ -98,13 +102,13 @@ export function MapSurface({
       }}
       style={mapStyles.map}
     >
-      {lives.map((live) => (
+      {groups.map((group) => (
         <MapActivityPulse
-          key={live.id}
+          key={group.id}
           leaflet={leaflet}
           map={map}
-          live={live}
-          onPress={onLivePress}
+          group={group}
+          onPress={onGroupPress}
         />
       ))}
     </View>
