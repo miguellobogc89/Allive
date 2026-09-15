@@ -84,15 +84,6 @@ export function useNowFeed({
             controller.signal,
           );
 
-        console.log(
-          "[ANDROID NOW LIVES]",
-          nextLives.map((live) => ({
-            id: live.id,
-            thumbnailUrl:
-              live.thumbnailUrl,
-          })),
-        );
-
         const nextReplays =
           await getReplays(
             controller.signal,

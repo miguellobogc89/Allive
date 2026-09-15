@@ -56,14 +56,6 @@ export function NowContentCard({
   const thumbnailUrl =
     source.thumbnailUrl;
 
-    if (isLive) {
-  console.log(
-    "[NOW CARD LIVE]",
-    source.id,
-    "thumbnail:",
-    thumbnailUrl,
-  );
-}
 
   const hasThumbnail =
     typeof thumbnailUrl ===
