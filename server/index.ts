@@ -39,6 +39,10 @@ import {
 } from "./routes/lives";
 
 import {
+  registerLocationRoutes,
+} from "./routes/location";
+
+import {
   registerNotificationRoutes,
 } from "./routes/notifications";
 
@@ -81,6 +85,7 @@ registerNotificationRoutes(app);
 registerSearchRoutes(app);
 registerProfileRoutes(app);
 registerUserProfileRoutes(app);
+registerLocationRoutes(app);
 
 app.listen(
   PORT,

@@ -21,19 +21,16 @@ function formatElapsedTime(
   endedAt: string | null,
 ) {
   if (!endedAt) {
-    return "Emitido recientemente";
+    return "—";
   }
 
   const ended =
     new Date(endedAt).getTime();
 
-  const now =
-    Date.now();
-
   const difference =
     Math.max(
       0,
-      now - ended,
+      Date.now() - ended,
     );
 
   const minutes =
@@ -79,7 +76,7 @@ function formatDuration(
   endedAt: string | null,
 ) {
   if (!endedAt) {
-    return "";
+    return "—";
   }
 
   const start =
@@ -134,6 +131,10 @@ export function ProfileMockLatestLive({
   const title =
     live.title ||
     "Directo sin título";
+
+  const place =
+    live.placeName ||
+    "—";
 
   const elapsedTime =
     formatElapsedTime(
@@ -226,19 +227,13 @@ export function ProfileMockLatestLive({
           </Text>
         </View>
 
-        {duration.length > 0 && (
-          <View
-            style={styles.duration}
+        <View style={styles.duration}>
+          <Text
+            style={styles.durationText}
           >
-            <Text
-              style={
-                styles.durationText
-              }
-            >
-              {duration}
-            </Text>
-          </View>
-        )}
+            {duration}
+          </Text>
+        </View>
 
         <View style={styles.info}>
           <Text
@@ -248,14 +243,62 @@ export function ProfileMockLatestLive({
             {title}
           </Text>
 
-          {live.placeName && (
-            <Text
-              style={styles.meta}
-              numberOfLines={1}
-            >
-              {live.placeName}
-            </Text>
-          )}
+          <Text
+            style={styles.meta}
+            numberOfLines={1}
+          >
+            {place}
+          </Text>
+
+          <View style={styles.metrics}>
+            <View style={styles.metric}>
+              <Ionicons
+                name="eye-outline"
+                size={12}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.metricText
+                }
+              >
+                —
+              </Text>
+            </View>
+
+            <View style={styles.metric}>
+              <Ionicons
+                name="heart-outline"
+                size={12}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.metricText
+                }
+              >
+                —
+              </Text>
+            </View>
+
+            <View style={styles.metric}>
+              <Ionicons
+                name="chatbubble-outline"
+                size={11}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={
+                  styles.metricText
+                }
+              >
+                —
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -388,5 +431,24 @@ const styles = StyleSheet.create({
     marginTop: 3,
     color: "#D0D9E2",
     fontSize: 10,
+  },
+
+  metrics: {
+    marginTop: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+
+  metric: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  metricText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "600",
   },
 });

@@ -9,34 +9,49 @@ import {
 } from "react-native";
 
 import {
+  type ProfileLive,
+} from "../../../api/profileApi";
+
+import {
   ProfileMockHighlightCard,
 } from "./ProfileMockHighlightCard";
 
-import {
-  profileMockVideos,
-} from "./profileMockData";
-
 type Props = {
+  lives: ProfileLive[];
   expanded: boolean;
   onPressViewAll: () => void;
 };
 
 export function ProfileMockHighlights({
+  lives,
   expanded,
   onPressViewAll,
 }: Props) {
-  const videos =
-    profileMockVideos.slice(1);
-
   const canExpand =
-    videos.length > 4;
+    lives.length > 4;
 
-  let visibleVideos =
-    videos.slice(0, 4);
+  let visibleLives =
+    lives.slice(0, 4);
 
   if (expanded) {
-    visibleVideos =
-      videos.slice(0, 16);
+    visibleLives =
+      lives.slice(0, 16);
+  }
+
+  let viewAllText =
+    "Ver todos";
+
+  let viewAllIcon:
+    "chevron-up" |
+    "chevron-forward" =
+    "chevron-forward";
+
+  if (expanded) {
+    viewAllText =
+      "Ver menos";
+
+    viewAllIcon =
+      "chevron-up";
   }
 
   return (
@@ -61,18 +76,16 @@ export function ProfileMockHighlights({
               return styles.viewAll;
             }}
           >
-            <Text style={styles.viewAllText}>
-              {expanded
-                ? "Ver menos"
-                : "Ver todos"}
+            <Text
+              style={
+                styles.viewAllText
+              }
+            >
+              {viewAllText}
             </Text>
 
             <Ionicons
-              name={
-                expanded
-                  ? "chevron-up"
-                  : "chevron-forward"
-              }
+              name={viewAllIcon}
               size={13}
               color="#24B8FF"
             />
@@ -81,14 +94,14 @@ export function ProfileMockHighlights({
       </View>
 
       <View style={styles.grid}>
-        {visibleVideos.map(
-          (video) => (
+        {visibleLives.map(
+          (live) => (
             <View
-              key={video.id}
+              key={live.id}
               style={styles.item}
             >
               <ProfileMockHighlightCard
-                video={video}
+                live={live}
               />
             </View>
           ),

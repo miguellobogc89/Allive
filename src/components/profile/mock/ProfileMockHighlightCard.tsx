@@ -3,47 +3,48 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  Image,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import type {
-  ProfileVideoItem,
-} from "../profileTypes";
+import {
+  type ProfileLive,
+} from "../../../api/profileApi";
 
 type Props = {
-  video: ProfileVideoItem;
+  live: ProfileLive;
 };
 
-function formatViews(
-  value?: number,
-) {
-  if (!value) {
-    return "—";
-  }
-
-  if (value >= 1000) {
-    return `${Math.round(
-      value / 1000,
-    )}K`;
-  }
-
-  return String(value);
-}
-
 export function ProfileMockHighlightCard({
-  video,
+  live,
 }: Props) {
+  const title =
+    live.title ||
+    "Directo sin título";
+
   return (
     <View style={styles.card}>
-      <View style={styles.placeholder}>
-        <Ionicons
-          name="videocam-outline"
-          size={20}
-          color="rgba(255,255,255,0.22)"
+      {live.thumbnailUrl && (
+        <Image
+          source={{
+            uri: live.thumbnailUrl,
+          }}
+          resizeMode="cover"
+          style={styles.thumbnail}
         />
-      </View>
+      )}
+
+      {!live.thumbnailUrl && (
+        <View style={styles.placeholder}>
+          <Ionicons
+            name="videocam-outline"
+            size={20}
+            color="rgba(255,255,255,0.22)"
+          />
+        </View>
+      )}
 
       <LinearGradient
         pointerEvents="none"
@@ -73,7 +74,9 @@ export function ProfileMockHighlightCard({
           x: 0.5,
           y: 1,
         }}
-        style={styles.bottomGradient}
+        style={
+          styles.bottomGradient
+        }
       />
 
       <View style={styles.bottom}>
@@ -81,7 +84,7 @@ export function ProfileMockHighlightCard({
           numberOfLines={1}
           style={styles.title}
         >
-          {video.title}
+          {title}
         </Text>
 
         <View style={styles.views}>
@@ -91,10 +94,10 @@ export function ProfileMockHighlightCard({
             color="#FFFFFF"
           />
 
-          <Text style={styles.viewsText}>
-            {formatViews(
-              video.viewerCount,
-            )}
+          <Text
+            style={styles.viewsText}
+          >
+            —
           </Text>
         </View>
       </View>
@@ -111,7 +114,18 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: "#17293A",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor:
+      "rgba(255,255,255,0.08)",
+  },
+
+  thumbnail: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
   },
 
   placeholder: {

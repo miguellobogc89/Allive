@@ -16,7 +16,9 @@ import {
 } from "../auth/AuthContext";
 
 import {
+  getMyLives,
   getMyProfileStats,
+  type ProfileLive,
   type ProfileStatsData,
 } from "../api/profileApi";
 
@@ -92,6 +94,18 @@ export function ProfileScreen({
     averageViewers: null,
   });
 
+  const [
+    latestLive,
+    setLatestLive,
+  ] = useState<ProfileLive | null>(
+    null,
+  );
+
+  const [
+  highlightLives,
+  setHighlightLives,
+] = useState<ProfileLive[]>([]);
+
   const username =
     user?.username ||
     "invitado";
@@ -112,25 +126,47 @@ export function ProfileScreen({
         averageViewers: null,
       });
 
+      setLatestLive(null);
+
       return;
     }
 
     const controller =
       new AbortController();
 
-    async function loadStats() {
+    async function loadProfileData() {
       if (!token) {
         return;
       }
 
       try {
-        const nextStats =
-          await getMyProfileStats(
+        const [
+          nextStats,
+          lives,
+        ] = await Promise.all([
+          getMyProfileStats(
             token,
             controller.signal,
-          );
+          ),
+          getMyLives(
+            token,
+            controller.signal,
+          ),
+        ]);
 
         setStats(nextStats);
+
+        setHighlightLives(
+  lives.slice(1),
+);
+
+        if (lives.length > 0) {
+          setLatestLive(
+            lives[0],
+          );
+        } else {
+          setLatestLive(null);
+        }
       } catch (loadError) {
         if (
           loadError instanceof Error &&
@@ -142,7 +178,7 @@ export function ProfileScreen({
       }
     }
 
-    void loadStats();
+    void loadProfileData();
 
     return () => {
       controller.abort();
@@ -235,23 +271,23 @@ export function ProfileScreen({
     );
   }
 
-let liveAreaStyle:
-  | typeof styles.liveArea
-  | typeof styles.liveAreaExpanded =
-  styles.liveArea;
+  let liveAreaStyle:
+    | typeof styles.liveArea
+    | typeof styles.liveAreaExpanded =
+    styles.liveArea;
 
-let highlightsStyle:
-  | typeof styles.highlightsFooter
-  | typeof styles.highlightsExpanded =
-  styles.highlightsFooter;
+  let highlightsStyle:
+    | typeof styles.highlightsFooter
+    | typeof styles.highlightsExpanded =
+    styles.highlightsFooter;
 
-if (highlightsExpanded) {
-  liveAreaStyle =
-    styles.liveAreaExpanded;
+  if (highlightsExpanded) {
+    liveAreaStyle =
+      styles.liveAreaExpanded;
 
-  highlightsStyle =
-    styles.highlightsExpanded;
-}
+    highlightsStyle =
+      styles.highlightsExpanded;
+  }
 
   const profileContent = (
     <>
@@ -299,20 +335,25 @@ if (highlightsExpanded) {
       <View
         style={liveAreaStyle}
       >
-        <ProfileMockLatestLive />
+        {latestLive && (
+          <ProfileMockLatestLive
+            live={latestLive}
+          />
+        )}
       </View>
 
       <View
         style={highlightsStyle}
       >
-        <ProfileMockHighlights
-          expanded={
-            highlightsExpanded
-          }
-          onPressViewAll={
-            handleToggleHighlights
-          }
-        />
+<ProfileMockHighlights
+  lives={highlightLives}
+  expanded={
+    highlightsExpanded
+  }
+  onPressViewAll={
+    handleToggleHighlights
+  }
+/>
       </View>
     </>
   );
