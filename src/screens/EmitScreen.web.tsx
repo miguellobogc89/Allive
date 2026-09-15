@@ -5,10 +5,15 @@ import {
   useRef,
   useState,
 } from "react";
+
 import {
   Room,
   RoomEvent,
 } from "livekit-client";
+
+import type {
+  LocationPlace,
+} from "../api/locationApi";
 
 import {
   subscribeToLiveMetrics,
@@ -45,11 +50,11 @@ import {
 } from "../components/live/liveRealtime";
 
 import {
-attachLiveCamera,
-attachPreviewStream,
-detachLiveVideo,
-getLiveCameraTrack,
-stopPreviewStream,
+  attachLiveCamera,
+  attachPreviewStream,
+  detachLiveVideo,
+  getLiveCameraTrack,
+  stopPreviewStream,
 } from "../components/live/liveBroadcastVideo.web";
 
 import {
@@ -70,14 +75,18 @@ function createLiveRoomName() {
 }
 
 type EmitScreenProps = {
-  onStatusChange?: (status: {
-    isLive: boolean;
-    isConnecting: boolean;
-    cameraReady: boolean;
-  }) => void;
+  onStatusChange?: (
+    status: {
+      isLive: boolean;
+      isConnecting: boolean;
+      cameraReady: boolean;
+    },
+  ) => void;
 
   onStartLiveReady?: (
-    startLive: (() => void) | null,
+    startLive:
+      | (() => void)
+      | null,
   ) => void;
 };
 
@@ -86,38 +95,57 @@ export function EmitScreen({
   onStartLiveReady,
 }: EmitScreenProps) {
   const roomRef =
-    useRef<Room | null>(null);
+    useRef<Room | null>(
+      null,
+    );
 
   const localVideoRef =
-    useRef<HTMLDivElement | null>(null);
+    useRef<HTMLDivElement | null>(
+      null,
+    );
 
   const previewStreamRef =
-    useRef<MediaStream | null>(null);
+    useRef<MediaStream | null>(
+      null,
+    );
 
   const finishLivePromiseRef =
-    useRef<Promise<void> | null>(null);
-  
+    useRef<Promise<void> | null>(
+      null,
+    );
+
   const finishedLiveSessionIdRef =
-    useRef<string | null>(null);
+    useRef<string | null>(
+      null,
+    );
 
   const previewVideoElementRef =
-    useRef<HTMLVideoElement | null>(null);
+    useRef<HTMLVideoElement | null>(
+      null,
+    );
 
   const liveVideoElementRef =
-    useRef<HTMLVideoElement | null>(null);
+    useRef<HTMLVideoElement | null>(
+      null,
+    );
 
   const liveSessionIdRef =
-    useRef<string | null>(null);
+    useRef<string | null>(
+      null,
+    );
 
   const recordingEgressIdRef =
-    useRef<string | null>(null);
+    useRef<string | null>(
+      null,
+    );
 
   const thumbnailCaptureRef =
     useRef<LiveThumbnailCaptureController | null>(
       null,
     );
 
-  const { token } = useAuth();
+  const { token } =
+    useAuth();
 
   const [
     cameraReady,
@@ -127,7 +155,9 @@ export function EmitScreen({
   const [
     cameraError,
     setCameraError,
-  ] = useState<string | null>(null);
+  ] = useState<string | null>(
+    null,
+  );
 
   const [
     isConnecting,
@@ -144,25 +174,24 @@ export function EmitScreen({
     setFinishModalVisible,
   ] = useState(false);
 
-    const [
+  const [
     isSavingReplay,
     setIsSavingReplay,
   ] = useState(false);
 
   const [
-    liveRoomName,
-    setLiveRoomName,
-  ] = useState<string | null>(null);
-
-  const [
     liveSessionId,
     setLiveSessionId,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     error,
     setError,
-  ] = useState<string | null>(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [
     title,
@@ -177,12 +206,22 @@ export function EmitScreen({
   const [
     comments,
     setComments,
-  ] = useState<LiveCommentModel[]>([]);
+  ] = useState<
+    LiveCommentModel[]
+  >([]);
 
   const [
     likes,
     setLikes,
   ] = useState(0);
+
+  const [
+    selectedLocationPlace,
+    setSelectedLocationPlace,
+  ] =
+    useState<LocationPlace | null>(
+      null,
+    );
 
   const { location } =
     useBroadcastLocation();
@@ -193,8 +232,61 @@ export function EmitScreen({
     updateViewerCount,
   } = useViewerCounter();
 
+  let liveLocation =
+    location;
+
+  if (
+    location &&
+    selectedLocationPlace
+  ) {
+    liveLocation = {
+      latitude:
+        selectedLocationPlace.latitude,
+      longitude:
+        selectedLocationPlace.longitude,
+      placeName:
+        selectedLocationPlace.name,
+    };
+  }
+
+  let displayedLocationName:
+    | string
+    | null = null;
+
+  if (location) {
+    displayedLocationName =
+      location.placeName;
+  }
+
+  if (
+    selectedLocationPlace
+  ) {
+    displayedLocationName =
+      selectedLocationPlace.name;
+  }
+
+  let locationCoordinates:
+    | {
+        latitude: number;
+        longitude: number;
+      }
+    | null = null;
+
+  if (location) {
+    locationCoordinates = {
+      latitude:
+        location.latitude,
+      longitude:
+        location.longitude,
+    };
+  }
+
   useEffect(() => {
-    onStatusChange?.({
+    if (!onStatusChange) {
+      return;
+    }
+
+    onStatusChange({
       isLive,
       isConnecting,
       cameraReady,
@@ -207,19 +299,29 @@ export function EmitScreen({
   ]);
 
   useEffect(() => {
-    onStartLiveReady?.(() => {
-      void startLive();
-    });
+    if (onStartLiveReady) {
+      onStartLiveReady(
+        () => {
+          void startLive();
+        },
+      );
+    }
 
     return () => {
-      onStartLiveReady?.(null);
+      if (
+        onStartLiveReady
+      ) {
+        onStartLiveReady(
+          null,
+        );
+      }
     };
   }, [
     cameraReady,
     eventName,
     isConnecting,
     isLive,
-    location,
+    liveLocation,
     onStartLiveReady,
     title,
     token,
@@ -242,21 +344,30 @@ export function EmitScreen({
           return;
         }
 
-        setLikes(update.likeCount);
+        setLikes(
+          update.likeCount,
+        );
       },
     );
-  }, [liveSessionId]);
+  }, [
+    liveSessionId,
+  ]);
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled =
+      false;
 
     async function preparePreview() {
       try {
-        setCameraError(null);
+        setCameraError(
+          null,
+        );
 
         if (
-          !navigator.mediaDevices ||
-          !navigator.mediaDevices
+          !navigator
+            .mediaDevices ||
+          !navigator
+            .mediaDevices
             .getUserMedia
         ) {
           throw new Error(
@@ -265,7 +376,8 @@ export function EmitScreen({
         }
 
         const stream =
-          await navigator.mediaDevices
+          await navigator
+            .mediaDevices
             .getUserMedia({
               video: true,
               audio: true,
@@ -274,9 +386,11 @@ export function EmitScreen({
         if (cancelled) {
           stream
             .getTracks()
-            .forEach((track) => {
-              track.stop();
-            });
+            .forEach(
+              (track) => {
+                track.stop();
+              },
+            );
 
           return;
         }
@@ -284,7 +398,9 @@ export function EmitScreen({
         previewStreamRef.current =
           stream;
 
-        if (localVideoRef.current) {
+        if (
+          localVideoRef.current
+        ) {
           previewVideoElementRef.current =
             attachPreviewStream(
               localVideoRef.current,
@@ -292,8 +408,12 @@ export function EmitScreen({
             );
         }
 
-        setCameraReady(true);
-      } catch (caughtError) {
+        setCameraReady(
+          true,
+        );
+      } catch (
+        caughtError
+      ) {
         console.error(
           "Error preparando preview:",
           caughtError,
@@ -312,7 +432,11 @@ export function EmitScreen({
 
       stopThumbnailCapture();
 
-      roomRef.current?.disconnect();
+      if (
+        roomRef.current
+      ) {
+        roomRef.current.disconnect();
+      }
 
       clearPreview();
       clearLiveVideo();
@@ -325,7 +449,9 @@ export function EmitScreen({
       previewVideoElementRef.current,
     );
 
-    previewStreamRef.current = null;
+    previewStreamRef.current =
+      null;
+
     previewVideoElementRef.current =
       null;
   }
@@ -340,7 +466,11 @@ export function EmitScreen({
   }
 
   function stopThumbnailCapture() {
-    thumbnailCaptureRef.current?.stop();
+    if (
+      thumbnailCaptureRef.current
+    ) {
+      thumbnailCaptureRef.current.stop();
+    }
 
     thumbnailCaptureRef.current =
       null;
@@ -348,17 +478,23 @@ export function EmitScreen({
 
   async function restorePreview() {
     if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices
+      !navigator
+        .mediaDevices ||
+      !navigator
+        .mediaDevices
         .getUserMedia
     ) {
-      setCameraReady(false);
+      setCameraReady(
+        false,
+      );
+
       return;
     }
 
     try {
       const stream =
-        await navigator.mediaDevices
+        await navigator
+          .mediaDevices
           .getUserMedia({
             video: true,
             audio: true,
@@ -367,7 +503,9 @@ export function EmitScreen({
       previewStreamRef.current =
         stream;
 
-      if (localVideoRef.current) {
+      if (
+        localVideoRef.current
+      ) {
         previewVideoElementRef.current =
           attachPreviewStream(
             localVideoRef.current,
@@ -375,15 +513,24 @@ export function EmitScreen({
           );
       }
 
-      setCameraReady(true);
-      setCameraError(null);
-    } catch (caughtError) {
+      setCameraReady(
+        true,
+      );
+
+      setCameraError(
+        null,
+      );
+    } catch (
+      caughtError
+    ) {
       console.error(
         "No se pudo restaurar preview:",
         caughtError,
       );
 
-      setCameraReady(false);
+      setCameraReady(
+        false,
+      );
 
       setCameraError(
         "No se ha podido volver a activar la cámara.",
@@ -395,9 +542,12 @@ export function EmitScreen({
     const currentLiveSessionId =
       liveSessionIdRef.current;
 
-    const authToken = token;
+    const authToken =
+      token;
 
-    if (!currentLiveSessionId) {
+    if (
+      !currentLiveSessionId
+    ) {
       return;
     }
 
@@ -423,7 +573,8 @@ export function EmitScreen({
     const recordingEgressId =
       recordingEgressIdRef.current;
 
-    const authToken = token;
+    const authToken =
+      token;
 
     if (
       !currentLiveSessionId ||
@@ -444,7 +595,9 @@ export function EmitScreen({
         "Grabación LIVE detenida:",
         recordingEgressId,
       );
-    } catch (caughtError) {
+    } catch (
+      caughtError
+    ) {
       console.error(
         "No se pudo detener la grabación:",
         caughtError,
@@ -462,9 +615,12 @@ export function EmitScreen({
     const currentLiveSessionId =
       liveSessionIdRef.current;
 
-    const authToken = token;
+    const authToken =
+      token;
 
-    if (!currentLiveSessionId) {
+    if (
+      !currentLiveSessionId
+    ) {
       return;
     }
 
@@ -480,19 +636,35 @@ export function EmitScreen({
       await updateLiveMetadata(
         currentLiveSessionId,
         {
-          title: nextTitle,
-          eventName: nextEventName,
-          location,
+          title:
+            nextTitle,
+          eventName:
+            nextEventName,
+          location:
+            liveLocation,
         },
         authToken,
       );
-    } catch (caughtError) {
-      console.error(caughtError);
+    } catch (
+      caughtError
+    ) {
+      console.error(
+        caughtError,
+      );
+
+      let message =
+        "No se pudieron guardar los cambios del LIVE.";
+
+      if (
+        caughtError instanceof
+        Error
+      ) {
+        message =
+          caughtError.message;
+      }
 
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "No se pudieron guardar los cambios del LIVE.",
+        message,
       );
     }
   }
@@ -505,7 +677,8 @@ export function EmitScreen({
       return;
     }
 
-    const authToken = token;
+    const authToken =
+      token;
 
     if (!authToken) {
       setError(
@@ -523,11 +696,15 @@ export function EmitScreen({
       return;
     }
 
-    let room: Room | null = null;
+    let room:
+      | Room
+      | null = null;
 
     try {
       setError(null);
-      setIsConnecting(true);
+      setIsConnecting(
+        true,
+      );
       setComments([]);
 
       resetViewerCounter();
@@ -535,73 +712,93 @@ export function EmitScreen({
       const roomName =
         createLiveRoomName();
 
-      setLiveRoomName(roomName);
-
       const {
         serverUrl,
         participantToken,
-      } = await getBroadcasterToken(
-        roomName,
-        authToken,
-      );
+      } =
+        await getBroadcasterToken(
+          roomName,
+          authToken,
+        );
 
       clearPreview();
-      setCameraReady(false);
 
-      room = new Room({
-        adaptiveStream: false,
-        dynacast: false,
-      });
+      setCameraReady(
+        false,
+      );
 
-      roomRef.current = room;
+      room =
+        new Room({
+          adaptiveStream:
+            false,
+          dynacast:
+            false,
+        });
 
-      const updateCount = () => {
-        if (room) {
-          updateViewerCount(room);
-        }
-      };
+      roomRef.current =
+        room;
 
-      const handleRealtimeData = (
-        payload: Uint8Array,
-      ) => {
-        const message =
-          parseLiveRealtimeMessage(
-            payload,
-          );
+      const updateCount =
+        () => {
+          if (room) {
+            updateViewerCount(
+              room,
+            );
+          }
+        };
 
-        if (
-          !message ||
-          message.type !==
-            "live-comment"
-        ) {
-          return;
-        }
+      const handleRealtimeData =
+        (
+          payload:
+            Uint8Array,
+        ) => {
+          const message =
+            parseLiveRealtimeMessage(
+              payload,
+            );
 
-        setComments((current) => {
           if (
-            current.some(
-              (comment) =>
-                comment.id ===
-                message.comment.id,
-            )
+            !message ||
+            message.type !==
+              "live-comment"
           ) {
-            return current;
+            return;
           }
 
-          return [
-            ...current,
-            message.comment,
-          ];
-        });
-      };
+          setComments(
+            (current) => {
+              const exists =
+                current.some(
+                  (
+                    comment,
+                  ) =>
+                    comment.id ===
+                    message
+                      .comment
+                      .id,
+                );
+
+              if (exists) {
+                return current;
+              }
+
+              return [
+                ...current,
+                message.comment,
+              ];
+            },
+          );
+        };
 
       room.on(
-        RoomEvent.ParticipantConnected,
+        RoomEvent
+          .ParticipantConnected,
         updateCount,
       );
 
       room.on(
-        RoomEvent.ParticipantDisconnected,
+        RoomEvent
+          .ParticipantDisconnected,
         updateCount,
       );
 
@@ -618,7 +815,8 @@ export function EmitScreen({
       );
 
       room.on(
-        RoomEvent.DataReceived,
+        RoomEvent
+          .DataReceived,
         handleRealtimeData,
       );
 
@@ -627,13 +825,21 @@ export function EmitScreen({
         participantToken,
       );
 
-      await room.localParticipant
-        .setCameraEnabled(true);
+      await room
+        .localParticipant
+        .setCameraEnabled(
+          true,
+        );
 
-      await room.localParticipant
-        .setMicrophoneEnabled(true);
+      await room
+        .localParticipant
+        .setMicrophoneEnabled(
+          true,
+        );
 
-      if (!localVideoRef.current) {
+      if (
+        !localVideoRef.current
+      ) {
         throw new Error(
           "No se ha podido preparar el preview del LIVE.",
         );
@@ -651,7 +857,8 @@ export function EmitScreen({
           {
             title,
             eventName,
-            location,
+            location:
+              liveLocation,
           },
           authToken,
         );
@@ -663,10 +870,6 @@ export function EmitScreen({
         registeredLiveSessionId,
       );
 
-      /*
-       * La grabación no debe impedir
-       * que el LIVE arranque.
-       */
       try {
         const recording =
           await startLiveRecording(
@@ -681,7 +884,9 @@ export function EmitScreen({
           "Grabación LIVE iniciada:",
           recording,
         );
-      } catch (recordingError) {
+      } catch (
+        recordingError
+      ) {
         recordingEgressIdRef.current =
           null;
 
@@ -694,66 +899,90 @@ export function EmitScreen({
       const currentLiveSessionId =
         liveSessionIdRef.current;
 
-      if (currentLiveSessionId) {
-const liveCameraTrack =
-  getLiveCameraTrack(room);
+      if (
+        currentLiveSessionId
+      ) {
+        const liveCameraTrack =
+          getLiveCameraTrack(
+            room,
+          );
 
-const mediaStreamTrack =
-  liveCameraTrack.mediaStreamTrack;
+        const mediaStreamTrack =
+          liveCameraTrack
+            .mediaStreamTrack;
 
-if (
-  !mediaStreamTrack ||
-  mediaStreamTrack.readyState !== "live"
-) {
-  throw new Error(
-    "La pista publicada de cámara del LIVE no está activa.",
-  );
-}
+        if (
+          !mediaStreamTrack ||
+          mediaStreamTrack
+            .readyState !==
+            "live"
+        ) {
+          throw new Error(
+            "La pista publicada de cámara del LIVE no está activa.",
+          );
+        }
 
         stopThumbnailCapture();
 
         thumbnailCaptureRef.current =
-          startLiveThumbnailCapture({
-            liveSessionId:
-              currentLiveSessionId,
-            mediaStreamTrack,
-            authToken,
-          });
+          startLiveThumbnailCapture(
+            {
+              liveSessionId:
+                currentLiveSessionId,
+              mediaStreamTrack,
+              authToken,
+            },
+          );
       }
 
-      updateViewerCount(room);
+      updateViewerCount(
+        room,
+      );
 
-      setCameraReady(true);
-      setIsLive(true);
+      setCameraReady(
+        true,
+      );
+
+      setIsLive(
+        true,
+      );
 
       void saveLiveMetadata(
         title,
         eventName,
       );
-    } catch (caughtError) {
+    } catch (
+      caughtError
+    ) {
       console.error(
         "Error iniciando Allive LIVE:",
         caughtError,
       );
 
+      let message =
+        "No se ha podido iniciar el LIVE.";
+
+      if (
+        caughtError instanceof
+        Error
+      ) {
+        message =
+          caughtError.message;
+      }
+
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "No se ha podido iniciar el LIVE.",
+        message,
       );
 
       stopThumbnailCapture();
 
-      /*
-       * Si el LIVE falla después
-       * de iniciar Egress, cerramos
-       * también esa grabación.
-       */
       await stopCurrentRecording();
 
       try {
         await endRegisteredLive();
-      } catch (backendError) {
+      } catch (
+        backendError
+      ) {
         console.error(
           "No se pudo limpiar el LIVE del backend:",
           backendError,
@@ -762,11 +991,17 @@ if (
 
       if (room) {
         try {
-          await room.localParticipant
-            .setCameraEnabled(false);
+          await room
+            .localParticipant
+            .setCameraEnabled(
+              false,
+            );
 
-          await room.localParticipant
-            .setMicrophoneEnabled(false);
+          await room
+            .localParticipant
+            .setMicrophoneEnabled(
+              false,
+            );
         } catch {
           // Las pistas pueden no haberse creado.
         }
@@ -774,72 +1009,103 @@ if (
         room.disconnect();
       }
 
-      roomRef.current = null;
+      roomRef.current =
+        null;
 
       clearLiveVideo();
 
-      setLiveRoomName(null);
-      setLiveSessionId(null);
-      setIsLive(false);
+      setLiveSessionId(
+        null,
+      );
+
+      setIsLive(
+        false,
+      );
+
       setComments([]);
+
       setLikes(0);
 
       resetViewerCounter();
 
       await restorePreview();
     } finally {
-      setIsConnecting(false);
+      setIsConnecting(
+        false,
+      );
     }
   }
 
-async function handleSaveReplay() {
-  const currentLiveSessionId =
-    finishedLiveSessionIdRef.current;
+  async function handleSaveReplay() {
+    const currentLiveSessionId =
+      finishedLiveSessionIdRef.current;
 
-  const authToken = token;
+    const authToken =
+      token;
 
-  if (
-    !currentLiveSessionId ||
-    !authToken ||
-    isSavingReplay
-  ) {
-    return;
-  }
-
-  try {
-    setIsSavingReplay(true);
-
-    if (finishLivePromiseRef.current) {
-      await finishLivePromiseRef.current;
+    if (
+      !currentLiveSessionId ||
+      !authToken ||
+      isSavingReplay
+    ) {
+      return;
     }
 
-  await saveLiveReplay(
-    currentLiveSessionId,
-    authToken,
-  );
+    try {
+      setIsSavingReplay(
+        true,
+      );
 
-  finishedLiveSessionIdRef.current =
-    null;
+      if (
+        finishLivePromiseRef.current
+      ) {
+        await finishLivePromiseRef.current;
+      }
 
-  setFinishModalVisible(false);
-  } catch (caughtError) {
-    console.error(
-      "No se pudo guardar el REPLAY:",
-      caughtError,
-    );
+      await saveLiveReplay(
+        currentLiveSessionId,
+        authToken,
+      );
 
-    setError(
-      caughtError instanceof Error
-        ? caughtError.message
-        : "No se pudo guardar el vídeo.",
-    );
-  } finally {
-    setIsSavingReplay(false);
+      finishedLiveSessionIdRef.current =
+        null;
+
+      setFinishModalVisible(
+        false,
+      );
+    } catch (
+      caughtError
+    ) {
+      console.error(
+        "No se pudo guardar el REPLAY:",
+        caughtError,
+      );
+
+      let message =
+        "No se pudo guardar el vídeo.";
+
+      if (
+        caughtError instanceof
+        Error
+      ) {
+        message =
+          caughtError.message;
+      }
+
+      setError(
+        message,
+      );
+    } finally {
+      setIsSavingReplay(
+        false,
+      );
+    }
   }
-}
 
   async function finishLive() {
-    setFinishModalVisible(true);
+    setFinishModalVisible(
+      true,
+    );
 
     const room =
       roomRef.current;
@@ -854,41 +1120,49 @@ async function handleSaveReplay() {
 
     stopThumbnailCapture();
 
-    /*
-     * Primero finalizamos Egress
-     * mientras la sala y sus pistas
-     * siguen disponibles.
-     */
     await stopCurrentRecording();
 
-    /*
-     * Después cerramos la sesión
-     * en nuestro backend.
-     */
     try {
       await endRegisteredLive();
-    } catch (caughtError) {
-      console.error(caughtError);
+    } catch (
+      caughtError
+    ) {
+      console.error(
+        caughtError,
+      );
+
+      let message =
+        "No se pudo cerrar el LIVE en Allive.";
+
+      if (
+        caughtError instanceof
+        Error
+      ) {
+        message =
+          caughtError.message;
+      }
 
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "No se pudo cerrar el LIVE en Allive.",
+        message,
       );
     }
 
-    /*
-     * Por último apagamos las pistas
-     * y desconectamos LiveKit.
-     */
     if (room) {
       try {
-        await room.localParticipant
-          .setCameraEnabled(false);
+        await room
+          .localParticipant
+          .setCameraEnabled(
+            false,
+          );
 
-        await room.localParticipant
-          .setMicrophoneEnabled(false);
-      } catch (caughtError) {
+        await room
+          .localParticipant
+          .setMicrophoneEnabled(
+            false,
+          );
+      } catch (
+        caughtError
+      ) {
         console.error(
           "Error desactivando cámara/micrófono:",
           caughtError,
@@ -898,17 +1172,27 @@ async function handleSaveReplay() {
       room.disconnect();
     }
 
-    roomRef.current = null;
-    liveSessionIdRef.current = null;
+    roomRef.current =
+      null;
+
+    liveSessionIdRef.current =
+      null;
+
     recordingEgressIdRef.current =
       null;
 
     clearLiveVideo();
 
-    setLiveRoomName(null);
-    setLiveSessionId(null);
-    setIsLive(false);
+    setLiveSessionId(
+      null,
+    );
+
+    setIsLive(
+      false,
+    );
+
     setComments([]);
+
     setLikes(0);
 
     resetViewerCounter();
@@ -920,7 +1204,9 @@ async function handleSaveReplay() {
     <LiveBroadcastStage
       media={
         <LiveBroadcastSurface
-          ref={localVideoRef}
+          ref={
+            localVideoRef
+          }
           cameraReady={
             cameraReady
           }
@@ -939,50 +1225,76 @@ async function handleSaveReplay() {
         error,
         title,
         eventName,
+
         locationName:
-          location?.placeName ?? null,
-        onChangeTitle: setTitle,
+          displayedLocationName,
+
+        locationCoordinates,
+
+        selectedLocationPlace,
+
+        onChangeLocationPlace:
+          setSelectedLocationPlace,
+
+        onChangeTitle:
+          setTitle,
+
         onChangeEventName:
           setEventName,
-        onSaveMetadata: () => {
-          void saveLiveMetadata(
-            title,
-            eventName,
-          );
-        },
-        onStartLive: startLive,
-        onFinishLive: () => {
-  const finishPromise =
-    finishLive();
 
-  finishLivePromiseRef.current =
-    finishPromise;
+        onSaveMetadata:
+          () => {
+            void saveLiveMetadata(
+              title,
+              eventName,
+            );
+          },
 
-  void finishPromise.finally(() => {
-    if (
-      finishLivePromiseRef.current ===
-      finishPromise
-    ) {
-      finishLivePromiseRef.current =
-        null;
-    }
-  });
-},
+        onStartLive:
+          startLive,
+
+        onFinishLive:
+          () => {
+            const finishPromise =
+              finishLive();
+
+            finishLivePromiseRef.current =
+              finishPromise;
+
+            void finishPromise.finally(
+              () => {
+                if (
+                  finishLivePromiseRef.current ===
+                  finishPromise
+                ) {
+                  finishLivePromiseRef.current =
+                    null;
+                }
+              },
+            );
+          },
       }}
       finishModal={{
         visible:
           finishModalVisible,
+
         saving:
           isSavingReplay,
-        discarding: false,
+
+        discarding:
+          false,
+
         onSave: () => {
           void handleSaveReplay();
         },
+
         onDiscard: () => {
           finishedLiveSessionIdRef.current =
             null;
 
-          setFinishModalVisible(false);
+          setFinishModalVisible(
+            false,
+          );
         },
       }}
     />

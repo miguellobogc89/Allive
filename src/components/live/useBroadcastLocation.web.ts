@@ -50,6 +50,11 @@ export function useBroadcastLocation() {
         async (
           position,
         ) => {
+          console.log("📍 GPS RAW", {
+  latitude: position.coords.latitude,
+  longitude: position.coords.longitude,
+  accuracy: position.coords.accuracy,
+});
           const latitude =
             position.coords.latitude;
 

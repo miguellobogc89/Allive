@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   useEffect,
   useRef,
+  useState,
 } from "react";
 import {
   Animated,
@@ -14,18 +15,41 @@ import {
   View,
 } from "react-native";
 
+import type {
+  LocationPlace,
+} from "../../../../api/locationApi";
+
 import {
   colors,
   radius,
   spacing,
 } from "../../../../styles";
 
+import {
+  LiveLocationPicker,
+} from "../location/LiveLocationPicker";
+
+type LiveCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
 type LiveStartMetadataModalProps = {
   visible: boolean;
 
   title: string;
   eventName: string;
+
   locationName: string;
+
+  locationCoordinates:
+    | LiveCoordinates
+    | null;
+
+  selectedLocationPlace:
+    | LocationPlace
+    | null;
+
   locationVisible: boolean;
 
   onChangeTitle: (
@@ -34,6 +58,10 @@ type LiveStartMetadataModalProps = {
 
   onChangeEventName: (
     value: string,
+  ) => void;
+
+  onChangeLocationPlace: (
+    place: LocationPlace | null,
   ) => void;
 
   onChangeLocationVisible: (
@@ -49,9 +77,12 @@ export function LiveStartMetadataModal({
   title,
   eventName,
   locationName,
+  locationCoordinates,
+  selectedLocationPlace,
   locationVisible,
   onChangeTitle,
   onChangeEventName,
+  onChangeLocationPlace,
   onChangeLocationVisible,
   onAccept,
   onClose,
@@ -66,10 +97,15 @@ export function LiveStartMetadataModal({
       new Animated.Value(14),
     ).current;
 
-  const [mounted, setMounted] =
-    useStateWithInitialVisible(
-      visible,
-    );
+  const [
+    mounted,
+    setMounted,
+  ] = useState(visible);
+
+  const [
+    locationPickerVisible,
+    setLocationPickerVisible,
+  ] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -108,6 +144,10 @@ export function LiveStartMetadataModal({
       return;
     }
 
+    setLocationPickerVisible(
+      false,
+    );
+
     if (!mounted) {
       return;
     }
@@ -121,7 +161,8 @@ export function LiveStartMetadataModal({
         {
           toValue: 0,
           duration: 160,
-          useNativeDriver: true,
+          useNativeDriver:
+            true,
         },
       ),
 
@@ -130,7 +171,8 @@ export function LiveStartMetadataModal({
         {
           toValue: -10,
           duration: 180,
-          useNativeDriver: true,
+          useNativeDriver:
+            true,
         },
       ),
     ]).start(
@@ -145,11 +187,48 @@ export function LiveStartMetadataModal({
     opacity,
     translateY,
     mounted,
-    setMounted,
   ]);
 
   if (!mounted) {
     return null;
+  }
+
+  let displayedLocationName =
+    locationName;
+
+  if (selectedLocationPlace) {
+    displayedLocationName =
+      selectedLocationPlace.name;
+  }
+
+  if (!displayedLocationName) {
+    displayedLocationName =
+      "Detectando ubicación…";
+  }
+
+  let pickerIcon:
+    | "chevron-down"
+    | "chevron-up" =
+    "chevron-down";
+
+  if (locationPickerVisible) {
+    pickerIcon = "chevron-up";
+  }
+
+  let visibleIconColor =
+    "rgba(255,255,255,0.48)";
+
+  if (locationVisible) {
+    visibleIconColor =
+      "#FFFFFF";
+  }
+
+  let hiddenIconColor =
+    "rgba(255,255,255,0.48)";
+
+  if (!locationVisible) {
+    hiddenIconColor =
+      "#FFFFFF";
   }
 
   return (
@@ -161,20 +240,22 @@ export function LiveStartMetadataModal({
       }
       style={styles.layer}
     >
-<Pressable
-  style={StyleSheet.absoluteFill}
-  onPress={onClose}
->
-  <Animated.View
-    pointerEvents="none"
-    style={[
-      styles.backdrop,
-      {
-        opacity,
-      },
-    ]}
-  />
-</Pressable>
+      <Pressable
+        style={
+          StyleSheet.absoluteFill
+        }
+        onPress={onClose}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.backdrop,
+            {
+              opacity,
+            },
+          ]}
+        />
+      </Pressable>
 
       <View
         pointerEvents="box-none"
@@ -198,13 +279,10 @@ export function LiveStartMetadataModal({
             accessibilityLabel="Cerrar"
             hitSlop={10}
             onPress={onClose}
-            style={({
-              pressed,
-            }) => [
+            style={({ pressed }) => [
               styles.closeButton,
-              pressed
-                ? styles.closeButtonPressed
-                : null,
+              pressed &&
+                styles.closeButtonPressed,
             ]}
           >
             <Ionicons
@@ -214,9 +292,7 @@ export function LiveStartMetadataModal({
             />
           </Pressable>
 
-          <View
-            style={styles.content}
-          >
+          <View style={styles.content}>
             <TextInput
               value={title}
               onChangeText={
@@ -239,9 +315,7 @@ export function LiveStartMetadataModal({
               placeholder="¿Cómo se llama el evento?"
               placeholderTextColor="rgba(255,255,255,0.55)"
               maxLength={100}
-              style={
-                styles.input
-              }
+              style={styles.input}
             />
 
             <View
@@ -249,10 +323,20 @@ export function LiveStartMetadataModal({
                 styles.locationBlock
               }
             >
-              <View
-                style={
-                  styles.locationIdentity
-                }
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setLocationPickerVisible(
+                    (
+                      current,
+                    ) => !current,
+                  );
+                }}
+                style={({ pressed }) => [
+                  styles.locationIdentity,
+                  pressed &&
+                    styles.locationIdentityPressed,
+                ]}
               >
                 <View
                   style={
@@ -285,11 +369,46 @@ export function LiveStartMetadataModal({
                       styles.locationText
                     }
                   >
-                    {locationName ||
-                      "Detectando ubicación…"}
+                    {
+                      displayedLocationName
+                    }
                   </Text>
                 </View>
-              </View>
+
+                <Ionicons
+                  name={pickerIcon}
+                  size={17}
+                  color="rgba(255,255,255,0.45)"
+                />
+              </Pressable>
+
+              {locationPickerVisible && (
+                <LiveLocationPicker
+                  visible
+                  automaticLocationName={
+                    locationName ||
+                    "Detectando ubicación…"
+                  }
+                  coordinates={
+                    locationCoordinates
+                  }
+                  selectedPlace={
+                    selectedLocationPlace
+                  }
+                  onSelectPlace={(
+                    place,
+                  ) => {
+                    onChangeLocationPlace(
+                      place,
+                    );
+                  }}
+                  onClose={() => {
+                    setLocationPickerVisible(
+                      false,
+                    );
+                  }}
+                />
+              )}
 
               <View
                 style={
@@ -315,29 +434,27 @@ export function LiveStartMetadataModal({
                         true,
                       );
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.visibilityOption,
-                      locationVisible
-                        ? styles.visibilityOptionActive
-                        : null,
+                      locationVisible &&
+                        styles.visibilityOptionActive,
+                      pressed &&
+                        styles.visibilityOptionPressed,
                     ]}
                   >
                     <Ionicons
                       name="eye-outline"
                       size={15}
                       color={
-                        locationVisible
-                          ? "#FFFFFF"
-                          : "rgba(255,255,255,0.48)"
+                        visibleIconColor
                       }
                     />
 
                     <Text
                       style={[
                         styles.visibilityText,
-                        locationVisible
-                          ? styles.visibilityTextActive
-                          : null,
+                        locationVisible &&
+                          styles.visibilityTextActive,
                       ]}
                     >
                       Visible
@@ -350,29 +467,27 @@ export function LiveStartMetadataModal({
                         false,
                       );
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.visibilityOption,
-                      !locationVisible
-                        ? styles.visibilityOptionActive
-                        : null,
+                      !locationVisible &&
+                        styles.visibilityOptionActive,
+                      pressed &&
+                        styles.visibilityOptionPressed,
                     ]}
                   >
                     <Ionicons
                       name="eye-off-outline"
                       size={15}
                       color={
-                        !locationVisible
-                          ? "#FFFFFF"
-                          : "rgba(255,255,255,0.48)"
+                        hiddenIconColor
                       }
                     />
 
                     <Text
                       style={[
                         styles.visibilityText,
-                        !locationVisible
-                          ? styles.visibilityTextActive
-                          : null,
+                        !locationVisible &&
+                          styles.visibilityTextActive,
                       ]}
                     >
                       Oculta
@@ -385,13 +500,10 @@ export function LiveStartMetadataModal({
             <Pressable
               accessibilityRole="button"
               onPress={onAccept}
-              style={({
-                pressed,
-              }) => [
+              style={({ pressed }) => [
                 styles.acceptButton,
-                pressed
-                  ? styles.acceptButtonPressed
-                  : null,
+                pressed &&
+                  styles.acceptButtonPressed,
               ]}
             >
               <Text
@@ -409,29 +521,8 @@ export function LiveStartMetadataModal({
   );
 }
 
-/*
- * Pequeño helper para mantener el componente
- * montado durante la animación de salida.
- */
-function useStateWithInitialVisible(
-  initialValue: boolean,
-) {
-  const React =
-    require("react") as typeof import("react");
-
-  return React.useState(
-    initialValue,
-  );
-}
-
 const styles =
   StyleSheet.create({
-    /*
-     * Este layer ocupa SIEMPRE exactamente
-     * toda la pantalla.
-     *
-     * No cambia cuando isLive cambia.
-     */
     layer: {
       ...StyleSheet.absoluteFill,
       zIndex: 50,
@@ -443,14 +534,6 @@ const styles =
         "rgba(0,0,0,0.18)",
     },
 
-    /*
-     * Esta es la pieza importante para evitar
-     * el salto al comenzar el LIVE.
-     *
-     * El modal siempre se centra respecto a
-     * este layer absoluto, no respecto a los
-     * controles del LIVE.
-     */
     centerStage: {
       ...StyleSheet.absoluteFill,
       alignItems: "center",
@@ -462,11 +545,8 @@ const styles =
       position: "relative",
       width: "100%",
       maxWidth: 420,
-
       padding: spacing.lg,
-
       borderRadius: 20,
-
       backgroundColor:
         "rgba(12,14,17,0.86)",
     },
@@ -475,16 +555,11 @@ const styles =
       position: "absolute",
       top: 10,
       right: 10,
-
       width: 34,
       height: 34,
-
       alignItems: "center",
-      justifyContent:
-        "center",
-
+      justifyContent: "center",
       borderRadius: 17,
-
       zIndex: 2,
     },
 
@@ -500,83 +575,71 @@ const styles =
 
     input: {
       minHeight: 48,
-
       paddingHorizontal: 14,
-
       color: "#FFFFFF",
-
       fontSize: 14,
       fontWeight: "500",
-
       borderWidth: 1,
-
       borderColor:
         "rgba(255,255,255,0.24)",
-
       borderRadius:
         radius.md,
-
       backgroundColor:
         "rgba(255,255,255,0.06)",
-
       outlineWidth: 0,
     },
 
     titleInput: {
       borderColor:
         "rgba(255,255,255,0.46)",
-
       fontSize: 15,
       fontWeight: "600",
     },
 
     locationBlock: {
-      gap: 14,
-
+      gap: 10,
       paddingHorizontal: 2,
       paddingVertical: 4,
     },
 
     locationIdentity: {
       minHeight: 42,
-
       flexDirection: "row",
       alignItems: "center",
-
       gap: 10,
+      paddingVertical: 3,
+      borderRadius: 10,
+    },
+
+    locationIdentityPressed: {
+      opacity: 0.72,
     },
 
     locationIcon: {
       width: 30,
       height: 30,
-
       alignItems: "center",
-      justifyContent:
-        "center",
-
+      justifyContent: "center",
       borderRadius: 15,
-
       backgroundColor:
         "rgba(255,255,255,0.07)",
     },
 
     locationContent: {
       flex: 1,
+      minWidth: 0,
     },
 
     locationLabel: {
       marginBottom: 2,
-
       color:
         "rgba(255,255,255,0.46)",
-
       fontSize: 11,
       fontWeight: "500",
     },
 
     locationText: {
       color: "#FFFFFF",
-
       fontSize: 14,
       fontWeight: "600",
     },
@@ -584,17 +647,14 @@ const styles =
     visibilityRow: {
       flexDirection: "row",
       alignItems: "center",
-
       justifyContent:
         "space-between",
-
       gap: spacing.sm,
     },
 
     visibilityLabel: {
       color:
         "rgba(255,255,255,0.58)",
-
       fontSize: 12,
       fontWeight: "500",
     },
@@ -602,27 +662,19 @@ const styles =
     visibilitySelector: {
       flexDirection: "row",
       alignItems: "center",
-
       gap: 4,
-
       padding: 3,
-
       borderRadius: 10,
-
       backgroundColor:
         "rgba(255,255,255,0.07)",
     },
 
     visibilityOption: {
       height: 30,
-
       flexDirection: "row",
       alignItems: "center",
-
       gap: 5,
-
       paddingHorizontal: 9,
-
       borderRadius: 8,
     },
 
@@ -631,10 +683,13 @@ const styles =
         "rgba(255,255,255,0.14)",
     },
 
+    visibilityOptionPressed: {
+      opacity: 0.72,
+    },
+
     visibilityText: {
       color:
         "rgba(255,255,255,0.48)",
-
       fontSize: 11,
       fontWeight: "600",
     },
@@ -645,23 +700,17 @@ const styles =
 
     acceptButton: {
       height: 46,
-
       marginTop: 4,
-
       alignItems: "center",
-      justifyContent:
-        "center",
-
+      justifyContent: "center",
       borderRadius:
         radius.md,
-
       backgroundColor:
         colors.accent,
     },
 
     acceptButtonPressed: {
       opacity: 0.82,
-
       transform: [
         {
           scale: 0.99,
@@ -671,7 +720,6 @@ const styles =
 
     acceptButtonText: {
       color: "#FFFFFF",
-
       fontSize: 14,
       fontWeight: "700",
     },

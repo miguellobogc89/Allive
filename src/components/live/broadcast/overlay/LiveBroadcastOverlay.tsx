@@ -12,15 +12,50 @@ import {
   View,
 } from "react-native";
 
-import type { LiveCommentModel } from "../../comments/liveCommentTypes";
-import { LiveTimedCommentsLayer } from "../../comments/LiveTimedCommentsLayer";
-import { LiveBroadcastBottomNav } from "../bottom-nav";
-import { LiveBroadcastHeader } from "../header";
-import { LiveBroadcastMetadata } from "../metadata/LiveBroadcastMetadata";
-import { LiveStartMetadataModal } from "../metadata/LiveStartMetadataModal";
-import { LiveBroadcastMoreMenu } from "../more-menu";
-import { LiveBroadcastError } from "./LiveBroadcastError";
-import { LiveNotice } from "../../shared";
+import type {
+  LocationPlace,
+} from "../../../../api/locationApi";
+
+import type {
+  LiveCommentModel,
+} from "../../comments/liveCommentTypes";
+
+import {
+  LiveTimedCommentsLayer,
+} from "../../comments/LiveTimedCommentsLayer";
+
+import {
+  LiveNotice,
+} from "../../shared";
+
+import {
+  LiveBroadcastBottomNav,
+} from "../bottom-nav";
+
+import {
+  LiveBroadcastHeader,
+} from "../header";
+
+import {
+  LiveBroadcastMetadata,
+} from "../metadata/LiveBroadcastMetadata";
+
+import {
+  LiveStartMetadataModal,
+} from "../metadata/LiveStartMetadataModal";
+
+import {
+  LiveBroadcastMoreMenu,
+} from "../more-menu";
+
+import {
+  LiveBroadcastError,
+} from "./LiveBroadcastError";
+
+type LiveCoordinates = {
+  latitude: number;
+  longitude: number;
+};
 
 type LiveBroadcastOverlayProps = {
   isLive: boolean;
@@ -36,6 +71,11 @@ type LiveBroadcastOverlayProps = {
   title?: string;
   eventName?: string;
   locationName?: string | null;
+
+  locationCoordinates?: LiveCoordinates | null;
+
+  selectedLocationPlace?: LocationPlace | null;
+
   microphoneEnabled?: boolean;
   initialStartMetadataVisible?: boolean;
   moreEnabled?: boolean;
@@ -49,6 +89,10 @@ type LiveBroadcastOverlayProps = {
 
   onChangeEventName?: (
     value: string,
+  ) => void;
+
+  onChangeLocationPlace?: (
+    place: LocationPlace | null,
   ) => void;
 
   onSaveMetadata?: () => void;
@@ -75,6 +119,8 @@ export function LiveBroadcastOverlay({
   title = "",
   eventName = "",
   locationName = null,
+  locationCoordinates = null,
+  selectedLocationPlace = null,
 
   microphoneEnabled = true,
   initialStartMetadataVisible = true,
@@ -85,6 +131,7 @@ export function LiveBroadcastOverlay({
 
   onChangeTitle,
   onChangeEventName,
+  onChangeLocationPlace,
   onSaveMetadata,
 
   onToggleMicrophone,
@@ -94,11 +141,10 @@ export function LiveBroadcastOverlay({
   onStartLive,
   onFinishLive,
 }: LiveBroadcastOverlayProps) {
-
   const [
-  contentVisible,
-  setContentVisible,
-] = useState(true);
+    contentVisible,
+    setContentVisible,
+  ] = useState(true);
 
   const [
     startMetadataVisible,
@@ -130,11 +176,11 @@ export function LiveBroadcastOverlay({
   ] = useState(true);
 
   const [
-  noticeMessage,
-  setNoticeMessage,
-] = useState<string | null>(
-  null,
-);
+    noticeMessage,
+    setNoticeMessage,
+  ] = useState<string | null>(
+    null,
+  );
 
   const opacity =
     useRef(
@@ -146,56 +192,22 @@ export function LiveBroadcastOverlay({
       new Animated.Value(0),
     ).current;
 
-function hideContent() {
-  if (
-    !contentVisible ||
-    startMetadataVisible
-  ) {
-    return;
-  }
+  function hideContent() {
+    if (
+      !contentVisible ||
+      startMetadataVisible
+    ) {
+      return;
+    }
 
-  setMoreMenuVisible(false);
+    setMoreMenuVisible(false);
 
-  Animated.parallel([
-    Animated.timing(
-      opacity,
-      {
-        toValue: 0,
-        duration: 160,
-        useNativeDriver: true,
-      },
-    ),
-
-    Animated.timing(
-      translateY,
-      {
-        toValue: -12,
-        duration: 180,
-        useNativeDriver: true,
-      },
-    ),
-  ]).start(() => {
-    setContentVisible(false);
-  });
-}
-
-function showContent() {
-  if (contentVisible) {
-    return;
-  }
-
-  setContentVisible(true);
-
-  opacity.setValue(0);
-  translateY.setValue(-12);
-
-  requestAnimationFrame(() => {
     Animated.parallel([
       Animated.timing(
         opacity,
         {
-          toValue: 1,
-          duration: 200,
+          toValue: 0,
+          duration: 160,
           useNativeDriver: true,
         },
       ),
@@ -203,31 +215,65 @@ function showContent() {
       Animated.timing(
         translateY,
         {
-          toValue: 0,
-          duration: 200,
+          toValue: -12,
+          duration: 180,
           useNativeDriver: true,
         },
       ),
-    ]).start();
-  });
-}
-
-function handleBackgroundPress() {
-  if (startMetadataVisible) {
-    return;
+    ]).start(() => {
+      setContentVisible(false);
+    });
   }
 
-  if (moreMenuVisible) {
-    setMoreMenuVisible(false);
+  function showContent() {
+    if (contentVisible) {
+      return;
+    }
+
+    setContentVisible(true);
+
+    opacity.setValue(0);
+    translateY.setValue(-12);
+
+    requestAnimationFrame(() => {
+      Animated.parallel([
+        Animated.timing(
+          opacity,
+          {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          translateY,
+          {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          },
+        ),
+      ]).start();
+    });
   }
 
-  if (contentVisible) {
-    hideContent();
-    return;
-  }
+  function handleBackgroundPress() {
+    if (startMetadataVisible) {
+      return;
+    }
 
-  showContent();
-}
+    if (moreMenuVisible) {
+      setMoreMenuVisible(false);
+    }
+
+    if (contentVisible) {
+      hideContent();
+      return;
+    }
+
+    showContent();
+  }
 
   function toggleMoreMenu() {
     setMoreMenuVisible(
@@ -244,59 +290,152 @@ function handleBackgroundPress() {
     setStartMetadataVisible(false);
   }
 
-function acceptStartMetadata() {
-  if (isLive) {
-    onSaveMetadata?.();
+  function acceptStartMetadata() {
+    if (isLive) {
+      if (onSaveMetadata) {
+        onSaveMetadata();
+      }
 
-    setNoticeMessage(
-      "Información del directo actualizada",
+      setNoticeMessage(
+        "Información del directo actualizada",
+      );
+    }
+
+    setStartMetadataVisible(false);
+  }
+
+  function toggleAudience() {
+    setAudienceMode(
+      (current) => {
+        let next:
+          | "public"
+          | "followers" =
+          "public";
+
+        if (
+          current === "public"
+        ) {
+          next = "followers";
+        }
+
+        if (
+          next === "followers"
+        ) {
+          setNoticeMessage(
+            "Directo visible solo para seguidores",
+          );
+        } else {
+          setNoticeMessage(
+            "El directo ahora es público",
+          );
+        }
+
+        return next;
+      },
     );
   }
 
-  setStartMetadataVisible(false);
-}
+  function toggleComments() {
+    setCommentsEnabled(
+      (current) => {
+        const next =
+          !current;
 
-function toggleAudience() {
-  setAudienceMode(
-    (current) => {
-      const next =
-        current === "public"
-          ? "followers"
-          : "public";
+        if (next) {
+          setNoticeMessage(
+            "Los comentarios se han activado",
+          );
+        } else {
+          setNoticeMessage(
+            "Los comentarios se han ocultado",
+          );
+        }
 
-      setNoticeMessage(
-        next === "followers"
-          ? "Directo visible solo para seguidores"
-          : "El directo ahora es público",
+        return next;
+      },
+    );
+  }
+
+  function handleChangeTitle(
+    value: string,
+  ) {
+    if (onChangeTitle) {
+      onChangeTitle(value);
+    }
+  }
+
+  function handleChangeEventName(
+    value: string,
+  ) {
+    if (onChangeEventName) {
+      onChangeEventName(value);
+    }
+  }
+
+  function handleChangeLocationPlace(
+    place: LocationPlace | null,
+  ) {
+    if (
+      onChangeLocationPlace
+    ) {
+      onChangeLocationPlace(
+        place,
       );
+    }
+  }
 
-      return next;
-    },
-  );
-}
+  function handleToggleMicrophone() {
+    if (onToggleMicrophone) {
+      onToggleMicrophone();
+    }
+  }
 
-function toggleComments() {
-  setCommentsEnabled(
-    (current) => {
-      const next = !current;
+  function handleOpenFilters() {
+    if (onOpenFilters) {
+      onOpenFilters();
+    }
+  }
 
-      setNoticeMessage(
-        next
-          ? "Los comentarios se han activado"
-          : "Los comentarios se han ocultado",
-      );
+  function handleSwitchCamera() {
+    if (onSwitchCamera) {
+      onSwitchCamera();
+    }
+  }
 
-      return next;
-    },
-  );
-}
+  let metadataLocation:
+    | string
+    | null =
+    locationName;
+
+  if (!locationVisible) {
+    metadataLocation = null;
+  }
+
+  let modalLocationName = "";
+
+  if (locationName) {
+    modalLocationName =
+      locationName;
+  }
+
+  const hasMetadata =
+    Boolean(
+      eventName.trim(),
+    ) ||
+    Boolean(
+      title.trim(),
+    ) ||
+    Boolean(
+      locationVisible &&
+        locationName,
+    );
 
   return (
     <View
       pointerEvents="box-none"
       style={styles.overlay}
     >
-      {isLive ? (
+      {isLive && (
         <LinearGradient
           pointerEvents="none"
           colors={[
@@ -315,7 +454,7 @@ function toggleComments() {
             styles.bottomGradient
           }
         />
-      ) : null}
+      )}
 
       <Pressable
         style={
@@ -337,102 +476,108 @@ function toggleComments() {
         }}
       />
 
-<LiveBroadcastHeader
-  isLive={isLive}
-  viewers={viewers}
-  likes={likes}
-  onFinishLive={onFinishLive}
-/>
+      <LiveBroadcastHeader
+        isLive={isLive}
+        viewers={viewers}
+        likes={likes}
+        onFinishLive={
+          onFinishLive
+        }
+      />
 
-{contentVisible ? (
-  <Animated.View
-    pointerEvents="box-none"
-    style={[
-      styles.contentLayer,
-      {
-        opacity,
-        transform: [
-          {
-            translateY,
-          },
-        ],
-      },
-    ]}
-  >
-    {isLive &&
-    (eventName.trim() ||
-      title.trim() ||
-      (
-        locationVisible &&
-        locationName
-      )) ? (
-      <Pressable
-        onPress={openStartMetadata}
-        style={styles.topMetadata}
-      >
-        <LiveBroadcastMetadata
-          eventName={eventName}
-          title={title}
-          location={
-            locationVisible
-              ? locationName
-              : null
+      {contentVisible && (
+        <Animated.View
+          pointerEvents="box-none"
+          style={[
+            styles.contentLayer,
+            {
+              opacity,
+              transform: [
+                {
+                  translateY,
+                },
+              ],
+            },
+          ]}
+        >
+          {isLive &&
+            hasMetadata && (
+              <Pressable
+                onPress={
+                  openStartMetadata
+                }
+                style={
+                  styles.topMetadata
+                }
+              >
+                <LiveBroadcastMetadata
+                  eventName={
+                    eventName
+                  }
+                  title={title}
+                  location={
+                    metadataLocation
+                  }
+                />
+              </Pressable>
+            )}
+
+          <LiveTimedCommentsLayer
+            comments={comments}
+            visible={
+              isLive &&
+              commentsEnabled
+            }
+          />
+        </Animated.View>
+      )}
+
+      {isLive && (
+        <LiveBroadcastBottomNav
+          isLive={isLive}
+          isConnecting={
+            isConnecting
+          }
+          cameraReady={
+            cameraReady
+          }
+          microphoneEnabled={
+            microphoneEnabled
+          }
+          moreEnabled={
+            moreEnabled
+          }
+          microphoneControlEnabled={
+            microphoneControlEnabled
+          }
+          filtersEnabled={
+            filtersEnabled
+          }
+          cameraSwitchEnabled={
+            cameraSwitchEnabled
+          }
+          onOpenMore={
+            toggleMoreMenu
+          }
+          onToggleMicrophone={
+            handleToggleMicrophone
+          }
+          onOpenFilters={
+            handleOpenFilters
+          }
+          onSwitchCamera={
+            handleSwitchCamera
+          }
+          onStartLive={
+            onStartLive
+          }
+          onFinishLive={
+            onFinishLive
           }
         />
-      </Pressable>
-    ) : null}
+      )}
 
-    <LiveTimedCommentsLayer
-      comments={comments}
-      visible={
-        isLive &&
-        commentsEnabled
-      }
-    />
-  </Animated.View>
-) : null}
-
-{isLive ? (
-  <LiveBroadcastBottomNav
-    isLive={isLive}
-    isConnecting={isConnecting}
-    cameraReady={cameraReady}
-    microphoneEnabled={
-      microphoneEnabled
-    }
-    moreEnabled={
-      moreEnabled
-    }
-    microphoneControlEnabled={
-      microphoneControlEnabled
-    }
-    filtersEnabled={
-      filtersEnabled
-    }
-    cameraSwitchEnabled={
-      cameraSwitchEnabled
-    }
-    onOpenMore={
-      toggleMoreMenu
-    }
-    onToggleMicrophone={
-      onToggleMicrophone ??
-      (() => {})
-    }
-    onOpenFilters={
-      onOpenFilters ??
-      (() => {})
-    }
-    onSwitchCamera={
-      onSwitchCamera ??
-      (() => {})
-    }
-    onStartLive={onStartLive}
-    onFinishLive={onFinishLive}
-  />
-) : null}
-
-      {isLive ? (
+      {isLive && (
         <LiveBroadcastMoreMenu
           visible={
             moreMenuVisible
@@ -453,7 +598,7 @@ function toggleComments() {
             toggleComments
           }
         />
-      ) : null}
+      )}
 
       <LiveStartMetadataModal
         visible={
@@ -462,18 +607,25 @@ function toggleComments() {
         title={title}
         eventName={eventName}
         locationName={
-          locationName ?? ""
+          modalLocationName
+        }
+        locationCoordinates={
+          locationCoordinates
+        }
+        selectedLocationPlace={
+          selectedLocationPlace
         }
         locationVisible={
           locationVisible
         }
         onChangeTitle={
-          onChangeTitle ??
-          (() => {})
+          handleChangeTitle
         }
         onChangeEventName={
-          onChangeEventName ??
-          (() => {})
+          handleChangeEventName
+        }
+        onChangeLocationPlace={
+          handleChangeLocationPlace
         }
         onChangeLocationVisible={
           setLocationVisible
@@ -504,9 +656,9 @@ const styles =
       height: 190,
     },
 
-contentLayer: {
-  ...StyleSheet.absoluteFill,
-},
+    contentLayer: {
+      ...StyleSheet.absoluteFill,
+    },
 
     topMetadata: {
       position: "absolute",
