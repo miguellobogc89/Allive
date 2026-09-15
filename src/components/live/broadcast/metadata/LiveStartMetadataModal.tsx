@@ -1,11 +1,15 @@
 // src/components/live/broadcast/metadata/LiveStartMetadataModal.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
 import {
   useEffect,
   useRef,
   useState,
 } from "react";
+
 import {
   Animated,
   Pressable,
@@ -100,94 +104,116 @@ export function LiveStartMetadataModal({
   const [
     mounted,
     setMounted,
-  ] = useState(visible);
+  ] = useState(
+    visible,
+  );
 
   const [
     locationPickerVisible,
     setLocationPickerVisible,
-  ] = useState(false);
+  ] = useState(
+    false,
+  );
 
-  useEffect(() => {
-    if (visible) {
-      setMounted(true);
+  useEffect(
+    () => {
+      if (visible) {
+        setMounted(
+          true,
+        );
+
+        opacity.stopAnimation();
+        translateY.stopAnimation();
+
+        opacity.setValue(
+          0,
+        );
+
+        translateY.setValue(
+          14,
+        );
+
+        requestAnimationFrame(
+          () => {
+            Animated.parallel([
+              Animated.timing(
+                opacity,
+                {
+                  toValue: 1,
+                  duration: 220,
+                  useNativeDriver:
+                    true,
+                },
+              ),
+
+              Animated.timing(
+                translateY,
+                {
+                  toValue: 0,
+                  duration: 240,
+                  useNativeDriver:
+                    true,
+                },
+              ),
+            ]).start();
+          },
+        );
+
+        return;
+      }
+
+      setLocationPickerVisible(
+        false,
+      );
+
+      if (!mounted) {
+        return;
+      }
 
       opacity.stopAnimation();
       translateY.stopAnimation();
 
-      opacity.setValue(0);
-      translateY.setValue(14);
+      Animated.parallel([
+        Animated.timing(
+          opacity,
+          {
+            toValue: 0,
+            duration: 160,
+            useNativeDriver:
+              true,
+          },
+        ),
 
-      requestAnimationFrame(() => {
-        Animated.parallel([
-          Animated.timing(
-            opacity,
-            {
-              toValue: 1,
-              duration: 220,
-              useNativeDriver:
-                true,
-            },
-          ),
-
-          Animated.timing(
-            translateY,
-            {
-              toValue: 0,
-              duration: 240,
-              useNativeDriver:
-                true,
-            },
-          ),
-        ]).start();
-      });
-
-      return;
-    }
-
-    setLocationPickerVisible(
-      false,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    opacity.stopAnimation();
-    translateY.stopAnimation();
-
-    Animated.parallel([
-      Animated.timing(
-        opacity,
-        {
-          toValue: 0,
-          duration: 160,
-          useNativeDriver:
-            true,
+        Animated.timing(
+          translateY,
+          {
+            toValue: -10,
+            duration: 180,
+            useNativeDriver:
+              true,
+          },
+        ),
+      ]).start(
+        ({
+          finished,
+        }) => {
+          if (
+            finished
+          ) {
+            setMounted(
+              false,
+            );
+          }
         },
-      ),
-
-      Animated.timing(
-        translateY,
-        {
-          toValue: -10,
-          duration: 180,
-          useNativeDriver:
-            true,
-        },
-      ),
-    ]).start(
-      ({ finished }) => {
-        if (finished) {
-          setMounted(false);
-        }
-      },
-    );
-  }, [
-    visible,
-    opacity,
-    translateY,
-    mounted,
-  ]);
+      );
+    },
+    [
+      visible,
+      opacity,
+      translateY,
+      mounted,
+    ],
+  );
 
   if (!mounted) {
     return null;
@@ -196,12 +222,16 @@ export function LiveStartMetadataModal({
   let displayedLocationName =
     locationName;
 
-  if (selectedLocationPlace) {
+  if (
+    selectedLocationPlace
+  ) {
     displayedLocationName =
       selectedLocationPlace.name;
   }
 
-  if (!displayedLocationName) {
+  if (
+    !displayedLocationName
+  ) {
     displayedLocationName =
       "Detectando ubicación…";
   }
@@ -211,14 +241,19 @@ export function LiveStartMetadataModal({
     | "chevron-up" =
     "chevron-down";
 
-  if (locationPickerVisible) {
-    pickerIcon = "chevron-up";
+  if (
+    locationPickerVisible
+  ) {
+    pickerIcon =
+      "chevron-up";
   }
 
   let visibleIconColor =
     "rgba(255,255,255,0.48)";
 
-  if (locationVisible) {
+  if (
+    locationVisible
+  ) {
     visibleIconColor =
       "#FFFFFF";
   }
@@ -226,25 +261,39 @@ export function LiveStartMetadataModal({
   let hiddenIconColor =
     "rgba(255,255,255,0.48)";
 
-  if (!locationVisible) {
+  if (
+    !locationVisible
+  ) {
     hiddenIconColor =
       "#FFFFFF";
+  }
+
+  let layerPointerEvents:
+    | "auto"
+    | "none" =
+    "none";
+
+  if (visible) {
+    layerPointerEvents =
+      "auto";
   }
 
   return (
     <View
       pointerEvents={
-        visible
-          ? "auto"
-          : "none"
+        layerPointerEvents
       }
-      style={styles.layer}
+      style={
+        styles.layer
+      }
     >
       <Pressable
         style={
           StyleSheet.absoluteFill
         }
-        onPress={onClose}
+        onPress={
+          onClose
+        }
       >
         <Animated.View
           pointerEvents="none"
@@ -259,13 +308,16 @@ export function LiveStartMetadataModal({
 
       <View
         pointerEvents="box-none"
-        style={styles.centerStage}
+        style={
+          styles.centerStage
+        }
       >
         <Animated.View
           style={[
             styles.card,
             {
               opacity,
+
               transform: [
                 {
                   translateY,
@@ -278,9 +330,14 @@ export function LiveStartMetadataModal({
             accessibilityRole="button"
             accessibilityLabel="Cerrar"
             hitSlop={10}
-            onPress={onClose}
-            style={({ pressed }) => [
+            onPress={
+              onClose
+            }
+            style={({
+              pressed,
+            }) => [
               styles.closeButton,
+
               pressed &&
                 styles.closeButtonPressed,
             ]}
@@ -292,9 +349,15 @@ export function LiveStartMetadataModal({
             />
           </Pressable>
 
-          <View style={styles.content}>
+          <View
+            style={
+              styles.content
+            }
+          >
             <TextInput
-              value={title}
+              value={
+                title
+              }
               onChangeText={
                 onChangeTitle
               }
@@ -308,14 +371,18 @@ export function LiveStartMetadataModal({
             />
 
             <TextInput
-              value={eventName}
+              value={
+                eventName
+              }
               onChangeText={
                 onChangeEventName
               }
               placeholder="¿Cómo se llama el evento?"
               placeholderTextColor="rgba(255,255,255,0.55)"
               maxLength={100}
-              style={styles.input}
+              style={
+                styles.input
+              }
             />
 
             <View
@@ -329,11 +396,15 @@ export function LiveStartMetadataModal({
                   setLocationPickerVisible(
                     (
                       current,
-                    ) => !current,
+                    ) =>
+                      !current,
                   );
                 }}
-                style={({ pressed }) => [
+                style={({
+                  pressed,
+                }) => [
                   styles.locationIdentity,
+
                   pressed &&
                     styles.locationIdentityPressed,
                 ]}
@@ -364,7 +435,9 @@ export function LiveStartMetadataModal({
                   </Text>
 
                   <Text
-                    numberOfLines={1}
+                    numberOfLines={
+                      1
+                    }
                     style={
                       styles.locationText
                     }
@@ -376,7 +449,9 @@ export function LiveStartMetadataModal({
                 </View>
 
                 <Ionicons
-                  name={pickerIcon}
+                  name={
+                    pickerIcon
+                  }
                   size={17}
                   color="rgba(255,255,255,0.45)"
                 />
@@ -395,13 +470,9 @@ export function LiveStartMetadataModal({
                   selectedPlace={
                     selectedLocationPlace
                   }
-                  onSelectPlace={(
-                    place,
-                  ) => {
-                    onChangeLocationPlace(
-                      place,
-                    );
-                  }}
+                  onSelectPlace={
+                    onChangeLocationPlace
+                  }
                   onClose={() => {
                     setLocationPickerVisible(
                       false,
@@ -434,10 +505,14 @@ export function LiveStartMetadataModal({
                         true,
                       );
                     }}
-                    style={({ pressed }) => [
+                    style={({
+                      pressed,
+                    }) => [
                       styles.visibilityOption,
+
                       locationVisible &&
                         styles.visibilityOptionActive,
+
                       pressed &&
                         styles.visibilityOptionPressed,
                     ]}
@@ -453,6 +528,7 @@ export function LiveStartMetadataModal({
                     <Text
                       style={[
                         styles.visibilityText,
+
                         locationVisible &&
                           styles.visibilityTextActive,
                       ]}
@@ -467,10 +543,14 @@ export function LiveStartMetadataModal({
                         false,
                       );
                     }}
-                    style={({ pressed }) => [
+                    style={({
+                      pressed,
+                    }) => [
                       styles.visibilityOption,
+
                       !locationVisible &&
                         styles.visibilityOptionActive,
+
                       pressed &&
                         styles.visibilityOptionPressed,
                     ]}
@@ -486,6 +566,7 @@ export function LiveStartMetadataModal({
                     <Text
                       style={[
                         styles.visibilityText,
+
                         !locationVisible &&
                           styles.visibilityTextActive,
                       ]}
@@ -499,9 +580,14 @@ export function LiveStartMetadataModal({
 
             <Pressable
               accessibilityRole="button"
-              onPress={onAccept}
-              style={({ pressed }) => [
+              onPress={
+                onAccept
+              }
+              style={({
+                pressed,
+              }) => [
                 styles.acceptButton,
+
                 pressed &&
                   styles.acceptButtonPressed,
               ]}
@@ -525,41 +611,72 @@ const styles =
   StyleSheet.create({
     layer: {
       ...StyleSheet.absoluteFill,
+
       zIndex: 50,
     },
 
     backdrop: {
       ...StyleSheet.absoluteFill,
+
       backgroundColor:
         "rgba(0,0,0,0.18)",
     },
 
     centerStage: {
       ...StyleSheet.absoluteFill,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 24,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      paddingHorizontal:
+        24,
     },
 
     card: {
-      position: "relative",
-      width: "100%",
-      maxWidth: 420,
-      padding: spacing.lg,
-      borderRadius: 20,
+      position:
+        "relative",
+
+      width:
+        "100%",
+
+      maxWidth:
+        420,
+
+      padding:
+        spacing.lg,
+
+      borderRadius:
+        20,
+
       backgroundColor:
         "rgba(12,14,17,0.86)",
+
+      overflow:
+        "visible",
     },
 
     closeButton: {
-      position: "absolute",
+      position:
+        "absolute",
+
       top: 10,
       right: 10,
+
       width: 34,
       height: 34,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 17,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      borderRadius:
+        17,
+
       zIndex: 2,
     },
 
@@ -569,113 +686,215 @@ const styles =
     },
 
     content: {
-      gap: spacing.md,
-      paddingTop: 24,
+      gap:
+        spacing.md,
+
+      paddingTop:
+        24,
+
+      overflow:
+        "visible",
     },
 
     input: {
-      minHeight: 48,
-      paddingHorizontal: 14,
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "500",
-      borderWidth: 1,
+      minHeight:
+        48,
+
+      paddingHorizontal:
+        14,
+
+      color:
+        "#FFFFFF",
+
+      fontSize:
+        14,
+
+      fontWeight:
+        "500",
+
+      borderWidth:
+        1,
+
       borderColor:
         "rgba(255,255,255,0.24)",
+
       borderRadius:
         radius.md,
+
       backgroundColor:
         "rgba(255,255,255,0.06)",
-      outlineWidth: 0,
+
+      outlineWidth:
+        0,
     },
 
     titleInput: {
       borderColor:
         "rgba(255,255,255,0.46)",
-      fontSize: 15,
-      fontWeight: "600",
+
+      fontSize:
+        15,
+
+      fontWeight:
+        "600",
     },
 
     locationBlock: {
-      gap: 10,
-      paddingHorizontal: 2,
-      paddingVertical: 4,
+      position:
+        "relative",
+
+      zIndex:
+        20,
+
+      gap:
+        10,
+
+      paddingHorizontal:
+        2,
+
+      paddingVertical:
+        4,
+
+      overflow:
+        "visible",
     },
 
     locationIdentity: {
-      minHeight: 42,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      paddingVertical: 3,
-      borderRadius: 10,
+      minHeight:
+        42,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap:
+        10,
+
+      paddingVertical:
+        3,
+
+      borderRadius:
+        10,
+
+      zIndex:
+        22,
     },
 
     locationIdentityPressed: {
-      opacity: 0.72,
+      opacity:
+        0.72,
     },
 
     locationIcon: {
       width: 30,
       height: 30,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 15,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      borderRadius:
+        15,
+
       backgroundColor:
         "rgba(255,255,255,0.07)",
     },
 
     locationContent: {
       flex: 1,
-      minWidth: 0,
+
+      minWidth:
+        0,
     },
 
     locationLabel: {
-      marginBottom: 2,
+      marginBottom:
+        2,
+
       color:
         "rgba(255,255,255,0.46)",
-      fontSize: 11,
-      fontWeight: "500",
+
+      fontSize:
+        11,
+
+      fontWeight:
+        "500",
     },
 
     locationText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "600",
+      color:
+        "#FFFFFF",
+
+      fontSize:
+        14,
+
+      fontWeight:
+        "600",
     },
 
     visibilityRow: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
       justifyContent:
         "space-between",
-      gap: spacing.sm,
+
+      gap:
+        spacing.sm,
     },
 
     visibilityLabel: {
       color:
         "rgba(255,255,255,0.58)",
-      fontSize: 12,
-      fontWeight: "500",
+
+      fontSize:
+        12,
+
+      fontWeight:
+        "500",
     },
 
     visibilitySelector: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
       gap: 4,
+
       padding: 3,
-      borderRadius: 10,
+
+      borderRadius:
+        10,
+
       backgroundColor:
         "rgba(255,255,255,0.07)",
     },
 
     visibilityOption: {
       height: 30,
-      flexDirection: "row",
-      alignItems: "center",
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
       gap: 5,
-      paddingHorizontal: 9,
-      borderRadius: 8,
+
+      paddingHorizontal:
+        9,
+
+      borderRadius:
+        8,
     },
 
     visibilityOptionActive: {
@@ -684,43 +903,66 @@ const styles =
     },
 
     visibilityOptionPressed: {
-      opacity: 0.72,
+      opacity:
+        0.72,
     },
 
     visibilityText: {
       color:
         "rgba(255,255,255,0.48)",
-      fontSize: 11,
-      fontWeight: "600",
+
+      fontSize:
+        11,
+
+      fontWeight:
+        "600",
     },
 
     visibilityTextActive: {
-      color: "#FFFFFF",
+      color:
+        "#FFFFFF",
     },
 
     acceptButton: {
-      height: 46,
-      marginTop: 4,
-      alignItems: "center",
-      justifyContent: "center",
+      height:
+        46,
+
+      marginTop:
+        4,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
       borderRadius:
         radius.md,
+
       backgroundColor:
         colors.accent,
     },
 
     acceptButtonPressed: {
-      opacity: 0.82,
+      opacity:
+        0.82,
+
       transform: [
         {
-          scale: 0.99,
+          scale:
+            0.99,
         },
       ],
     },
 
     acceptButtonText: {
-      color: "#FFFFFF",
-      fontSize: 14,
-      fontWeight: "700",
+      color:
+        "#FFFFFF",
+
+      fontSize:
+        14,
+
+      fontWeight:
+        "700",
     },
   });

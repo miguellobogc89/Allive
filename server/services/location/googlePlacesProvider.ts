@@ -13,6 +13,53 @@ const GOOGLE_TEXT_SEARCH_URL =
 const GOOGLE_NEARBY_SEARCH_URL =
   "https://places.googleapis.com/v1/places:searchNearby";
 
+const LIVE_RELEVANT_PLACE_TYPES = [
+  "restaurant",
+  "bar",
+  "cafe",
+  "coffee_shop",
+  "pub",
+  "night_club",
+
+  "movie_theater",
+  "performing_arts_theater",
+  "concert_hall",
+  "amphitheatre",
+  "event_venue",
+
+  "museum",
+  "art_gallery",
+  "cultural_center",
+  "historical_landmark",
+  "monument",
+
+  "tourist_attraction",
+  "visitor_center",
+  "observation_deck",
+
+  "amusement_park",
+  "aquarium",
+  "zoo",
+  "water_park",
+
+  "park",
+  "national_park",
+  "plaza",
+
+  "stadium",
+  "sports_complex",
+  "sports_club",
+  "gym",
+
+  "shopping_mall",
+  "market",
+
+  "airport",
+  "train_station",
+  "transit_station",
+  "ferry_terminal",
+] as const;
+
 type GoogleAddressComponent = {
   longText?: string;
   types?: string[];
@@ -339,7 +386,10 @@ async function searchNearby(
           ]),
 
         body: JSON.stringify({
-          maxResultCount: 20,
+          includedTypes:
+            LIVE_RELEVANT_PLACE_TYPES,
+
+          maxResultCount: 4,
 
           rankPreference:
             "DISTANCE",
@@ -354,7 +404,7 @@ async function searchNearby(
                   coordinates.longitude,
               },
 
-              radius: 1000,
+              radius: 10,
             },
           },
 

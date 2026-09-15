@@ -1,9 +1,13 @@
 // src/components/live/broadcast/location/LiveLocationPicker.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
 import {
   ActivityIndicator,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -12,14 +16,6 @@ import {
 import type {
   LocationPlace,
 } from "../../../../api/locationApi";
-
-import {
-  LiveLocationResult,
-} from "./LiveLocationResult";
-
-import {
-  LiveLocationSearchInput,
-} from "./LiveLocationSearchInput";
 
 import {
   useLiveLocationPicker,
@@ -50,6 +46,9 @@ type Props = {
   onClose: () => void;
 };
 
+const EXACT_LOCATION_ID =
+  "__allive_exact_location__";
+
 export function LiveLocationPicker({
   visible,
   automaticLocationName,
@@ -59,8 +58,6 @@ export function LiveLocationPicker({
   onClose,
 }: Props) {
   const {
-    query,
-    setQuery,
     places,
     loading,
   } = useLiveLocationPicker({
@@ -72,250 +69,468 @@ export function LiveLocationPicker({
     return null;
   }
 
-  const automaticSelected =
+  const approximateSelected =
     !selectedPlace;
 
-  let resultsTitle =
-    "Cerca de ti";
+  const exactSelected =
+    selectedPlace?.id ===
+    EXACT_LOCATION_ID;
 
-  if (
-    query.trim().length >= 2
+  function selectExactLocation() {
+    if (!coordinates) {
+      return;
+    }
+
+    onSelectPlace({
+      id:
+        EXACT_LOCATION_ID,
+
+      name:
+        "Ubicación exacta",
+
+      address:
+        null,
+
+      latitude:
+        coordinates.latitude,
+
+      longitude:
+        coordinates.longitude,
+    });
+
+    onClose();
+  }
+
+  function selectApproximateLocation() {
+    onSelectPlace(
+      null,
+    );
+
+    onClose();
+  }
+
+  function selectPlace(
+    place: LocationPlace,
   ) {
-    resultsTitle = "Resultados";
+    onSelectPlace(
+      place,
+    );
+
+    onClose();
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          Ubicación del LIVE
-        </Text>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar ubicaciones"
-          hitSlop={8}
-          onPress={onClose}
-        >
-          <Ionicons
-            name="close"
-            size={20}
-            color="rgba(255,255,255,0.66)"
-          />
-        </Pressable>
-      </View>
-
-      <Pressable
-        onPress={() => {
-          onSelectPlace(null);
-        }}
-        style={({ pressed }) => [
-          styles.automaticLocation,
-          automaticSelected &&
-            styles.automaticLocationSelected,
-          pressed &&
-            styles.pressed,
-        ]}
-      >
-        <View style={styles.autoIcon}>
-          <Ionicons
-            name="navigate-outline"
-            size={17}
-            color="#FFFFFF"
-          />
-        </View>
-
-        <View style={styles.autoContent}>
-          <Text style={styles.autoLabel}>
-            Ubicación aproximada
-          </Text>
-
-          <Text
-            numberOfLines={1}
-            style={styles.autoName}
-          >
-            {automaticLocationName}
-          </Text>
-        </View>
-
-        {automaticSelected && (
-          <Ionicons
-            name="checkmark-circle"
-            size={19}
-            color="#FFFFFF"
-          />
-        )}
-      </Pressable>
-
-      <LiveLocationSearchInput
-        value={query}
-        onChangeText={setQuery}
-      />
-
+    <View
+      style={
+        styles.floatingContainer
+      }
+    >
       <View
-        style={styles.resultsHeader}
+        style={
+          styles.header
+        }
       >
         <Text
-          style={styles.resultsTitle}
+          style={
+            styles.headerTitle
+          }
         >
-          {resultsTitle}
+          Compartir ubicación
         </Text>
 
         {loading && (
           <ActivityIndicator
             size="small"
-            color="rgba(255,255,255,0.52)"
+            color="rgba(255,255,255,0.55)"
           />
         )}
       </View>
 
-      <View style={styles.results}>
-        {places.map((place) => {
-          const selected =
-            selectedPlace?.id ===
-            place.id;
-
-          return (
-            <LiveLocationResult
-              key={place.id}
-              place={place}
-              selected={selected}
-              onPress={
-                onSelectPlace
-              }
-            />
-          );
-        })}
-
-        {!loading &&
-          places.length === 0 && (
+      <ScrollView
+        style={
+          styles.scroll
+        }
+        contentContainerStyle={
+          styles.scrollContent
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
+        nestedScrollEnabled
+      >
+        {coordinates && (
+          <Pressable
+            onPress={
+              selectExactLocation
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.option,
+              exactSelected &&
+                styles.optionSelected,
+              pressed &&
+                styles.optionPressed,
+            ]}
+          >
             <View
-              style={styles.empty}
+              style={
+                styles.icon
+              }
+            >
+              <Ionicons
+                name="navigate"
+                size={18}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View
+              style={
+                styles.optionContent
+              }
             >
               <Text
                 style={
-                  styles.emptyText
+                  styles.optionTitle
                 }
               >
-                No se han encontrado
-                lugares.
+                Ubicación exacta
+              </Text>
+
+              <Text
+                style={
+                  styles.optionSubtitle
+                }
+              >
+                Comparte tu posición GPS
               </Text>
             </View>
+
+            {exactSelected && (
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color="#FFFFFF"
+              />
+            )}
+          </Pressable>
+        )}
+
+        {places.map(
+          (
+            place,
+          ) => {
+            const selected =
+              selectedPlace?.id ===
+              place.id;
+
+            return (
+              <Pressable
+                key={
+                  place.id
+                }
+                onPress={() => {
+                  selectPlace(
+                    place,
+                  );
+                }}
+                style={({
+                  pressed,
+                }) => [
+                  styles.option,
+                  selected &&
+                    styles.optionSelected,
+                  pressed &&
+                    styles.optionPressed,
+                ]}
+              >
+                <View
+                  style={
+                    styles.icon
+                  }
+                >
+                  <Ionicons
+                    name="location"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                </View>
+
+                <View
+                  style={
+                    styles.optionContent
+                  }
+                >
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={
+                      styles.optionTitle
+                    }
+                  >
+                    {
+                      place.name
+                    }
+                  </Text>
+
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={
+                      styles.optionSubtitle
+                    }
+                  >
+                    Lugar cercano
+                  </Text>
+                </View>
+
+                {selected && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                )}
+              </Pressable>
+            );
+          },
+        )}
+
+        <Pressable
+          onPress={
+            selectApproximateLocation
+          }
+          style={({
+            pressed,
+          }) => [
+            styles.option,
+            approximateSelected &&
+              styles.optionSelected,
+            pressed &&
+              styles.optionPressed,
+          ]}
+        >
+          <View
+            style={
+              styles.icon
+            }
+          >
+            <Ionicons
+              name="map-outline"
+              size={18}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <View
+            style={
+              styles.optionContent
+            }
+          >
+            <Text
+              numberOfLines={1}
+              style={
+                styles.optionTitle
+              }
+            >
+              {
+                automaticLocationName
+              }
+            </Text>
+
+            <Text
+              style={
+                styles.optionSubtitle
+              }
+            >
+              Barrio o ciudad
+            </Text>
+          </View>
+
+          {approximateSelected && (
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color="#FFFFFF"
+            />
           )}
-      </View>
+        </Pressable>
+      </ScrollView>
     </View>
   );
 }
 
 const styles =
   StyleSheet.create({
-    container: {
-      gap: 10,
-      padding: 12,
+    floatingContainer: {
+      position:
+        "absolute",
+
+      top: 48,
+      left: 0,
+      right: 0,
+
+      zIndex: 100,
+
+      maxHeight: 260,
+
       borderWidth: 1,
+
       borderColor:
-        "rgba(255,255,255,0.11)",
-      borderRadius: 14,
+        "rgba(255,255,255,0.14)",
+
+      borderRadius: 16,
+
       backgroundColor:
-        "rgba(0,0,0,0.18)",
+        "rgba(20,22,25,0.98)",
+
+      shadowColor:
+        "#000000",
+
+      shadowOpacity:
+        0.45,
+
+      shadowRadius:
+        20,
+
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+
+      elevation: 18,
+
+      overflow:
+        "hidden",
     },
 
     header: {
-      flexDirection: "row",
-      alignItems: "center",
+      height: 38,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
       justifyContent:
         "space-between",
+
+      paddingHorizontal:
+        13,
+
+      borderBottomWidth:
+        StyleSheet.hairlineWidth,
+
+      borderBottomColor:
+        "rgba(255,255,255,0.10)",
     },
 
-    title: {
-      color: "#FFFFFF",
-      fontSize: 13,
-      fontWeight: "600",
+    headerTitle: {
+      color:
+        "rgba(255,255,255,0.55)",
+
+      fontSize: 10,
+
+      fontWeight:
+        "600",
+
+      textTransform:
+        "uppercase",
+
+      letterSpacing:
+        0.6,
     },
 
-    automaticLocation: {
-      minHeight: 52,
-      flexDirection: "row",
-      alignItems: "center",
+    scroll: {
+      maxHeight:
+        220,
+    },
+
+    scrollContent: {
+      padding:
+        6,
+    },
+
+    option: {
+      minHeight:
+        54,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
       gap: 10,
-      paddingHorizontal: 10,
-      paddingVertical: 7,
-      borderRadius: 12,
+
+      paddingHorizontal:
+        9,
+
+      paddingVertical:
+        7,
+
+      borderRadius:
+        11,
+    },
+
+    optionSelected: {
       backgroundColor:
-        "rgba(255,255,255,0.04)",
+        "rgba(255,255,255,0.10)",
     },
 
-    automaticLocationSelected: {
+    optionPressed: {
       backgroundColor:
-        "rgba(255,255,255,0.11)",
+        "rgba(255,255,255,0.07)",
     },
 
-    pressed: {
-      opacity: 0.72,
-    },
+    icon: {
+      width: 34,
+      height: 34,
 
-    autoIcon: {
-      width: 32,
-      height: 32,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 16,
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      borderRadius:
+        17,
+
       backgroundColor:
         "rgba(255,255,255,0.08)",
     },
 
-    autoContent: {
+    optionContent: {
       flex: 1,
       minWidth: 0,
     },
 
-    autoLabel: {
+    optionTitle: {
+      color:
+        "#FFFFFF",
+
+      fontSize:
+        13,
+
+      fontWeight:
+        "600",
+    },
+
+    optionSubtitle: {
+      marginTop:
+        2,
+
       color:
         "rgba(255,255,255,0.43)",
-      fontSize: 10,
-      fontWeight: "400",
-    },
 
-    autoName: {
-      marginTop: 1,
-      color: "#FFFFFF",
-      fontSize: 13,
-      fontWeight: "600",
-    },
+      fontSize:
+        10,
 
-    resultsHeader: {
-      minHeight: 20,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent:
-        "space-between",
-      paddingHorizontal: 2,
+      fontWeight:
+        "400",
     },
-
-    resultsTitle: {
-      color:
-        "rgba(255,255,255,0.45)",
-      fontSize: 10,
-      fontWeight: "500",
-      textTransform: "uppercase",
-      letterSpacing: 0.6,
-    },
-
-    results: {
-      gap: 5,
-      maxHeight: 230,
-      overflow: "hidden",
-    },
-
-    empty: {
-      paddingVertical: 14,
-      alignItems: "center",
-    },
-
-    emptyText: {
-      color:
-        "rgba(255,255,255,0.42)",
-      fontSize: 12,
-      fontWeight: "400",
-    },
-  });
+  }); 

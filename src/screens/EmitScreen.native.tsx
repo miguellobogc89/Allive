@@ -20,6 +20,10 @@ import {
   View,
 } from "react-native";
 
+import type {
+  LocationPlace,
+} from "../api/locationApi";
+
 import {
   useAuth,
 } from "../auth/AuthContext";
@@ -35,6 +39,10 @@ import {
 import {
   CameraSwitchControl,
 } from "../components/live/broadcast/bottom-nav/CameraSwitchControl";
+
+import {
+  useBroadcastLocation,
+} from "../components/live/useBroadcastLocation.native";
 
 import {
   tokens,
@@ -96,54 +104,135 @@ export function EmitScreen({
     setEventName,
   ] = useState("");
 
+  const [
+    selectedLocationPlace,
+    setSelectedLocationPlace,
+  ] = useState<LocationPlace | null>(
+    null,
+  );
+
+  const {
+    location,
+  } = useBroadcastLocation();
+
   const cameraReady =
     Boolean(
       permission?.granted,
     );
 
+  let displayedLocationName:
+    | string
+    | null = null;
+
+  if (location) {
+    displayedLocationName =
+      location.placeName;
+  }
+
+  if (selectedLocationPlace) {
+    displayedLocationName =
+      selectedLocationPlace.name;
+  }
+
+  let locationCoordinates:
+    | {
+        latitude: number;
+        longitude: number;
+      }
+    | null = null;
+
+  if (location) {
+    locationCoordinates = {
+      latitude:
+        location.latitude,
+      longitude:
+        location.longitude,
+    };
+  }
+
   function toggleCamera() {
-    setFacing((current) =>
-      current === "back"
-        ? "front"
-        : "back",
+    setFacing(
+      (
+        current,
+      ) => {
+        if (
+          current === "back"
+        ) {
+          return "front";
+        }
+
+        return "back";
+      },
     );
   }
 
-  useEffect(() => {
-    onStatusChange?.({
-      isLive,
-      isConnecting: false,
+  useEffect(
+    () => {
+      if (!onStatusChange) {
+        return;
+      }
+
+      onStatusChange({
+        isLive,
+        isConnecting:
+          false,
+        cameraReady,
+      });
+    },
+    [
       cameraReady,
-    });
-  }, [
-    cameraReady,
-    isLive,
-    onStatusChange,
-  ]);
+      isLive,
+      onStatusChange,
+    ],
+  );
 
-  useEffect(() => {
-    if (
-      !isAuthenticated ||
-      !token ||
-      !cameraReady
-    ) {
-      onStartLiveReady?.(null);
-      return;
-    }
+  useEffect(
+    () => {
+      if (
+        !isAuthenticated ||
+        !token ||
+        !cameraReady
+      ) {
+        if (
+          onStartLiveReady
+        ) {
+          onStartLiveReady(
+            null,
+          );
+        }
 
-    onStartLiveReady?.(() => {
-      setIsLive(true);
-    });
+        return;
+      }
 
-    return () => {
-      onStartLiveReady?.(null);
-    };
-  }, [
-    cameraReady,
-    isAuthenticated,
-    onStartLiveReady,
-    token,
-  ]);
+      if (
+        onStartLiveReady
+      ) {
+        onStartLiveReady(
+          () => {
+            setIsLive(
+              true,
+            );
+          },
+        );
+      }
+
+      return () => {
+        if (
+          onStartLiveReady
+        ) {
+          onStartLiveReady(
+            null,
+          );
+        }
+      };
+    },
+    [
+      cameraReady,
+      isAuthenticated,
+      onStartLiveReady,
+      token,
+    ],
+  );
 
   if (
     !isAuthenticated ||
@@ -276,9 +365,11 @@ export function EmitScreen({
         authToken={token}
         title={title}
         eventName={eventName}
-        onFinish={() =>
-          setIsLive(false)
-        }
+        onFinish={() => {
+          setIsLive(
+            false,
+          );
+        }}
       />
     );
   }
@@ -300,19 +391,30 @@ export function EmitScreen({
         error: null,
         title,
         eventName,
-        locationName: null,
-        onChangeTitle: setTitle,
+        locationName:
+          displayedLocationName,
+        locationCoordinates,
+        selectedLocationPlace,
+        onChangeTitle:
+          setTitle,
         onChangeEventName:
           setEventName,
+        onChangeLocationPlace:
+          setSelectedLocationPlace,
         onStartLive: () => {
-          setIsLive(true);
+          setIsLive(
+            true,
+          );
         },
         onFinishLive: () => {
-          setIsLive(false);
+          setIsLive(
+            false,
+          );
         },
         onToggleMicrophone:
           () => {},
-        onOpenFilters: () => {},
+        onOpenFilters:
+          () => {},
         onSwitchCamera:
           toggleCamera,
       }}
