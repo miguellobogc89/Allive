@@ -1,74 +1,42 @@
 // src/screens/ReplayViewerScreen.native.tsx
 
 import {
-  ActivityIndicator,
-  View,
-} from "react-native";
+  AlliveLoadingScreen,
+} from "../components/loading/AlliveLoadingScreen";
 
 import {
   ReplayViewerScreenBase,
 } from "../components/live/replay/viewer/ReplayViewerScreenBase";
 
-import {
-  replayViewerStyles as styles,
-} from "../components/live/replay/viewer/ReplayViewerScreen.styles";
-
-import type {
-  ReplayViewerNavigation,
-} from "../components/live/replay/viewer/hooks/useReplayFeed";
-
-import {
-  tokens,
-} from "../styles";
-
 type ReplayViewerScreenProps = {
-  requestedReplayId?:
-    | string
-    | null;
+  requestedReplayId?: string | null;
+
+  onClose?: () => void;
 
   onOpenUser?: (
     userId: string,
-  ) => void;
-
-  onNavigationReady?: (
-    navigation:
-      ReplayViewerNavigation,
   ) => void;
 };
 
 export function ReplayViewerScreen({
   requestedReplayId = null,
+  onClose,
   onOpenUser,
-  onNavigationReady,
 }: ReplayViewerScreenProps) {
   return (
     <ReplayViewerScreenBase
       requestedReplayId={
         requestedReplayId
       }
+      onClose={
+        onClose
+      }
       onOpenUser={
         onOpenUser
       }
-      onNavigationReady={
-        onNavigationReady
-      }
       renderLoading={() => (
-        <View
-          style={
-            styles.loading
-          }
-        >
-          <ActivityIndicator
-            color={
-              tokens.color.accent
-                .primary
-            }
-          />
-        </View>
+        <AlliveLoadingScreen />
       )}
-      showNavigation={
-        false
-      }
     />
   );
 }

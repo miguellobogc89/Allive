@@ -7,6 +7,9 @@ import {
 type NowReplayViewerProps = {
   requestedReplayId?: string | null;
   selectedReplayId?: string | null;
+
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -15,6 +18,7 @@ type NowReplayViewerProps = {
 export function NowReplayViewer({
   requestedReplayId = null,
   selectedReplayId = null,
+  onClose,
   onOpenUser,
 }: NowReplayViewerProps) {
   return (
@@ -22,6 +26,9 @@ export function NowReplayViewer({
       requestedReplayId={
         requestedReplayId ??
         selectedReplayId
+      }
+      onClose={
+        onClose
       }
       onOpenUser={
         onOpenUser

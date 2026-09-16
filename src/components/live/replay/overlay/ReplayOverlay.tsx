@@ -21,6 +21,10 @@ import {
 } from "../../../../styles";
 
 import {
+  VideoViewerHeader,
+} from "../../../video/viewer/VideoViewerHeader";
+
+import {
   LiveViewerIdentity,
 } from "../../viewer/header/LiveViewerIdentity";
 
@@ -31,10 +35,6 @@ import {
 import {
   ReplayLikeButton,
 } from "../controls";
-
-import {
-  ReplayHeader,
-} from "../header/ReplayHeader";
 
 import {
   ReplayPlaybackControls,
@@ -62,6 +62,8 @@ type ReplayOverlayProps = {
   onPrevious: () => void;
   onNext: () => void;
 
+  onClose?: () => void;
+
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
   onOpenLives?: () => void;
@@ -75,7 +77,9 @@ type ReplayOverlayProps = {
   duration?: number;
 
   onPlaybackToggle?: () => void;
-  onSeek?: (time: number) => void;
+  onSeek?: (
+    time: number,
+  ) => void;
   onSkipBackward?: () => void;
   onSkipForward?: () => void;
   onToggleMute?: () => void;
@@ -87,8 +91,6 @@ export function ReplayOverlay({
   currentIndex,
   totalReplays,
 
-  likes,
-
   liked,
   likeLoading = false,
   onLikePress,
@@ -98,6 +100,8 @@ export function ReplayOverlay({
 
   onPrevious,
   onNext,
+
+  onClose,
 
   onFollowPress,
   onOpenCreator,
@@ -227,9 +231,7 @@ export function ReplayOverlay({
 
   return (
     <View
-      style={
-        styles.overlay
-      }
+      style={styles.overlay}
       pointerEvents="box-none"
     >
       <LinearGradient
@@ -260,9 +262,19 @@ export function ReplayOverlay({
         }
       />
 
-      <ReplayHeader
-        likes={likes}
-      />
+      <View
+        style={styles.header}
+        pointerEvents="box-none"
+      >
+        <VideoViewerHeader
+          mode="replay"
+          viewers={
+            replay.peakViewerCount ??
+            0
+          }
+          onClose={onClose}
+        />
+      </View>
 
       <Animated.View
         pointerEvents={
@@ -409,8 +421,7 @@ const styles =
     },
 
     bottomGradient: {
-      position:
-        "absolute",
+      position: "absolute",
 
       left: 0,
       right: 0,
@@ -419,9 +430,18 @@ const styles =
       height: 190,
     },
 
+    header: {
+      position: "absolute",
+
+      top: 18,
+      left: 0,
+      right: 0,
+
+      zIndex: 30,
+    },
+
     identityLayer: {
-      position:
-        "absolute",
+      position: "absolute",
 
       top: 80,
       left: spacing.md,
@@ -431,8 +451,7 @@ const styles =
     },
 
     likeLayer: {
-      position:
-        "absolute",
+      position: "absolute",
 
       right: spacing.md,
       bottom: 28,

@@ -11,6 +11,8 @@ import {
 type ReplayViewerScreenProps = {
   requestedReplayId?: string | null;
 
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -18,12 +20,16 @@ type ReplayViewerScreenProps = {
 
 export function ReplayViewerScreen({
   requestedReplayId = null,
+  onClose,
   onOpenUser,
 }: ReplayViewerScreenProps) {
   return (
     <ReplayViewerScreenBase
       requestedReplayId={
         requestedReplayId
+      }
+      onClose={
+        onClose
       }
       onOpenUser={
         onOpenUser

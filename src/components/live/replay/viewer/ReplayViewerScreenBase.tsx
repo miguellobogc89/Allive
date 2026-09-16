@@ -1,3 +1,5 @@
+// src/components/live/replay/viewer/ReplayViewerScreenBase.tsx
+
 import {
   useEffect,
   type ReactNode,
@@ -40,6 +42,8 @@ import {
 type ReplayViewerScreenBaseProps = {
   requestedReplayId?: string | null;
 
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -56,6 +60,7 @@ type ReplayViewerScreenBaseProps = {
 
 export function ReplayViewerScreenBase({
   requestedReplayId = null,
+  onClose,
   onOpenUser,
   onNavigationReady,
   renderLoading,
@@ -127,7 +132,7 @@ export function ReplayViewerScreenBase({
               styles.emptySubtitle
             }
           >
-            Los directos recientes aparecerÃ¡n aquÃ­.
+            Los directos recientes aparecerán aquí.
           </Text>
         </View>
       </View>
@@ -156,6 +161,9 @@ export function ReplayViewerScreenBase({
       }
       onNext={
         goToNextReplay
+      }
+      onClose={
+        onClose
       }
       onOpenUser={
         onOpenUser
@@ -187,6 +195,8 @@ type ReplayContentProps = {
   onNext:
     () => void;
 
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -206,6 +216,7 @@ function ReplayContent({
   onPrevious,
   onNext,
 
+  onClose,
   onOpenUser,
   showNavigation,
 }: ReplayContentProps) {
@@ -260,6 +271,9 @@ function ReplayContent({
           }
           onNext={
             onNext
+          }
+          onClose={
+            onClose
           }
           onOpenCreator={
             creatorId

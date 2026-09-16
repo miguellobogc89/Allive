@@ -168,22 +168,36 @@ const closeLive =
     );
   }, []);
 
+  const closeReplay =
+  useCallback(() => {
+    setSelectedReplayId(
+      null,
+    );
+
+    setActiveSection(
+      "now",
+    );
+  }, []);
+
   if (
     requestedReplayId ||
     selectedReplayId
   ) {
     return (
-      <NowReplayViewer
-        requestedReplayId={
-          requestedReplayId
-        }
-        selectedReplayId={
-          selectedReplayId
-        }
-        onOpenUser={
-          onOpenUser
-        }
-      />
+<NowReplayViewer
+  requestedReplayId={
+    requestedReplayId
+  }
+  selectedReplayId={
+    selectedReplayId
+  }
+  onClose={
+    closeReplay
+  }
+  onOpenUser={
+    onOpenUser
+  }
+/>
     );
   }
 
