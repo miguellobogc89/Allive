@@ -14,9 +14,9 @@ import {
 } from "../db";
 
 import {
-  startLiveRecording,
-  stopLiveRecording,
-} from "../services/liveRecordingService";
+  startRecording,
+  stopRecording,
+} from "../services/recordingEngineService";
 
 import {
   ActiveLiveExistsError,
@@ -660,28 +660,76 @@ likeCount:
         }
 
 const recording =
-          await startLiveRecording(
-            live.roomName,
-            live.id,
-          );
+  await startRecording(
+    live.roomName,
+    live.id,
+  );
 
-        await prisma.liveSession.update({
-          where: {
-            id: live.id,
-          },
-          data: {
-            recording_key:
-              recording.key,
-            recording_url:
-              recording.url,
-            recording_egress_id:
-              recording.egressId,
-          },
-        });
+await prisma.liveSession.update({
+  where: {
+    id: live.id,
+  },
 
-        return res
-          .status(201)
-          .json(recording);
+  data: {
+    recording_engine:
+      recording.engine,
+
+    /*
+     * Campos finales del replay.
+     *
+     * LEGACY los genera directamente.
+     * TRACK los generará posteriormente
+     * durante la finalización/mux.
+     */
+    recording_key:
+      recording.recordingKey,
+
+    recording_url:
+      recording.recordingUrl,
+
+    /*
+     * Egress antiguo.
+     * Solo se utiliza con LEGACY.
+     */
+    recording_egress_id:
+      recording.legacyEgressId,
+
+    /*
+     * Egress independientes del nuevo
+     * motor TRACK.
+     */
+    recording_video_egress_id:
+      recording.videoEgressId,
+
+    recording_audio_egress_id:
+      recording.audioEgressId,
+
+    recording_video_key:
+      recording.videoKey,
+
+    recording_audio_key:
+      recording.audioKey,
+  },
+});
+
+return res
+  .status(201)
+  .json({
+    engine:
+      recording.engine,
+
+    recordingKey:
+      recording.recordingKey,
+
+    recordingUrl:
+      recording.recordingUrl,
+
+    videoEgressId:
+      recording.videoEgressId,
+
+    audioEgressId:
+      recording.audioEgressId,
+  });
       } catch (error) {
         console.error(
           "Error iniciando grabación:",
@@ -719,10 +767,6 @@ const recording =
             ? idParam[0]
             : idParam;
 
-        const {
-          egressId,
-        } = req.body;
-
         if (!id) {
           return res
             .status(400)
@@ -732,18 +776,7 @@ const recording =
             });
         }
 
-        if (
-          !egressId ||
-          typeof egressId !==
-            "string"
-        ) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "egressId es obligatorio",
-            });
-        }
+
 
         const live =
           await prisma.liveSession.findUnique(
@@ -775,9 +808,28 @@ const recording =
             });
         }
 
-        await stopLiveRecording(
-          egressId,
-        );
+await stopRecording({
+  engine:
+    live.recording_engine,
+
+  legacyEgressId:
+    live.recording_egress_id,
+
+  videoEgressId:
+    live.recording_video_egress_id,
+
+  audioEgressId:
+    live.recording_audio_egress_id,
+
+  videoKey:
+    live.recording_video_key,
+
+  audioKey:
+    live.recording_audio_key,
+
+  roomName:
+    live.roomName,
+});
 
         return res.json({
           ok: true,
