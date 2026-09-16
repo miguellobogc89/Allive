@@ -157,12 +157,16 @@ export function NowScreen({
       [],
     );
 
-  const closeLive =
-    useCallback(() => {
-      setSelectedLiveId(
-        null,
-      );
-    }, []);
+const closeLive =
+  useCallback(() => {
+    setSelectedLiveId(
+      null,
+    );
+
+    setActiveSection(
+      "now",
+    );
+  }, []);
 
   if (
     requestedReplayId ||

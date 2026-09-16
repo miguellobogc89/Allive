@@ -11,7 +11,11 @@ import {
 type NowLiveViewerProps = {
   requestedLiveId?: string | null;
   selectedLiveId?: string | null;
+
   lives: ActiveLive[];
+
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -21,6 +25,7 @@ export function NowLiveViewer({
   requestedLiveId = null,
   selectedLiveId = null,
   lives,
+  onClose,
   onOpenUser,
 }: NowLiveViewerProps) {
   return (
@@ -31,6 +36,9 @@ export function NowLiveViewer({
       }
       initialLives={
         lives
+      }
+      onClose={
+        onClose
       }
       onOpenUser={
         onOpenUser
