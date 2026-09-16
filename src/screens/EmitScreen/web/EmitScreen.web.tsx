@@ -1020,11 +1020,24 @@ if (cameraTrack) {
   }
 
   async function handleSaveReplay() {
+    
     const currentLiveSessionId =
       finishedLiveSessionIdRef.current;
 
     const authToken =
       token;
+
+      console.log(
+  "💾 SAVE REPLAY CLICK:",
+  {
+    currentLiveSessionId,
+    hasAuthToken:
+      Boolean(authToken),
+    isSavingReplay,
+    finishedRef:
+      finishedLiveSessionIdRef.current,
+  },
+);
 
     if (
       !currentLiveSessionId ||
@@ -1039,16 +1052,28 @@ if (cameraTrack) {
         true,
       );
 
+      console.log(
+  "💾 Esperando finishLivePromise...",
+);
+
       if (
         finishLivePromiseRef.current
       ) {
         await finishLivePromiseRef.current;
       }
 
+      console.log(
+  "💾 finishLivePromise terminada. Llamando replay/save...",
+);
+
       await saveLiveReplay(
         currentLiveSessionId,
         authToken,
       );
+
+      console.log(
+  "💾 replay/save completado",
+);
 
       finishedLiveSessionIdRef.current =
         null;

@@ -49,7 +49,7 @@ export function useFollowingFeed({
   const [
     followingLoading,
     setFollowingLoading,
-  ] = useState(false);
+  ] = useState(true);
 
   const [
     followingError,
@@ -59,13 +59,6 @@ export function useFollowingFeed({
   >(null);
 
   useEffect(() => {
-    if (
-      activeSection !==
-      "following"
-    ) {
-      return;
-    }
-
     if (!token) {
       setFollowingLives(
         [],
@@ -76,7 +69,7 @@ export function useFollowingFeed({
       );
 
       setFollowingError(
-        "Inicia sesi\u00f3n para ver a las personas que sigues.",
+        "Inicia sesión para ver a las personas que sigues.",
       );
 
       setFollowingLoading(
@@ -91,6 +84,8 @@ export function useFollowingFeed({
 
     const controller =
       new AbortController();
+
+    let firstLoad = true;
 
     async function loadFollowing() {
       try {
@@ -137,8 +132,11 @@ export function useFollowingFeed({
       } finally {
         if (
           !controller.signal
-            .aborted
+            .aborted &&
+          firstLoad
         ) {
+          firstLoad = false;
+
           setFollowingLoading(
             false,
           );
@@ -166,7 +164,6 @@ export function useFollowingFeed({
       );
     };
   }, [
-    activeSection,
     token,
   ]);
 

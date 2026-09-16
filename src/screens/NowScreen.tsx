@@ -276,14 +276,6 @@ export function NowScreen({
             }}
           />
         </View>
-      ) : followingLoading ? (
-        <View
-          style={
-            styles.section
-          }
-        >
-          <AlliveLoadingScreen />
-        </View>
       ) : (
         <NowContentGrid
           items={

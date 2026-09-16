@@ -36,8 +36,16 @@ import {
 } from "./src/api/notificationsApi";
 
 import {
+  AlliveLoadingScreen,
+} from "./src/components/loading/AlliveLoadingScreen";
+
+import {
   BottomNav,
 } from "./src/components/navigation/BottomNav";
+
+import {
+  PersistentTabScreens,
+} from "./src/navigation/PersistentTabScreens";
 
 import {
   useAppNavigation,
@@ -59,24 +67,8 @@ import {
 } from "./src/screens/EmitScreen";
 
 import {
-  MapScreen,
-} from "./src/screens/MapScreen";
-
-import {
-  NowScreen,
-} from "./src/screens/NowScreen";
-
-import {
   NotificationsScreen,
 } from "./src/screens/NotificationsScreen";
-
-import {
-  ProfileScreen,
-} from "./src/screens/ProfileScreen";
-
-import {
-  SearchScreen,
-} from "./src/screens/SearchScreen";
 
 import {
   UserProfileScreen,
@@ -91,38 +83,28 @@ import {
 } from "./src/styles";
 
 function AppContent() {
-const {
-  identity,
-  isLoading,
-  token,
-} = useAuth();
+  const {
+    identity,
+    isLoading,
+    token,
+  } = useAuth();
 
-const {
-  activeTab,
-
+  const {
+    activeTab,
     selectedUserId,
-
     notificationsVisible,
-
     requestedLiveId,
-
     requestedReplayId,
-
     changeTab,
-
     openLive,
-
     openReplay,
-
     openUser,
-
     openNotifications,
-
     goBack,
   } = useAppNavigation();
 
   const blurTargetRef =
-  useRef<View | null>(null);
+    useRef<View | null>(null);
 
   const [
     unreadNotifications,
@@ -340,7 +322,11 @@ const {
     refreshUnreadNotifications,
   ]);
 
-
+  if (isLoading) {
+    return (
+      <AlliveLoadingScreen />
+    );
+  }
 
   if (!identity) {
     return (
@@ -377,7 +363,7 @@ const {
       startLive;
   }
 
-  function renderScreen() {
+  function renderForegroundScreen() {
     if (
       notificationsVisible
     ) {
@@ -415,48 +401,6 @@ const {
     }
 
     if (
-      activeTab === "now"
-    ) {
-      return (
-        <NowScreen
-          requestedLiveId={
-            requestedLiveId
-          }
-          requestedReplayId={
-            requestedReplayId
-          }
-          unreadNotifications={
-            unreadNotifications
-          }
-          onOpenSearch={() => {
-            changeTab("search");
-          }}
-          onOpenNotifications={
-            openNotifications
-          }
-          onOpenUser={
-            openUser
-          }
-        />
-      );
-    }
-
-    if (
-      activeTab === "map"
-    ) {
-      return (
-        <MapScreen
-          onOpenLive={
-            openLive
-          }
-          onOpenReplay={
-            openReplay
-          }
-        />
-      );
-    }
-
-    if (
       activeTab === "emit"
     ) {
       return (
@@ -471,62 +415,15 @@ const {
       );
     }
 
-if (
-  activeTab === "search"
-) {
-  return (
-    <SearchScreen
-      onOpenLive={
-        openLive
-      }
-      onOpenReplay={
-        openReplay
-      }
-      onOpenUser={
-        openUser
-      }
-    />
-  );
-}
-
-    if (
-      activeTab === "profile"
-    ) {
-      return (
-        <ProfileScreen
-          unreadNotifications={
-            unreadNotifications
-          }
-          onOpenNotifications={
-            openNotifications
-          }
-        />
-      );
-    }
-
-    return (
-      <NowScreen
-        requestedLiveId={
-          requestedLiveId
-        }
-        requestedReplayId={
-          requestedReplayId
-        }
-        unreadNotifications={
-          unreadNotifications
-        }
-        onOpenSearch={() => {
-          changeTab("search");
-        }}
-        onOpenNotifications={
-          openNotifications
-        }
-        onOpenUser={
-          openUser
-        }
-      />
-    );
+    return null;
   }
+
+  const foregroundScreen =
+    renderForegroundScreen();
+
+  const showPersistentTabs =
+    !foregroundScreen &&
+    activeTab !== "emit";
 
   return (
     <SafeAreaView
@@ -537,23 +434,65 @@ if (
         "top",
       ]}
     >
-<BlurTargetView
-  ref={blurTargetRef}
-  style={
-    styles.content
-  }
->
-  {renderScreen()}
-</BlurTargetView>
+      <BlurTargetView
+        ref={blurTargetRef}
+        style={
+          styles.content
+        }
+      >
+        <View
+          style={{
+            flex: 1,
+            display:
+              showPersistentTabs
+                ? "flex"
+                : "none",
+          }}
+        >
+          <PersistentTabScreens
+            activeTab={
+              activeTab
+            }
+            requestedLiveId={
+              requestedLiveId
+            }
+            requestedReplayId={
+              requestedReplayId
+            }
+            unreadNotifications={
+              unreadNotifications
+            }
+            onChangeTab={
+              changeTab
+            }
+            onOpenLive={
+              openLive
+            }
+            onOpenReplay={
+              openReplay
+            }
+            onOpenUser={
+              openUser
+            }
+            onOpenNotifications={
+              openNotifications
+            }
+          />
+        </View>
+
+        {foregroundScreen}
+      </BlurTargetView>
 
       {activeTab ===
         "emit" &&
       emitIsLive ? null : (
-<BottomNav
-  blurTarget={blurTargetRef}
-  activeTab={
-    activeTab
-  }
+        <BottomNav
+          blurTarget={
+            blurTargetRef
+          }
+          activeTab={
+            activeTab
+          }
           onTabPress={
             changeTab
           }

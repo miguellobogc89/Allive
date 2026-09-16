@@ -291,10 +291,6 @@ export function registerLiveRoutes(
               replay_saved_at: {
                 not: null,
               },
-
-              replay_visible_until: {
-                gt: new Date(),
-              },
             },
 
             orderBy: {
@@ -456,9 +452,6 @@ export function registerLiveRoutes(
                 },
                 replay_saved_at: {
                   not: null,
-                },
-                replay_visible_until: {
-                  gt: new Date(),
                 },
               },
 
@@ -918,18 +911,38 @@ await stopRecording({
             });
         }
 
-        if (
-          !live.recording_key ||
-          !live.recording_url ||
-          !live.recording_egress_id
-        ) {
-          return res
-            .status(409)
-            .json({
-              error:
-                "Esta emisión no tiene una grabación disponible",
-            });
-        }
+const hasLegacyRecording =
+  live.recording_engine ===
+    "LEGACY" &&
+  Boolean(
+    live.recording_key &&
+      live.recording_url &&
+      live.recording_egress_id,
+  );
+
+const hasTrackRecording =
+  live.recording_engine ===
+    "TRACK" &&
+  Boolean(
+    live.recording_video_egress_id ||
+      live.recording_audio_egress_id,
+  ) &&
+  Boolean(
+    live.recording_video_key ||
+      live.recording_audio_key,
+  );
+
+if (
+  !hasLegacyRecording &&
+  !hasTrackRecording
+) {
+  return res
+    .status(409)
+    .json({
+      error:
+        "Esta emisión no tiene una grabación disponible",
+    });
+}
 
         const savedAt =
           new Date();
