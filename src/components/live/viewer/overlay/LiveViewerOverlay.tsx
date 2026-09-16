@@ -515,15 +515,15 @@ const styles =
       width: "100%",
     },
 
-    identityLayer: {
-      position: "absolute",
+identityLayer: {
+  position: "absolute",
 
-      top: 78,
-      left: 16,
-      right: 16,
+  left: 16,
+  right: 16,
+  bottom: 92,
 
-      zIndex: 29,
-    },
+  zIndex: 29,
+},
 
     bottomContent: {
       ...StyleSheet.absoluteFill,

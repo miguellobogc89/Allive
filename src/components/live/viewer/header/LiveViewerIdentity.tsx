@@ -41,8 +41,8 @@ export function LiveViewerIdentity({
     live.creator ?? null;
 
   const creatorName =
-    creator?.displayName ||
     creator?.username ||
+    creator?.displayName ||
     "Allive";
 
   const creatorInitial =
@@ -52,19 +52,59 @@ export function LiveViewerIdentity({
       .toUpperCase() ||
     "A";
 
+const eventName =
+  live.eventName?.trim() ||
+  null;
+
+const title =
+  live.title?.trim() ||
+  null;
+
   const location =
     live.placeName?.trim() ||
-    null;
-
-  const eventName =
-    live.eventName?.trim() ||
-    live.title?.trim() ||
     null;
 
   return (
     <View
       style={styles.container}
     >
+      {eventName ? (
+        <Text
+          numberOfLines={2}
+          style={styles.event}
+        >
+          {eventName}
+        </Text>
+      ) : null}
+
+{title ? (
+  <Text
+    numberOfLines={2}
+    style={styles.title}
+  >
+    {title}
+  </Text>
+) : null}
+
+      {location ? (
+        <View
+          style={styles.locationRow}
+        >
+          <Ionicons
+            name="location-sharp"
+            size={13}
+            color="rgba(255,255,255,0.78)"
+          />
+
+          <Text
+            numberOfLines={1}
+            style={styles.location}
+          >
+            {location}
+          </Text>
+        </View>
+      ) : null}
+
       <View
         style={styles.creatorRow}
       >
@@ -117,7 +157,7 @@ export function LiveViewerIdentity({
               styles.creatorName
             }
           >
-            {creatorName}
+            @{creatorName}
           </Text>
         </Pressable>
 
@@ -164,38 +204,6 @@ export function LiveViewerIdentity({
           </Pressable>
         ) : null}
       </View>
-
-      {location ? (
-        <View
-          style={
-            styles.locationRow
-          }
-        >
-          <Ionicons
-            name="location-sharp"
-            size={13}
-            color="rgba(255,255,255,0.78)"
-          />
-
-          <Text
-            numberOfLines={1}
-            style={
-              styles.location
-            }
-          >
-            {location}
-          </Text>
-        </View>
-      ) : null}
-
-      {eventName ? (
-        <Text
-          numberOfLines={2}
-          style={styles.event}
-        >
-          {eventName}
-        </Text>
-      ) : null}
     </View>
   );
 }
@@ -204,33 +212,103 @@ const styles =
   StyleSheet.create({
     container: {
       width: "100%",
-
       maxWidth: 430,
     },
 
+    event: {
+      color: "#FFFFFF",
+
+      fontSize: 18,
+      lineHeight: 22,
+
+      fontWeight: "700",
+
+      letterSpacing: -0.3,
+
+      textShadowColor:
+        "rgba(0,0,0,0.9)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 1,
+      },
+
+      textShadowRadius: 4,
+    },
+
+title: {
+  marginTop: 3,
+
+  color: "#FFFFFF",
+
+  fontSize: 15,
+  lineHeight: 19,
+
+  fontWeight: "500",
+
+  textShadowColor:
+    "rgba(0,0,0,0.9)",
+
+  textShadowOffset: {
+    width: 0,
+    height: 1,
+  },
+
+  textShadowRadius: 3,
+},
+
+    locationRow: {
+      marginTop: 4,
+
+      flexDirection: "row",
+      alignItems: "center",
+
+      gap: 3,
+    },
+
+    location: {
+      flexShrink: 1,
+
+      color:
+        "rgba(255,255,255,0.78)",
+
+      fontSize: 12,
+      lineHeight: 16,
+
+      fontWeight: "500",
+
+      textShadowColor:
+        "rgba(0,0,0,0.9)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 1,
+      },
+
+      textShadowRadius: 3,
+    },
+
     creatorRow: {
-      width: "100%",
+      marginTop: 10,
 
       flexDirection: "row",
       alignItems: "center",
     },
 
     creatorIdentity: {
-      flex: 1,
-
-      minWidth: 0,
-
       flexDirection: "row",
       alignItems: "center",
+
+      minWidth: 0,
     },
 
     avatar: {
-      width: 38,
-      height: 38,
+      width: 28,
+      height: 28,
 
-      marginRight: 9,
+      marginRight: 7,
 
-      borderRadius: 19,
+      borderRadius: 14,
 
       overflow: "hidden",
 
@@ -240,23 +318,10 @@ const styles =
       backgroundColor:
         colors.surfaceElevated,
 
-      borderWidth: 1.5,
+      borderWidth: 1,
 
       borderColor:
-        "rgba(255,255,255,0.92)",
-
-      shadowColor:
-        "#000000",
-
-      shadowOffset: {
-        width: 0,
-        height: 1,
-      },
-
-      shadowOpacity: 0.35,
-      shadowRadius: 3,
-
-      elevation: 5,
+        "rgba(255,255,255,0.7)",
     },
 
     avatarImage: {
@@ -267,7 +332,7 @@ const styles =
     avatarFallback: {
       color: "#FFFFFF",
 
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: "700",
     },
 
@@ -276,11 +341,11 @@ const styles =
 
       color: "#FFFFFF",
 
-      fontSize: 14,
-      fontWeight: "700",
+      fontSize: 13,
+      fontWeight: "600",
 
       textShadowColor:
-        "rgba(0,0,0,0.8)",
+        "rgba(0,0,0,0.9)",
 
       textShadowOffset: {
         width: 0,
@@ -291,8 +356,7 @@ const styles =
     },
 
     followButton: {
-      minWidth: 62,
-      height: 29,
+      height: 27,
 
       marginLeft: 10,
 
@@ -301,20 +365,20 @@ const styles =
       alignItems: "center",
       justifyContent: "center",
 
-      borderRadius: 15,
+      borderRadius: 7,
 
       backgroundColor:
-        "rgba(255,255,255,0.16)",
+        "rgba(0,0,0,0.18)",
 
       borderWidth: 1,
 
       borderColor:
-        "rgba(255,255,255,0.28)",
+        "rgba(255,255,255,0.72)",
     },
 
     followingButton: {
       backgroundColor:
-        "rgba(255,255,255,0.10)",
+        "rgba(255,255,255,0.12)",
     },
 
     followDisabled: {
@@ -325,60 +389,8 @@ const styles =
       color: "#FFFFFF",
 
       fontSize: 11,
-      fontWeight: "700",
+      fontWeight: "600",
     },
-
-    locationRow: {
-      marginTop: 7,
-
-      flexDirection: "row",
-      alignItems: "center",
-
-      gap: 4,
-    },
-
-    location: {
-      flexShrink: 1,
-
-      color:
-        "rgba(255,255,255,0.78)",
-
-      fontSize: 12,
-      fontWeight: "500",
-
-      textShadowColor:
-        "rgba(0,0,0,0.8)",
-
-      textShadowOffset: {
-        width: 0,
-        height: 1,
-      },
-
-      textShadowRadius: 3,
-    },
-
-event: {
-  marginTop: 4,
-
-  color: "#FFFFFF",
-
-  fontSize: 17,
-  lineHeight: 21,
-
-  fontWeight: "700",
-
-  letterSpacing: -0.2,
-
-  textShadowColor:
-    "rgba(0,0,0,0.9)",
-
-  textShadowOffset: {
-    width: 0,
-    height: 1,
-  },
-
-  textShadowRadius: 4,
-},
 
     pressed: {
       opacity: 0.72,
