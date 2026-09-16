@@ -9,6 +9,10 @@ import {
 } from "react-native";
 
 import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import {
   colors,
 } from "../../../../styles";
 
@@ -18,8 +22,10 @@ import type {
 
 type Props = {
   live: ActiveLive;
+
   followLoading?: boolean;
   isFollowing?: boolean;
+
   onFollowPress?: () => void;
   onOpenCreator?: () => void;
 };
@@ -31,7 +37,8 @@ export function LiveViewerIdentity({
   onFollowPress,
   onOpenCreator,
 }: Props) {
-  const creator = live.creator ?? null;
+  const creator =
+    live.creator ?? null;
 
   const creatorName =
     creator?.displayName ||
@@ -42,297 +49,338 @@ export function LiveViewerIdentity({
     creatorName
       .trim()
       .charAt(0)
-      .toUpperCase() || "A";
+      .toUpperCase() ||
+    "A";
 
   const location =
-    live.placeName?.trim() || null;
+    live.placeName?.trim() ||
+    null;
 
-  const event =
-    live.eventName?.trim() || null;
-
-  const title =
-    live.title?.trim() || null;
+  const eventName =
+    live.eventName?.trim() ||
+    live.title?.trim() ||
+    null;
 
   return (
-    <View style={styles.container}>
-      {event ? (
+    <View
+      style={styles.container}
+    >
+      <View
+        style={styles.creatorRow}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Abrir perfil del creador"
+          disabled={
+            !onOpenCreator
+          }
+          onPress={
+            onOpenCreator
+          }
+          style={({
+            pressed,
+          }) => [
+            styles.creatorIdentity,
+
+            pressed &&
+              styles.pressed,
+          ]}
+        >
+          <View
+            style={styles.avatar}
+          >
+            {creator?.avatarUrl ? (
+              <Image
+                source={{
+                  uri:
+                    creator.avatarUrl,
+                }}
+                style={
+                  styles.avatarImage
+                }
+                resizeMode="cover"
+              />
+            ) : (
+              <Text
+                style={
+                  styles.avatarFallback
+                }
+              >
+                {creatorInitial}
+              </Text>
+            )}
+          </View>
+
+          <Text
+            numberOfLines={1}
+            style={
+              styles.creatorName
+            }
+          >
+            {creatorName}
+          </Text>
+        </Pressable>
+
+        {onFollowPress ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              isFollowing
+                ? "Dejar de seguir creador"
+                : "Seguir creador"
+            }
+            disabled={
+              followLoading
+            }
+            onPress={
+              onFollowPress
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.followButton,
+
+              isFollowing &&
+                styles.followingButton,
+
+              followLoading &&
+                styles.followDisabled,
+
+              pressed &&
+                styles.pressed,
+            ]}
+          >
+            <Text
+              style={
+                styles.followText
+              }
+            >
+              {followLoading
+                ? "..."
+                : isFollowing
+                  ? "Siguiendo"
+                  : "Seguir"}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {location ? (
+        <View
+          style={
+            styles.locationRow
+          }
+        >
+          <Ionicons
+            name="location-sharp"
+            size={13}
+            color="rgba(255,255,255,0.78)"
+          />
+
+          <Text
+            numberOfLines={1}
+            style={
+              styles.location
+            }
+          >
+            {location}
+          </Text>
+        </View>
+      ) : null}
+
+      {eventName ? (
         <Text
           numberOfLines={2}
           style={styles.event}
         >
-          {event}
-        </Text>
-      ) : null}
-
-      <View style={styles.creatorRow}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Abrir perfil del creador"
-          disabled={!onOpenCreator}
-          onPress={onOpenCreator}
-          style={({ pressed }) => [
-            styles.creatorIdentity,
-            pressed && styles.pressed,
-          ]}
-        >
-          <View style={styles.avatarShadow}>
-            <View style={styles.avatar}>
-              {creator?.avatarUrl ? (
-                <Image
-                  source={{
-                    uri: creator.avatarUrl,
-                  }}
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={styles.avatarFallback}>
-                  {creatorInitial}
-                </Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.creatorInfo}>
-            <View style={styles.nameRow}>
-              <Text
-                numberOfLines={1}
-                style={styles.creatorName}
-              >
-                {creatorName}
-              </Text>
-
-              {onFollowPress ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    isFollowing
-                      ? "Dejar de seguir creador"
-                      : "Seguir creador"
-                  }
-                  disabled={followLoading}
-                  onPress={(event) => {
-                    event.stopPropagation();
-                    onFollowPress();
-                  }}
-                  style={({ pressed }) => [
-                    styles.followButton,
-                    isFollowing &&
-                      styles.followingButton,
-                    followLoading &&
-                      styles.followDisabled,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.followText}>
-                    {followLoading
-                      ? "..."
-                      : isFollowing
-                        ? "Siguiendo"
-                        : "Seguir"}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-
-            {location ? (
-              <Text
-                numberOfLines={1}
-                style={styles.location}
-              >
-                {location}
-              </Text>
-            ) : null}
-          </View>
-        </Pressable>
-      </View>
-
-      {title ? (
-        <Text
-          numberOfLines={2}
-          style={styles.title}
-        >
-          {title}
+          {eventName}
         </Text>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      width: "100%",
 
-  event: {
-    marginBottom: 10,
-
-    color: "#FFFFFF",
-
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: "900",
-
-    letterSpacing: -0.7,
-
-    textShadowColor: "rgba(0,0,0,0.95)",
-    textShadowOffset: {
-      width: 0,
-      height: 2,
+      maxWidth: 430,
     },
-    textShadowRadius: 4,
-  },
 
-  creatorRow: {
-    width: "100%",
-  },
+    creatorRow: {
+      width: "100%",
 
-  creatorIdentity: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  avatarShadow: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-
-    marginRight: 12,
-
-    backgroundColor: "#000000",
-
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+      flexDirection: "row",
+      alignItems: "center",
     },
-    shadowOpacity: 1,
-    shadowRadius: 3,
 
-    elevation: 12,
-  },
+    creatorIdentity: {
+      flex: 1,
 
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+      minWidth: 0,
 
-    overflow: "hidden",
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    backgroundColor: colors.surfaceElevated,
-
-    borderWidth: 2,
-    borderColor: "rgba(0,0,0,0.9)",
-  },
-
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  avatarFallback: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-
-  creatorInfo: {
-    flex: 1,
-    minWidth: 0,
-
-    height: 56,
-
-    justifyContent: "center",
-    gap: 5,
-  },
-
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  creatorName: {
-    flexShrink: 1,
-
-    color: "#FFFFFF",
-
-    fontSize: 14,
-    fontWeight: "600",
-
-    textShadowColor: "rgba(0,0,0,0.95)",
-    textShadowOffset: {
-      width: 0,
-      height: 1,
+      flexDirection: "row",
+      alignItems: "center",
     },
-    textShadowRadius: 3,
-  },
 
-  followButton: {
-    height: 27,
+    avatar: {
+      width: 38,
+      height: 38,
 
-    paddingHorizontal: 12,
+      marginRight: 9,
 
-    borderRadius: 6,
+      borderRadius: 19,
 
-    alignItems: "center",
-    justifyContent: "center",
+      overflow: "hidden",
 
-    backgroundColor: "rgba(45,45,45,0.92)",
+      alignItems: "center",
+      justifyContent: "center",
 
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-  },
+      backgroundColor:
+        colors.surfaceElevated,
 
-  followingButton: {
-    backgroundColor: "rgba(65,65,65,0.9)",
-  },
+      borderWidth: 1.5,
 
-  followDisabled: {
-    opacity: 0.55,
-  },
+      borderColor:
+        "rgba(255,255,255,0.92)",
 
-  followText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
+      shadowColor:
+        "#000000",
 
-  location: {
-    color: "rgba(255,255,255,0.78)",
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
 
-    fontSize: 13,
-    fontWeight: "500",
+      shadowOpacity: 0.35,
+      shadowRadius: 3,
 
-    textShadowColor: "rgba(0,0,0,0.95)",
-    textShadowOffset: {
-      width: 0,
-      height: 1,
+      elevation: 5,
     },
-    textShadowRadius: 3,
-  },
 
-  title: {
-    marginTop: 9,
-
-    color: "rgba(255,255,255,0.94)",
-
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "600",
-
-    textShadowColor: "rgba(0,0,0,0.95)",
-    textShadowOffset: {
-      width: 0,
-      height: 1,
+    avatarImage: {
+      width: "100%",
+      height: "100%",
     },
-    textShadowRadius: 3,
+
+    avatarFallback: {
+      color: "#FFFFFF",
+
+      fontSize: 14,
+      fontWeight: "700",
+    },
+
+    creatorName: {
+      flexShrink: 1,
+
+      color: "#FFFFFF",
+
+      fontSize: 14,
+      fontWeight: "700",
+
+      textShadowColor:
+        "rgba(0,0,0,0.8)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 1,
+      },
+
+      textShadowRadius: 3,
+    },
+
+    followButton: {
+      minWidth: 62,
+      height: 29,
+
+      marginLeft: 10,
+
+      paddingHorizontal: 13,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      borderRadius: 15,
+
+      backgroundColor:
+        "rgba(255,255,255,0.16)",
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.28)",
+    },
+
+    followingButton: {
+      backgroundColor:
+        "rgba(255,255,255,0.10)",
+    },
+
+    followDisabled: {
+      opacity: 0.5,
+    },
+
+    followText: {
+      color: "#FFFFFF",
+
+      fontSize: 11,
+      fontWeight: "700",
+    },
+
+    locationRow: {
+      marginTop: 7,
+
+      flexDirection: "row",
+      alignItems: "center",
+
+      gap: 4,
+    },
+
+    location: {
+      flexShrink: 1,
+
+      color:
+        "rgba(255,255,255,0.78)",
+
+      fontSize: 12,
+      fontWeight: "500",
+
+      textShadowColor:
+        "rgba(0,0,0,0.8)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 1,
+      },
+
+      textShadowRadius: 3,
+    },
+
+event: {
+  marginTop: 4,
+
+  color: "#FFFFFF",
+
+  fontSize: 17,
+  lineHeight: 21,
+
+  fontWeight: "700",
+
+  letterSpacing: -0.2,
+
+  textShadowColor:
+    "rgba(0,0,0,0.9)",
+
+  textShadowOffset: {
+    width: 0,
+    height: 1,
   },
 
-  pressed: {
-    opacity: 0.72,
-  },
-});
+  textShadowRadius: 4,
+},
+
+    pressed: {
+      opacity: 0.72,
+    },
+  });
