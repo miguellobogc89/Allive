@@ -1,10 +1,12 @@
 // server/services/liveSessions.ts
 
 import { prisma } from "../db";
+
 import {
   getParticipantRole,
   roomService,
 } from "../livekit";
+
 import {
   notifyLiveStarted,
 } from "./notifications";
@@ -29,9 +31,14 @@ export class ActiveLiveExistsError extends Error {
       "El usuario ya tiene una emisión activa",
     );
 
-    this.name = "ActiveLiveExistsError";
-    this.liveId = liveId;
-    this.roomName = roomName;
+    this.name =
+      "ActiveLiveExistsError";
+
+    this.liveId =
+      liveId;
+
+    this.roomName =
+      roomName;
   }
 }
 
@@ -39,31 +46,44 @@ export function cleanOptionalString(
   value: unknown,
   maxLength: number,
 ) {
-  if (typeof value !== "string") {
+  if (
+    typeof value !==
+    "string"
+  ) {
     return null;
   }
 
-  const cleaned = value
-    .trim()
-    .slice(0, maxLength);
+  const cleaned =
+    value
+      .trim()
+      .slice(
+        0,
+        maxLength,
+      );
 
   return cleaned || null;
 }
 
-async function hasBroadcaster(
+async function getRoomState(
   roomName: string,
 ) {
   try {
     const rooms =
       await roomService.listRooms();
 
-    const roomExists = rooms.some(
-      (room) =>
-        room.name === roomName,
-    );
+    const roomExists =
+      rooms.some(
+        (room) =>
+          room.name ===
+          roomName,
+      );
 
     if (!roomExists) {
-      return false;
+      return {
+        broadcasterActive:
+          false,
+        viewerCount: 0,
+      };
     }
 
     const participants =
@@ -71,21 +91,65 @@ async function hasBroadcaster(
         roomName,
       );
 
-    return participants.some(
-      (participant) =>
+    let broadcasterActive =
+      false;
+
+    let viewerCount = 0;
+
+    for (
+      const participant
+      of participants
+    ) {
+      const role =
         getParticipantRole(
           participant.metadata,
           participant.identity,
-        ) === "broadcaster",
-    );
+        );
+
+      if (
+        role ===
+        "broadcaster"
+      ) {
+        broadcasterActive =
+          true;
+      }
+
+      if (
+        role ===
+        "viewer"
+      ) {
+        viewerCount += 1;
+      }
+    }
+
+    return {
+      broadcasterActive,
+      viewerCount,
+    };
   } catch (error) {
     console.warn(
-      `No se pudo reconciliar ${roomName}:`,
+      `No se pudo consultar ${roomName}:`,
       error,
     );
 
     return null;
   }
+}
+
+async function hasBroadcaster(
+  roomName: string,
+) {
+  const roomState =
+    await getRoomState(
+      roomName,
+    );
+
+  if (!roomState) {
+    return null;
+  }
+
+  return roomState
+    .broadcasterActive;
 }
 
 export async function reconcileActiveLives() {
@@ -96,7 +160,8 @@ export async function reconcileActiveLives() {
       },
 
       orderBy: {
-        startedAt: "desc",
+        startedAt:
+          "desc",
       },
 
       include: {
@@ -104,50 +169,94 @@ export async function reconcileActiveLives() {
           select: {
             id: true,
             username: true,
-            displayName: true,
+            displayName:
+              true,
             avatarUrl: true,
           },
         },
       },
     });
 
-  if (dbLives.length === 0) {
+  if (
+    dbLives.length ===
+    0
+  ) {
     return [];
   }
 
   const activeLives = [];
 
-for (const live of dbLives) {
-  if (
-    showDevMockLives &&
-    live.roomName.startsWith(
-      DEV_LIVE_PREFIX,
-    )
+  for (
+    const live
+    of dbLives
   ) {
-    activeLives.push(
-      live,
-    );
+    if (
+      showDevMockLives &&
+      live.roomName.startsWith(
+        DEV_LIVE_PREFIX,
+      )
+    ) {
+      activeLives.push({
+        ...live,
+        viewerCount: 0,
+      });
 
-    continue;
-  }
+      continue;
+    }
 
-  const broadcasterActive =
-    await hasBroadcaster(
-      live.roomName,
-    );
-      await hasBroadcaster(
+    const roomState =
+      await getRoomState(
         live.roomName,
       );
 
-    if (broadcasterActive === true) {
-      activeLives.push(live);
+    if (!roomState) {
       continue;
     }
 
-    if (broadcasterActive === null) {
+    if (
+      !roomState
+        .broadcasterActive
+    ) {
       continue;
     }
-    
+
+    const viewerCount =
+      roomState.viewerCount;
+
+    let peak_viewer_count =
+      live.peak_viewer_count;
+
+    if (
+      viewerCount >
+      peak_viewer_count
+    ) {
+      const updated =
+        await prisma.liveSession.update({
+          where: {
+            id: live.id,
+          },
+
+          data: {
+            peak_viewer_count:
+              viewerCount,
+          },
+
+          select: {
+            peak_viewer_count:
+              true,
+          },
+        });
+
+      peak_viewer_count =
+        updated
+          .peak_viewer_count;
+    }
+
+    activeLives.push({
+      ...live,
+      viewerCount,
+      peak_viewer_count,
+    });
   }
 
   return activeLives;
@@ -162,7 +271,8 @@ export async function cleanupDevLives() {
 
       data: {
         status: "ENDED",
-        endedAt: new Date(),
+        endedAt:
+          new Date(),
       },
     });
 
@@ -172,7 +282,10 @@ export async function cleanupDevLives() {
     const rooms =
       await roomService.listRooms();
 
-    for (const room of rooms) {
+    for (
+      const room
+      of rooms
+    ) {
       try {
         await roomService.deleteRoom(
           room.name,
@@ -194,7 +307,9 @@ export async function cleanupDevLives() {
   }
 
   return {
-    endedLives: result.count,
+    endedLives:
+      result.count,
+
     deletedRooms,
   };
 }
@@ -210,25 +325,38 @@ async function resolveExistingLive(
       },
 
       orderBy: {
-        startedAt: "desc",
+        startedAt:
+          "desc",
       },
     });
 
-  if (existingLives.length === 0) {
+  if (
+    existingLives.length ===
+    0
+  ) {
     return null;
   }
 
-  for (const live of existingLives) {
+  for (
+    const live
+    of existingLives
+  ) {
     const broadcasterActive =
       await hasBroadcaster(
         live.roomName,
       );
 
-    if (broadcasterActive === true) {
+    if (
+      broadcasterActive ===
+      true
+    ) {
       return live;
     }
 
-    if (broadcasterActive === null) {
+    if (
+      broadcasterActive ===
+      null
+    ) {
       throw new ActiveLiveExistsError(
         live.id,
         live.roomName,
@@ -242,7 +370,8 @@ async function resolveExistingLive(
 
       data: {
         status: "ENDED",
-        endedAt: new Date(),
+        endedAt:
+          new Date(),
       },
     });
 
@@ -256,7 +385,10 @@ async function resolveExistingLive(
 
 export async function createLiveSession(
   creatorId: string,
-  body: Record<string, unknown>,
+  body: Record<
+    string,
+    unknown
+  >,
 ) {
   const existingLive =
     await resolveExistingLive(
@@ -282,72 +414,85 @@ export async function createLiveSession(
 
   const live =
     await prisma.liveSession.create({
-    data: {
-      roomName: roomName as string,
+      data: {
+        roomName:
+          roomName as string,
 
-      creatorId,
+        creatorId,
 
-      status: "LIVE",
+        status: "LIVE",
 
-      title: cleanOptionalString(
-        title,
-        120,
-      ),
+        title:
+          cleanOptionalString(
+            title,
+            120,
+          ),
 
-      eventName: cleanOptionalString(
-        eventName,
-        120,
-      ),
+        eventName:
+          cleanOptionalString(
+            eventName,
+            120,
+          ),
 
-      description: cleanOptionalString(
-        description,
-        500,
-      ),
+        description:
+          cleanOptionalString(
+            description,
+            500,
+          ),
 
-      latitude:
-        typeof latitude === "number"
-          ? latitude
-          : null,
+        latitude:
+          typeof latitude ===
+          "number"
+            ? latitude
+            : null,
 
-      longitude:
-        typeof longitude === "number"
-          ? longitude
-          : null,
+        longitude:
+          typeof longitude ===
+          "number"
+            ? longitude
+            : null,
 
-      placeName: cleanOptionalString(
-        placeName,
-        160,
-      ),
-    },
+        placeName:
+          cleanOptionalString(
+            placeName,
+            160,
+          ),
+      },
 
-    include: {
-      creator: {
-        select: {
-          id: true,
-          username: true,
-          displayName: true,
-          avatarUrl: true,
+      include: {
+        creator: {
+          select: {
+            id: true,
+            username: true,
+            displayName:
+              true,
+            avatarUrl: true,
+          },
         },
       },
-    },
-  });
+    });
 
   void notifyLiveStarted(
     live.id,
     creatorId,
-  ).catch((error) => {
-    console.warn(
-      "No se pudieron notificar los seguidores del LIVE:",
-      error,
-    );
-  });
+  ).catch(
+    (error) => {
+      console.warn(
+        "No se pudieron notificar los seguidores del LIVE:",
+        error,
+      );
+    },
+  );
 
   return live;
 }
 
 export async function updateLiveSession(
   id: string,
-  body: Record<string, unknown>,
+  body: Record<
+    string,
+    unknown
+  >,
 ) {
   const {
     title,
@@ -363,35 +508,44 @@ export async function updateLiveSession(
     },
 
     data: {
-      ...(title !== undefined && {
-        title: cleanOptionalString(
-          title,
-          120,
-        ),
+      ...(title !==
+        undefined && {
+        title:
+          cleanOptionalString(
+            title,
+            120,
+          ),
       }),
 
-      ...(eventName !== undefined && {
-        eventName: cleanOptionalString(
-          eventName,
-          120,
-        ),
+      ...(eventName !==
+        undefined && {
+        eventName:
+          cleanOptionalString(
+            eventName,
+            120,
+          ),
       }),
 
-      ...(latitude !== undefined && {
+      ...(latitude !==
+        undefined && {
         latitude:
-          typeof latitude === "number"
+          typeof latitude ===
+          "number"
             ? latitude
             : null,
       }),
 
-      ...(longitude !== undefined && {
+      ...(longitude !==
+        undefined && {
         longitude:
-          typeof longitude === "number"
+          typeof longitude ===
+          "number"
             ? longitude
             : null,
       }),
 
-      ...(placeName !== undefined && {
+      ...(placeName !==
+        undefined && {
         placeName:
           cleanOptionalString(
             placeName,
@@ -405,7 +559,8 @@ export async function updateLiveSession(
         select: {
           id: true,
           username: true,
-          displayName: true,
+          displayName:
+            true,
           avatarUrl: true,
         },
       },
@@ -427,6 +582,26 @@ export async function endLiveSession(
     return null;
   }
 
+  /*
+   * Hacemos una última lectura
+   * de LiveKit antes de cerrar.
+   */
+  const roomState =
+    await getRoomState(
+      existingLive.roomName,
+    );
+
+  const finalPeak =
+    roomState
+      ? Math.max(
+          existingLive
+            .peak_viewer_count,
+          roomState
+            .viewerCount,
+        )
+      : existingLive
+          .peak_viewer_count;
+
   const live =
     await prisma.liveSession.update({
       where: {
@@ -435,7 +610,12 @@ export async function endLiveSession(
 
       data: {
         status: "ENDED",
-        endedAt: new Date(),
+
+        endedAt:
+          new Date(),
+
+        peak_viewer_count:
+          finalPeak,
       },
     });
 

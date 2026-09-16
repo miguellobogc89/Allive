@@ -1,6 +1,8 @@
 // src/components/now/NowAudienceBadge.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
 
 import {
   Text,
@@ -20,11 +22,12 @@ type NowAudienceBadgeProps = {
     | "live"
     | "replay";
 
-  count?: number | null;
+  count?:
+    | number
+    | null;
 };
 
 export function NowAudienceBadge({
-  type,
   count,
 }: NowAudienceBadgeProps) {
   return (
@@ -34,16 +37,14 @@ export function NowAudienceBadge({
       }
     >
       <Ionicons
-        name={
-          type === "live"
-            ? "person"
-            : "heart"
-        }
+        name="eye"
         size={
-          tokens.icon.now.audience
+          tokens.icon.now
+            .audience
         }
         color={
-          tokens.color.text.primary
+          tokens.color.text
+            .primary
         }
       />
 
@@ -61,7 +62,9 @@ export function NowAudienceBadge({
 }
 
 function formatCount(
-  value?: number | null,
+  value?:
+    | number
+    | null,
 ) {
   if (
     typeof value !==
@@ -85,7 +88,8 @@ function formatCount(
   }
 
   if (
-    value >= 1000
+    value >=
+    1000
   ) {
     return `${(
       value /
@@ -97,4 +101,3 @@ function formatCount(
     value,
   );
 }
-

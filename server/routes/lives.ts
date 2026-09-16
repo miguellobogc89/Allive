@@ -322,6 +322,9 @@ export function registerLiveRoutes(
               replay_visible_until:
                 true,
 
+              peakViewerCount:
+                true,
+
               creator: {
                 select: {
                   id: true,
@@ -400,6 +403,9 @@ export function registerLiveRoutes(
 
                 replayVisibleUntil:
                   replay.replay_visible_until,
+
+                peakViewerCount:
+                  replay.peakViewerCount,
 
                 likeCount:
                   replay._count
@@ -483,6 +489,9 @@ export function registerLiveRoutes(
                 replay_visible_until:
                   true,
 
+                peakViewerCount:
+                  true,
+
                 creator: {
                   select: {
                     id: true,
@@ -550,6 +559,9 @@ replaySavedAt:
 
 replayVisibleUntil:
   replay.replay_visible_until,
+
+peakViewerCount:
+  replay.peakViewerCount,
 
 likeCount:
   replay._count

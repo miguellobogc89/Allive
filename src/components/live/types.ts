@@ -3,29 +3,78 @@
 export type LiveCreator = {
   id?: string;
   username?: string;
-  displayName?: string | null;
-  avatarUrl?: string | null;
+  displayName?:
+    | string
+    | null;
+  avatarUrl?:
+    | string
+    | null;
 };
 
 export type ActiveLive = {
   id: string;
   roomName: string;
-  title?: string | null;
-  eventName?: string | null;
-  placeName?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  thumbnailUrl?: string | null;
-  viewerCount?: number | null;
-  likeCount?: number | null;
-  commentCount?: number | null;
-  creator?: LiveCreator | null;
+
+  title?:
+    | string
+    | null;
+
+  eventName?:
+    | string
+    | null;
+
+  placeName?:
+    | string
+    | null;
+
+  latitude?:
+    | number
+    | null;
+
+  longitude?:
+    | number
+    | null;
+
+  thumbnailUrl?:
+    | string
+    | null;
+
+  /*
+   * Espectadores concurrentes
+   * actuales.
+   */
+  viewerCount?:
+    | number
+    | null;
+
+  /*
+   * Máximo de espectadores
+   * simultáneos alcanzado
+   * durante el LIVE.
+   */
+  peakViewerCount?:
+    | number
+    | null;
+
+  likeCount?:
+    | number
+    | null;
+
+  commentCount?:
+    | number
+    | null;
+
+  creator?:
+    | LiveCreator
+    | null;
 };
 
 export type LiveKitTokenResponse = {
   serverUrl: string;
   participantToken: string;
-  role: "broadcaster" | "viewer";
+  role:
+    | "broadcaster"
+    | "viewer";
 };
 
 export type LiveComment = {
