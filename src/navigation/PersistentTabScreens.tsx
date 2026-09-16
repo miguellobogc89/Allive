@@ -204,6 +204,7 @@ const styles =
     },
 
     hidden: {
-      opacity: 0,
+      // Remove inactive tabs from hit testing, including web map controls.
+      display: "none",
     },
   });
