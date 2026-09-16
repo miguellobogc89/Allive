@@ -55,6 +55,7 @@ model LiveSession {
   recording_audio_egress_id String?
   recording_video_key       String?
   recording_audio_key       String?
+  peak_viewer_count         Int             @default(0)
   live_comments             live_comments[]
   live_likes                live_likes[]
   creator                   User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)

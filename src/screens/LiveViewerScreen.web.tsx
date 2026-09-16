@@ -39,6 +39,8 @@ type LiveViewerScreenProps = {
 
   onNoLivesAvailable?: () => void;
 
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -48,6 +50,7 @@ export function LiveViewerScreen({
   requestedLiveId = null,
   initialLives = EMPTY_INITIAL_LIVES,
   onNoLivesAvailable,
+  onClose,
   onOpenUser,
 }: LiveViewerScreenProps) {
   const loadLives =
@@ -102,6 +105,9 @@ export function LiveViewerScreen({
       )}
       onNoLivesAvailable={
         onNoLivesAvailable
+      }
+      onClose={
+        onClose
       }
       onOpenUser={
         onOpenUser

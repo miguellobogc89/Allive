@@ -80,6 +80,8 @@ type Props = {
   currentIndex: number;
   totalLives: number;
 
+  onClose?: () => void;
+
   onPrevious: () => void;
   onNext: () => void;
 
@@ -98,6 +100,7 @@ export function LiveViewerOverlay({
   authToken,
   currentIndex,
   totalLives,
+  onClose,
   onPrevious,
   onNext,
   onOpenUser,
@@ -322,8 +325,8 @@ export function LiveViewerOverlay({
             viewers={
               audience.total
             }
-            likes={
-              likeCount
+            onClose={
+              onClose
             }
           />
         </View>

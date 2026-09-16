@@ -45,6 +45,8 @@ type LiveViewerScreenProps = {
     | string
     | null;
 
+  onClose?: () => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
@@ -57,6 +59,7 @@ type LiveViewerScreenProps = {
 
 export function LiveViewerScreen({
   requestedLiveId = null,
+  onClose,
   onOpenUser,
   onNavigationReady,
 }: LiveViewerScreenProps) {
@@ -149,6 +152,9 @@ export function LiveViewerScreen({
           }
         />
       )}
+      onClose={
+        onClose
+      }
       onOpenUser={
         onOpenUser
       }

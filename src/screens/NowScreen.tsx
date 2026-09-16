@@ -157,6 +157,13 @@ export function NowScreen({
       [],
     );
 
+  const closeLive =
+    useCallback(() => {
+      setSelectedLiveId(
+        null,
+      );
+    }, []);
+
   if (
     requestedReplayId ||
     selectedReplayId
@@ -190,6 +197,9 @@ export function NowScreen({
         }
         lives={
           lives
+        }
+        onClose={
+          closeLive
         }
         onOpenUser={
           onOpenUser
@@ -260,6 +270,7 @@ export function NowScreen({
               setSelectedLiveId(
                 liveId,
               );
+
               setSelectedReplayId(
                 null,
               );
@@ -270,6 +281,7 @@ export function NowScreen({
               setSelectedReplayId(
                 replayId,
               );
+
               setSelectedLiveId(
                 null,
               );

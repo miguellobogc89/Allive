@@ -90,6 +90,7 @@ type LiveViewerScreenBaseProps = {
       LiveViewerNavigation,
   ) => void;
   showNavigation?: boolean;
+    onClose?: () => void;
 };
 
 export function LiveViewerScreenBase({
@@ -104,6 +105,7 @@ export function LiveViewerScreenBase({
   onOpenUser,
   onNavigationReady,
   showNavigation = true,
+    onClose,
 }: LiveViewerScreenBaseProps) {
   const {
     identity,
@@ -231,6 +233,9 @@ export function LiveViewerScreenBase({
           }
           showNavigation={
             showNavigation
+          }
+          onClose={
+            onClose
           }
         />
       ) : null}

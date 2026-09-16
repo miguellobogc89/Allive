@@ -801,31 +801,73 @@ return res
             });
         }
 
-await stopRecording({
-  engine:
-    live.recording_engine,
+const recordingResult =
+  await stopRecording({
+    engine:
+      live.recording_engine,
 
-  legacyEgressId:
-    live.recording_egress_id,
+    legacyEgressId:
+      live.recording_egress_id,
 
-  videoEgressId:
-    live.recording_video_egress_id,
+    videoEgressId:
+      live.recording_video_egress_id,
 
-  audioEgressId:
-    live.recording_audio_egress_id,
+    audioEgressId:
+      live.recording_audio_egress_id,
 
-  videoKey:
-    live.recording_video_key,
+    videoKey:
+      live.recording_video_key,
 
-  audioKey:
-    live.recording_audio_key,
+    audioKey:
+      live.recording_audio_key,
 
-  roomName:
-    live.roomName,
+    roomName:
+      live.roomName,
 
-  liveSessionId:
-    live.id,
-});
+    liveSessionId:
+      live.id,
+  });
+
+if (
+  live.recording_engine === "TRACK"
+) {
+  if (
+    !recordingResult.recordingKey ||
+    !recordingResult.recordingUrl
+  ) {
+    throw new Error(
+      "TRACK terminó sin generar el replay final.",
+    );
+  }
+
+  await prisma.liveSession.update({
+    where: {
+      id: live.id,
+    },
+
+    data: {
+      recording_key:
+        recordingResult.recordingKey,
+
+      recording_url:
+        recordingResult.recordingUrl,
+    },
+  });
+
+  console.log(
+    "🎬 Replay TRACK persistido:",
+    {
+      liveSessionId:
+        live.id,
+
+      recordingKey:
+        recordingResult.recordingKey,
+
+      recordingUrl:
+        recordingResult.recordingUrl,
+    },
+  );
+}
 
 
         return res.json({
@@ -928,12 +970,8 @@ const hasTrackRecording =
   live.recording_engine ===
     "TRACK" &&
   Boolean(
-    live.recording_video_egress_id ||
-      live.recording_audio_egress_id,
-  ) &&
-  Boolean(
-    live.recording_video_key ||
-      live.recording_audio_key,
+    live.recording_key &&
+      live.recording_url,
   );
 
 if (
