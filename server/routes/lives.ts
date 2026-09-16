@@ -822,7 +822,11 @@ await stopRecording({
 
   roomName:
     live.roomName,
+
+  liveSessionId:
+    live.id,
 });
+
 
         return res.json({
           ok: true,

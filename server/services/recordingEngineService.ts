@@ -10,9 +10,21 @@ import {
   stopTrackRecordingSession,
 } from "../liveRecording";
 
+import {
+  finalizeTrackReplay,
+} from "../liveRecording/trackFinalizer";
+
+
 export type RecordingEngine =
   | "TRACK"
   | "LEGACY";
+
+
+type StopRecordingResult = {
+  recordingKey: string | null;
+  recordingUrl: string | null;
+};
+
 
 function getRecordingEngine(): RecordingEngine {
   const configured =
@@ -31,6 +43,7 @@ function getRecordingEngine(): RecordingEngine {
    */
   return "TRACK";
 }
+
 
 export async function startRecording(
   roomName: string,
@@ -76,9 +89,9 @@ export async function startRecording(
     engine,
 
     /*
-     * TRACK todavía no produce el replay final.
-     * recording_key / recording_url se rellenarán
-     * después del proceso de mux/finalización.
+     * TRACK genera primero las pistas RAW.
+     * recording_key y recording_url se crearán
+     * al finalizar el LIVE mediante el mux.
      */
     recordingKey: null,
     recordingUrl: null,
@@ -97,6 +110,7 @@ export async function startRecording(
       recording.audioKey,
   };
 }
+
 
 export async function stopRecording(
   recording: {
@@ -118,27 +132,75 @@ export async function stopRecording(
       string | null;
 
     roomName: string;
+
+    liveSessionId: string;
   },
-) {
+): Promise<StopRecordingResult> {
   if (
     recording.engine === "TRACK"
   ) {
-    return stopTrackRecordingSession({
-      roomName:
-        recording.roomName,
+    /*
+     * Primero detenemos ambos Track Egress.
+     *
+     * LiveKit termina entonces de escribir
+     * los archivos RAW en R2.
+     */
+    const stopResults =
+      await stopTrackRecordingSession({
+        roomName:
+          recording.roomName,
 
-      videoEgressId:
-        recording.videoEgressId,
+        videoEgressId:
+          recording.videoEgressId,
 
-      audioEgressId:
-        recording.audioEgressId,
+        audioEgressId:
+          recording.audioEgressId,
 
-      videoKey:
+        videoKey:
+          recording.videoKey,
+
+        audioKey:
+          recording.audioKey,
+      });
+
+    /*
+     * Si LiveKit no pudo detener alguno de los
+     * Egress, no intentamos generar un replay
+     * potencialmente incompleto.
+     */
+    const failedStop =
+      stopResults.find(
+        (result) =>
+          result.status ===
+          "rejected",
+      );
+
+    if (failedStop) {
+      throw new Error(
+        `No se pudo detener correctamente Track Egress: ${String(
+          failedStop.reason,
+        )}`,
+      );
+    }
+
+    /*
+     * Una vez cerrados los Egress, esperamos
+     * los objetos de R2 y hacemos el mux.
+     */
+    const finalizedReplay =
+      await finalizeTrackReplay(
+        recording.liveSessionId,
         recording.videoKey,
-
-      audioKey:
         recording.audioKey,
-    });
+      );
+
+    return {
+      recordingKey:
+        finalizedReplay.key,
+
+      recordingUrl:
+        finalizedReplay.url,
+    };
   }
 
   if (
@@ -153,5 +215,12 @@ export async function stopRecording(
     recording.legacyEgressId,
   );
 
-  return [];
+  /*
+   * LEGACY ya tiene recording_key y recording_url
+   * desde el inicio. No generamos nada adicional.
+   */
+  return {
+    recordingKey: null,
+    recordingUrl: null,
+  };
 }

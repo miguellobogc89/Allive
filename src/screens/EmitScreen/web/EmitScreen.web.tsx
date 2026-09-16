@@ -1052,28 +1052,17 @@ if (cameraTrack) {
         true,
       );
 
-      console.log(
-  "💾 Esperando finishLivePromise...",
-);
-
       if (
         finishLivePromiseRef.current
       ) {
         await finishLivePromiseRef.current;
       }
 
-      console.log(
-  "💾 finishLivePromise terminada. Llamando replay/save...",
-);
-
       await saveLiveReplay(
         currentLiveSessionId,
         authToken,
       );
 
-      console.log(
-  "💾 replay/save completado",
-);
 
       finishedLiveSessionIdRef.current =
         null;
