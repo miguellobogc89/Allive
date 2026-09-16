@@ -64,6 +64,9 @@ type NowScreenProps = {
 
   unreadNotifications?: number;
 
+  onCloseRequestedVideo?:
+  () => void;
+
   onOpenSearch?: () => void;
 
   onOpenNotifications?: () => void;
@@ -77,6 +80,7 @@ export function NowScreen({
   requestedLiveId = null,
   requestedReplayId = null,
   unreadNotifications = 0,
+  onCloseRequestedVideo,
   onOpenSearch,
   onOpenNotifications,
   onOpenUser,
@@ -159,25 +163,33 @@ export function NowScreen({
 
 const closeLive =
   useCallback(() => {
+    if (requestedLiveId) {
+      onCloseRequestedVideo?.();
+      return;
+    }
+
     setSelectedLiveId(
       null,
     );
+  }, [
+    requestedLiveId,
+    onCloseRequestedVideo,
+  ]);
 
-    setActiveSection(
-      "now",
-    );
-  }, []);
-
-  const closeReplay =
+const closeReplay =
   useCallback(() => {
+    if (requestedReplayId) {
+      onCloseRequestedVideo?.();
+      return;
+    }
+
     setSelectedReplayId(
       null,
     );
-
-    setActiveSection(
-      "now",
-    );
-  }, []);
+  }, [
+    requestedReplayId,
+    onCloseRequestedVideo,
+  ]);
 
   if (
     requestedReplayId ||

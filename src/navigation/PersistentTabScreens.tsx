@@ -40,6 +40,9 @@ type Props = {
 
   unreadNotifications: number;
 
+  onCloseRequestedVideo:
+  () => void;
+
   onChangeTab: (
     tab: PersistentTab,
   ) => void;
@@ -68,6 +71,7 @@ export function PersistentTabScreens({
   onChangeTab,
   onOpenLive,
   onOpenReplay,
+  onCloseRequestedVideo,
   onOpenUser,
   onOpenNotifications,
 }: Props) {
@@ -89,28 +93,31 @@ export function PersistentTabScreens({
             : "none"
         }
       >
-        <NowScreen
-          requestedLiveId={
-            requestedLiveId
-          }
-          requestedReplayId={
-            requestedReplayId
-          }
-          unreadNotifications={
-            unreadNotifications
-          }
-          onOpenSearch={() => {
-            onChangeTab(
-              "search",
-            );
-          }}
-          onOpenNotifications={
-            onOpenNotifications
-          }
-          onOpenUser={
-            onOpenUser
-          }
-        />
+<NowScreen
+  requestedLiveId={
+    requestedLiveId
+  }
+  requestedReplayId={
+    requestedReplayId
+  }
+  unreadNotifications={
+    unreadNotifications
+  }
+  onCloseRequestedVideo={
+    onCloseRequestedVideo
+  }
+  onOpenSearch={() => {
+    onChangeTab(
+      "search",
+    );
+  }}
+  onOpenNotifications={
+    onOpenNotifications
+  }
+  onOpenUser={
+    onOpenUser
+  }
+/>
       </View>
 
       <View

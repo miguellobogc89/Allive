@@ -449,35 +449,38 @@ function AppContent() {
                 : "none",
           }}
         >
-          <PersistentTabScreens
-            activeTab={
-              activeTab
-            }
-            requestedLiveId={
-              requestedLiveId
-            }
-            requestedReplayId={
-              requestedReplayId
-            }
-            unreadNotifications={
-              unreadNotifications
-            }
-            onChangeTab={
-              changeTab
-            }
-            onOpenLive={
-              openLive
-            }
-            onOpenReplay={
-              openReplay
-            }
-            onOpenUser={
-              openUser
-            }
-            onOpenNotifications={
-              openNotifications
-            }
-          />
+<PersistentTabScreens
+  activeTab={
+    activeTab
+  }
+  requestedLiveId={
+    requestedLiveId
+  }
+  requestedReplayId={
+    requestedReplayId
+  }
+  unreadNotifications={
+    unreadNotifications
+  }
+  onChangeTab={
+    changeTab
+  }
+  onOpenLive={
+    openLive
+  }
+  onOpenReplay={
+    openReplay
+  }
+  onCloseRequestedVideo={
+    goBack
+  }
+  onOpenUser={
+    openUser
+  }
+  onOpenNotifications={
+    openNotifications
+  }
+/>
         </View>
 
         {foregroundScreen}
