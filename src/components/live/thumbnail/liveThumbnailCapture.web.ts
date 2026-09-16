@@ -16,7 +16,8 @@ const CAPTURE_INTERVAL_MS =
 
 type StartLiveThumbnailCaptureOptions = {
   liveSessionId: string;
-  mediaStreamTrack: MediaStreamTrack;
+  getMediaStreamTrack: () =>
+    MediaStreamTrack | null;
   authToken: string;
 };
 
@@ -26,7 +27,7 @@ export type LiveThumbnailCaptureController = {
 
 export function startLiveThumbnailCapture({
   liveSessionId,
-  mediaStreamTrack,
+  getMediaStreamTrack,
   authToken,
 }: StartLiveThumbnailCaptureOptions): LiveThumbnailCaptureController {
   let stopped = false;
@@ -48,6 +49,17 @@ export function startLiveThumbnailCapture({
       return;
     }
 
+    const mediaStreamTrack =
+      getMediaStreamTrack();
+
+    if (
+      !mediaStreamTrack ||
+      mediaStreamTrack.kind !== "video" ||
+      mediaStreamTrack.readyState !== "live"
+    ) {
+      return;
+    }
+
     captureRunning = true;
 
     try {
@@ -56,6 +68,10 @@ export function startLiveThumbnailCapture({
           mediaStreamTrack,
         );
 
+      if (stopped) {
+        return;
+      }
+
       const result =
         await uploadLiveThumbnail(
           liveSessionId,
@@ -63,11 +79,19 @@ export function startLiveThumbnailCapture({
           authToken,
         );
 
+      if (stopped) {
+        return;
+      }
+
       console.log(
         "Allive thumbnail actualizada:",
         result.thumbnailUrl,
       );
     } catch (error) {
+      if (stopped) {
+        return;
+      }
+
       console.warn(
         "No se pudo actualizar la thumbnail del LIVE:",
         error,

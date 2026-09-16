@@ -141,9 +141,13 @@ export async function markLiveAsEnded(
 }
 
 export type LiveRecordingResponse = {
-  egressId: string;
-  key: string;
-  url: string;
+  engine: "TRACK" | "LEGACY";
+
+  recordingKey: string | null;
+  recordingUrl: string | null;
+
+  videoEgressId: string | null;
+  audioEgressId: string | null;
 };
 
 export async function startLiveRecording(
@@ -155,17 +159,13 @@ export async function startLiveRecording(
     {
       method: "POST",
       headers: {
-        Authorization:
-          `Bearer ${authToken}`,
+        Authorization: `Bearer ${authToken}`,
       },
     },
   );
 
   if (!response.ok) {
-    const responseBody =
-      await response
-        .json()
-        .catch(() => null);
+    const responseBody = await response.json().catch(() => null);
 
     throw new Error(
       responseBody?.error ??
@@ -173,15 +173,33 @@ export async function startLiveRecording(
     );
   }
 
-  const recording =
-    await response.json();
+  const recording = await response.json();
 
   if (
-    !recording?.egressId ||
-    !recording?.url
+    recording?.engine !== "TRACK" &&
+    recording?.engine !== "LEGACY"
   ) {
     throw new Error(
-      "La API devolvió una grabación inválida.",
+      "La API devolvió un motor de grabación inválido.",
+    );
+  }
+
+  if (
+    recording.engine === "TRACK" &&
+    !recording.videoEgressId &&
+    !recording.audioEgressId
+  ) {
+    throw new Error(
+      "La API no devolvió ninguna pista de grabación TRACK.",
+    );
+  }
+
+  if (
+    recording.engine === "LEGACY" &&
+    !recording.recordingUrl
+  ) {
+    throw new Error(
+      "La API devolvió una grabación LEGACY inválida.",
     );
   }
 
@@ -190,33 +208,20 @@ export async function startLiveRecording(
 
 export async function stopLiveRecording(
   liveSessionId: string,
-  egressId: string,
   authToken: string,
 ) {
   const response = await fetch(
     `${API_URL}/api/lives/${liveSessionId}/recording/stop`,
     {
       method: "POST",
-
       headers: {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${authToken}`,
+        Authorization: `Bearer ${authToken}`,
       },
-
-      body: JSON.stringify({
-        egressId,
-      }),
     },
   );
 
   if (!response.ok) {
-    const responseBody =
-      await response
-        .json()
-        .catch(() => null);
+    const responseBody = await response.json().catch(() => null);
 
     throw new Error(
       responseBody?.error ??
@@ -240,17 +245,13 @@ export async function saveLiveReplay(
     {
       method: "POST",
       headers: {
-        Authorization:
-          `Bearer ${authToken}`,
+        Authorization: `Bearer ${authToken}`,
       },
     },
   );
 
   if (!response.ok) {
-    const responseBody =
-      await response
-        .json()
-        .catch(() => null);
+    const responseBody = await response.json().catch(() => null);
 
     throw new Error(
       responseBody?.error ??
