@@ -30,29 +30,34 @@ model User {
 }
 
 model LiveSession {
-  id                   String          @id @default(cuid())
-  roomName             String          @unique
-  creatorId            String
-  status               LiveStatus      @default(LIVE)
-  title                String?
-  description          String?
-  latitude             Float?
-  longitude            Float?
-  placeName            String?
-  startedAt            DateTime        @default(now())
-  endedAt              DateTime?
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
-  eventName            String?
-  thumbnailUrl         String?
-  recording_key        String?
-  recording_url        String?
-  recording_egress_id  String?
-  replay_saved_at      DateTime?       @db.Timestamptz(6)
-  replay_visible_until DateTime?       @db.Timestamptz(6)
-  live_comments        live_comments[]
-  live_likes           live_likes[]
-  creator              User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  id                        String          @id @default(cuid())
+  roomName                  String          @unique
+  creatorId                 String
+  status                    LiveStatus      @default(LIVE)
+  title                     String?
+  description               String?
+  latitude                  Float?
+  longitude                 Float?
+  placeName                 String?
+  startedAt                 DateTime        @default(now())
+  endedAt                   DateTime?
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  eventName                 String?
+  thumbnailUrl              String?
+  recording_key             String?
+  recording_url             String?
+  recording_egress_id       String?
+  replay_saved_at           DateTime?       @db.Timestamptz(6)
+  replay_visible_until      DateTime?       @db.Timestamptz(6)
+  recording_engine          String?
+  recording_video_egress_id String?
+  recording_audio_egress_id String?
+  recording_video_key       String?
+  recording_audio_key       String?
+  live_comments             live_comments[]
+  live_likes                live_likes[]
+  creator                   User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@index([status, startedAt])
   @@index([creatorId])
