@@ -1,3 +1,5 @@
+// src/components/live/replay/viewer/ReplayVideoPlayer.native.tsx
+
 import {
   useCallback,
   useEffect,
@@ -60,9 +62,11 @@ export function ReplayVideoPlayer({
 
   useEffect(() => {
     setPaused(false);
+
     setMuted(
       player.muted,
     );
+
     setCurrentTime(0);
 
     const interval =
@@ -108,11 +112,14 @@ export function ReplayVideoPlayer({
         player.playing
       ) {
         player.pause();
+
         setPaused(true);
+
         return;
       }
 
       player.play();
+
       setPaused(false);
     }, [
       player,
@@ -162,7 +169,7 @@ export function ReplayVideoPlayer({
     useCallback(() => {
       seekTo(
         player.currentTime -
-          10,
+          15,
       );
     }, [
       player,

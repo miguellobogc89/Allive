@@ -19,6 +19,7 @@ type ReplayPlaybackControlsProps = {
   muted: boolean;
 
   onTogglePlayback: () => void;
+
   onSeek: (
     time: number,
   ) => void;
@@ -46,7 +47,9 @@ function formatTime(
   seconds: number,
 ) {
   const safeSeconds =
-    Number.isFinite(seconds)
+    Number.isFinite(
+      seconds,
+    )
       ? Math.max(
           0,
           Math.floor(
@@ -91,7 +94,9 @@ export function ReplayPlaybackControls({
     >(null);
 
   const safeDuration =
-    Number.isFinite(duration)
+    Number.isFinite(
+      duration,
+    )
       ? Math.max(
           0,
           duration,
@@ -326,7 +331,7 @@ const styles =
 
       left: 12,
       right: 12,
-      bottom: 13,
+      bottom: 22,
 
       flexDirection:
         "row",
@@ -337,13 +342,13 @@ const styles =
 
     timeText: {
       color:
-        "rgba(255,255,255,0.92)",
+        "rgba(255,255,255,0.94)",
 
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: "600",
 
       textShadowColor:
-        "rgba(0,0,0,0.8)",
+        "rgba(0,0,0,0.85)",
 
       textShadowOffset: {
         width: 0,
@@ -354,27 +359,27 @@ const styles =
     },
 
     progressTouchArea: {
-      height: 22,
+      height: 30,
 
       justifyContent:
         "flex-end",
     },
 
     track: {
-      height: 2,
+      height: 3,
 
       overflow:
         "hidden",
 
       backgroundColor:
-        "rgba(255,255,255,0.34)",
+        "rgba(255,255,255,0.38)",
     },
 
     trackActive: {
-      height: 4,
+      height: 5,
 
       backgroundColor:
-        "rgba(255,255,255,0.50)",
+        "rgba(255,255,255,0.55)",
     },
 
     fill: {
@@ -388,14 +393,14 @@ const styles =
       position:
         "absolute",
 
-      bottom: -4,
+      bottom: -3,
 
-      width: 10,
-      height: 10,
+      width: 11,
+      height: 11,
 
-      marginLeft: -5,
+      marginLeft: -5.5,
 
-      borderRadius: 5,
+      borderRadius: 5.5,
 
       backgroundColor:
         "#FFFFFF",

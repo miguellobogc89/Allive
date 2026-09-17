@@ -70,8 +70,11 @@ type NowScreenProps = {
 
   onOpenSearch?: () => void;
 
-  onVideoViewerVisibleChange?: (
-  visible: boolean,
+onVideoViewerVisibleChange?: (
+  mode:
+    | "live"
+    | "replay"
+    | null,
 ) => void;
 
   onOpenNotifications?: () => void;
@@ -124,18 +127,30 @@ const videoViewerVisible =
     selectedReplayId,
   );
 
+const videoViewerMode:
+  | "live"
+  | "replay"
+  | null =
+    requestedReplayId ||
+    selectedReplayId
+      ? "replay"
+      : requestedLiveId ||
+          selectedLiveId
+        ? "live"
+        : null;
+
 useEffect(() => {
   onVideoViewerVisibleChange?.(
-    videoViewerVisible,
+    videoViewerMode,
   );
 
   return () => {
     onVideoViewerVisibleChange?.(
-      false,
+      null,
     );
   };
 }, [
-  videoViewerVisible,
+  videoViewerMode,
   onVideoViewerVisibleChange,
 ]);
 

@@ -1,3 +1,5 @@
+// src/components/live/replay/viewer/ReplayVideoPlayer.web.tsx
+
 import {
   useCallback,
   useEffect,
@@ -84,6 +86,7 @@ export function ReplayVideoPlayer({
         video.paused
       ) {
         void video.play();
+
         return;
       }
 
@@ -146,7 +149,7 @@ export function ReplayVideoPlayer({
 
       seekTo(
         video.currentTime -
-          10,
+          15,
       );
     }, [
       seekTo,

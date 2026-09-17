@@ -110,29 +110,12 @@ export function PersistentTabScreens({
           onCloseRequestedVideo={
             onCloseRequestedVideo
           }
-          onVideoViewerVisibleChange={(
-            visible,
-          ) => {
-            if (!visible) {
-              onVideoViewerVisibleChange?.(
-                null,
-              );
 
-              return;
-            }
+          
+          onVideoViewerVisibleChange={
+            onVideoViewerVisibleChange
+          }
 
-            if (requestedReplayId) {
-              onVideoViewerVisibleChange?.(
-                "replay",
-              );
-
-              return;
-            }
-
-            onVideoViewerVisibleChange?.(
-              "live",
-            );
-          }}
           onOpenSearch={() => {
             onChangeTab(
               "search",

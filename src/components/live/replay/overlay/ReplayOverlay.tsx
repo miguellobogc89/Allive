@@ -1,11 +1,6 @@
 // src/components/live/replay/overlay/ReplayOverlay.tsx
 
 import {
-  useRef,
-  useState,
-} from "react";
-
-import {
   Ionicons,
 } from "@expo/vector-icons";
 
@@ -14,7 +9,6 @@ import {
 } from "expo-linear-gradient";
 
 import {
-  Animated,
   Pressable,
   StyleSheet,
   Text,
@@ -114,9 +108,7 @@ function formatCount(
     )}K`;
   }
 
-  return String(
-    count,
-  );
+  return String(count);
 }
 
 export function ReplayOverlay({
@@ -156,52 +148,6 @@ export function ReplayOverlay({
   onSkipForward,
   onToggleMute,
 }: ReplayOverlayProps) {
-  const [
-    contentVisible,
-    setContentVisible,
-  ] = useState(true);
-
-  const contentOpacity =
-    useRef(
-      new Animated.Value(1),
-    ).current;
-
-  function toggleContent() {
-    const nextVisible =
-      !contentVisible;
-
-    setContentVisible(
-      nextVisible,
-    );
-
-    Animated.timing(
-      contentOpacity,
-      {
-        toValue:
-          nextVisible
-            ? 1
-            : 0,
-
-        duration: 160,
-
-        useNativeDriver:
-          true,
-      },
-    ).start();
-  }
-
-  function handleSurfacePress() {
-    if (
-      onPlaybackToggle
-    ) {
-      onPlaybackToggle();
-
-      return;
-    }
-
-    toggleContent();
-  }
-
   const hasPlaybackControls =
     Boolean(
       onPlaybackToggle &&
@@ -211,23 +157,12 @@ export function ReplayOverlay({
         onToggleMute,
     );
 
-  /*
-   * Los comentarios del LIVE
-   * todavía no están conectados
-   * aquí como histórico.
-   *
-   * Dejamos el contador preparado
-   * visualmente en 0 hasta conectar
-   * esa fuente de datos.
-   */
   const replayCommentCount =
     0;
 
   return (
     <View
-      style={
-        styles.overlay
-      }
+      style={styles.overlay}
       pointerEvents="box-none"
     >
       <LinearGradient
@@ -254,9 +189,118 @@ export function ReplayOverlay({
           styles.tapSurface
         }
         onPress={
-          handleSurfacePress
+          onPlaybackToggle
+        }
+        disabled={
+          !onPlaybackToggle
+        }
+        accessibilityRole="button"
+        accessibilityLabel={
+          playbackPaused
+            ? "Reproducir replay"
+            : "Pausar replay"
         }
       />
+
+      {playbackPaused ? (
+        <View
+          style={
+            styles.pausedControls
+          }
+          pointerEvents="box-none"
+        >
+          <Pressable
+            style={({
+              pressed,
+            }) => [
+              styles.skipButton,
+              pressed &&
+                styles.controlPressed,
+            ]}
+            onPress={
+              onSkipBackward
+            }
+            disabled={
+              !onSkipBackward
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Retroceder 15 segundos"
+          >
+            <Ionicons
+              name="arrow-undo-outline"
+              size={24}
+              color="#FFFFFF"
+            />
+
+            <Text
+              style={
+                styles.skipText
+              }
+            >
+              15
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={({
+              pressed,
+            }) => [
+              styles.playButton,
+              pressed &&
+                styles.controlPressed,
+            ]}
+            onPress={
+              onPlaybackToggle
+            }
+            disabled={
+              !onPlaybackToggle
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Reproducir"
+          >
+            <Ionicons
+              name="play"
+              size={38}
+              color="#FFFFFF"
+              style={
+                styles.playIcon
+              }
+            />
+          </Pressable>
+
+          <Pressable
+            style={({
+              pressed,
+            }) => [
+              styles.skipButton,
+              pressed &&
+                styles.controlPressed,
+            ]}
+            onPress={
+              onSkipForward
+            }
+            disabled={
+              !onSkipForward
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Avanzar 15 segundos"
+          >
+            <Ionicons
+              name="arrow-redo-outline"
+              size={24}
+              color="#FFFFFF"
+            />
+
+            <Text
+              style={
+                styles.skipText
+              }
+            >
+              15
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View
         style={
@@ -276,25 +320,14 @@ export function ReplayOverlay({
         />
       </View>
 
-      <Animated.View
-        pointerEvents={
-          contentVisible
-            ? "box-none"
-            : "none"
+      <View
+        style={
+          styles.identityLayer
         }
-        style={[
-          styles.identityLayer,
-
-          {
-            opacity:
-              contentOpacity,
-          },
-        ]}
+        pointerEvents="box-none"
       >
         <LiveViewerIdentity
-          live={
-            replay
-          }
+          live={replay}
           followLoading={
             followLoading
           }
@@ -308,22 +341,13 @@ export function ReplayOverlay({
             onOpenCreator
           }
         />
-      </Animated.View>
+      </View>
 
-      <Animated.View
-        pointerEvents={
-          contentVisible
-            ? "box-none"
-            : "none"
+      <View
+        style={
+          styles.actionsLayer
         }
-        style={[
-          styles.actionsLayer,
-
-          {
-            opacity:
-              contentOpacity,
-          },
-        ]}
+        pointerEvents="box-none"
       >
         <View
           style={
@@ -376,9 +400,7 @@ export function ReplayOverlay({
               styles.actionCount
             }
           >
-            {formatCount(
-              likes,
-            )}
+            {formatCount(likes)}
           </Text>
         </View>
 
@@ -428,7 +450,47 @@ export function ReplayOverlay({
             />
           </View>
         </View>
-      </Animated.View>
+
+        <View
+          style={
+            styles.actionItem
+          }
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              playbackMuted
+                ? "Activar sonido"
+                : "Silenciar"
+            }
+            disabled={
+              !onToggleMute
+            }
+            hitSlop={8}
+            onPress={
+              onToggleMute
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.actionButton,
+
+              pressed &&
+                styles.actionPressed,
+            ]}
+          >
+            <Ionicons
+              name={
+                playbackMuted
+                  ? "volume-mute-outline"
+                  : "volume-high-outline"
+              }
+              size={28}
+              color="#FFFFFF"
+            />
+          </Pressable>
+        </View>
+      </View>
 
       {hasPlaybackControls ? (
         <ReplayPlaybackControls
@@ -497,8 +559,7 @@ const styles =
     },
 
     bottomGradient: {
-      position:
-        "absolute",
+      position: "absolute",
 
       left: 0,
       right: 0,
@@ -508,8 +569,7 @@ const styles =
     },
 
     header: {
-      position:
-        "absolute",
+      position: "absolute",
 
       top: 18,
       left: 0,
@@ -518,49 +578,118 @@ const styles =
       zIndex: 30,
     },
 
+    pausedControls: {
+      position: "absolute",
+
+      left: 0,
+      right: 0,
+      top: "50%",
+
+      marginTop: -36,
+
+      zIndex: 50,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: 22,
+    },
+
+    playButton: {
+      width: 72,
+      height: 72,
+
+      borderRadius: 36,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      backgroundColor:
+        "rgba(0,0,0,0.48)",
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.18)",
+    },
+
+    playIcon: {
+      marginLeft: 4,
+    },
+
+    skipButton: {
+      width: 58,
+      height: 58,
+
+      borderRadius: 29,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      backgroundColor:
+        "rgba(0,0,0,0.42)",
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.14)",
+    },
+
+    skipText: {
+      position: "absolute",
+
+      bottom: 6,
+
+      color: "#FFFFFF",
+
+      fontSize: 10,
+      fontWeight: "400",
+    },
+
+    controlPressed: {
+      transform: [
+        {
+          scale: 0.92,
+        },
+      ],
+    },
+
     identityLayer: {
-      position:
-        "absolute",
+      position: "absolute",
 
       left: spacing.md,
       right: 88,
-      bottom: 42,
+      bottom: 48,
 
       zIndex: 20,
     },
 
     actionsLayer: {
-      position:
-        "absolute",
+      position: "absolute",
 
       right: 12,
-      bottom: 48,
+      bottom: 54,
 
       zIndex: 40,
 
-      alignItems:
-        "center",
+      alignItems: "center",
 
-      gap: 15,
+      gap: 13,
     },
 
     actionItem: {
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
+      alignItems: "center",
+      justifyContent: "center",
     },
 
     actionButton: {
       width: 46,
       height: 42,
 
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
+      alignItems: "center",
+      justifyContent: "center",
     },
 
     actionCount: {
