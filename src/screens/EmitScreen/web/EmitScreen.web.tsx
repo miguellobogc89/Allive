@@ -13,6 +13,15 @@ import {
 } from "livekit-client";
 
 import {
+  X,
+} from "lucide-react-native";
+
+import {
+  Pressable,
+  StyleSheet,
+} from "react-native";
+
+import {
   createEmitPreviewStream,
 } from "./emitCamera.web";
 
@@ -85,6 +94,7 @@ import type {
 export function EmitScreen({
   onStatusChange,
   onStartLiveReady,
+  onClose,
 }: EmitScreenProps) {
   const roomRef =
     useRef<Room | null>(
@@ -1194,6 +1204,7 @@ if (cameraTrack) {
     await restorePreview();
   }
 
+
   return (
     <LiveBroadcastStage
       media={
@@ -1291,6 +1302,62 @@ if (cameraTrack) {
           );
         },
       }}
-    />
+    >
+      {!isLive &&
+        !finishModalVisible && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Salir de emisión"
+            hitSlop={10}
+            onPress={
+              onClose
+            }
+            style={({ pressed }) => [
+              localStyles.closeButton,
+              pressed &&
+                localStyles.closeButtonPressed,
+            ]}
+          >
+            <X
+              size={23}
+              color="#FFFFFF"
+              strokeWidth={2.4}
+            />
+          </Pressable>
+        )}
+    </LiveBroadcastStage>
   );
 }
+
+const localStyles =
+  StyleSheet.create({
+    closeButton: {
+      position: "absolute",
+
+      top: 16,
+      right: 16,
+
+      width: 42,
+      height: 42,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      borderRadius: 21,
+
+      backgroundColor:
+        "rgba(12,13,16,0.48)",
+
+      zIndex: 100,
+    },
+
+    closeButtonPressed: {
+      opacity: 0.7,
+
+      transform: [
+        {
+          scale: 0.94,
+        },
+      ],
+    },
+  });

@@ -413,14 +413,17 @@ function AppContent() {
       activeTab === "emit"
     ) {
       return (
-        <EmitScreen
-          onStatusChange={
-            handleEmitStatusChange
-          }
-          onStartLiveReady={
-            handleEmitStartReady
-          }
-        />
+<EmitScreen
+  onStatusChange={
+    handleEmitStatusChange
+  }
+  onStartLiveReady={
+    handleEmitStartReady
+  }
+  onClose={
+    goBack
+  }
+/>
       );
     }
 

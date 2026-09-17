@@ -9,10 +9,6 @@ import {
 } from "./bottomNav.config";
 
 import {
-  BottomNavEmit,
-} from "./BottomNavEmit";
-
-import {
   BottomNavTab,
 } from "./BottomNavTab";
 
@@ -35,76 +31,29 @@ type Props = {
 export function BottomNavMain({
   activeTab,
   onTabPress,
-  emitCanStart,
-  emitIsConnecting,
-  onEmitStart,
   compact,
 }: Props) {
   return (
     <>
       {bottomNavItems.map(
-        (item) => {
-          if (
-            item.id === "emit"
-          ) {
-            const startMode =
+        (item) => (
+          <BottomNavTab
+            key={item.id}
+            item={item}
+            isActive={
               activeTab ===
-                "emit" &&
-              Boolean(
-                onEmitStart,
-              );
-
-            return (
-              <BottomNavEmit
-                key={item.id}
-                startMode={
-                  startMode
-                }
-                canStart={
-                  emitCanStart
-                }
-                isConnecting={
-                  emitIsConnecting
-                }
-                compact={
-                  compact
-                }
-                onPress={() => {
-                  if (
-                    startMode
-                  ) {
-                    onEmitStart?.();
-
-                    return;
-                  }
-
-                  onTabPress(
-                    "emit",
-                  );
-                }}
-              />
-            );
-          }
-
-          return (
-            <BottomNavTab
-              key={item.id}
-              item={item}
-              isActive={
-                activeTab ===
-                item.id
-              }
-              compact={
-                compact
-              }
-              onPress={() =>
-                onTabPress(
-                  item.id,
-                )
-              }
-            />
-          );
-        },
+              item.id
+            }
+            compact={
+              compact
+            }
+            onPress={() =>
+              onTabPress(
+                item.id,
+              )
+            }
+          />
+        ),
       )}
     </>
   );
