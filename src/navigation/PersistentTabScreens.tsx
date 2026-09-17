@@ -41,7 +41,14 @@ type Props = {
   unreadNotifications: number;
 
   onCloseRequestedVideo:
-  () => void;
+    () => void;
+
+  onVideoViewerVisibleChange?: (
+    mode:
+      | "live"
+      | "replay"
+      | null,
+  ) => void;
 
   onChangeTab: (
     tab: PersistentTab,
@@ -72,6 +79,7 @@ export function PersistentTabScreens({
   onOpenLive,
   onOpenReplay,
   onCloseRequestedVideo,
+  onVideoViewerVisibleChange,
   onOpenUser,
   onOpenNotifications,
 }: Props) {
@@ -93,31 +101,56 @@ export function PersistentTabScreens({
             : "none"
         }
       >
-<NowScreen
-  requestedLiveId={
-    requestedLiveId
-  }
-  requestedReplayId={
-    requestedReplayId
-  }
-  unreadNotifications={
-    unreadNotifications
-  }
-  onCloseRequestedVideo={
-    onCloseRequestedVideo
-  }
-  onOpenSearch={() => {
-    onChangeTab(
-      "search",
-    );
-  }}
-  onOpenNotifications={
-    onOpenNotifications
-  }
-  onOpenUser={
-    onOpenUser
-  }
-/>
+        <NowScreen
+          requestedLiveId={
+            requestedLiveId
+          }
+          requestedReplayId={
+            requestedReplayId
+          }
+          unreadNotifications={
+            unreadNotifications
+          }
+          onCloseRequestedVideo={
+            onCloseRequestedVideo
+          }
+          onVideoViewerVisibleChange={(
+            visible,
+          ) => {
+            if (!visible) {
+              onVideoViewerVisibleChange?.(
+                null,
+              );
+
+              return;
+            }
+
+            if (
+              requestedReplayId
+            ) {
+              onVideoViewerVisibleChange?.(
+                "replay",
+              );
+
+              return;
+            }
+
+            onVideoViewerVisibleChange?.(
+              "live",
+            );
+          }}
+          onOpenSearch={() => {
+            onChangeTab(
+              "search",
+            );
+          }}
+          onOpenNotifications={
+            onOpenNotifications
+          }
+          onOpenUser={
+            onOpenUser
+          }
+        />
       </View>
 
       <View
@@ -204,7 +237,6 @@ const styles =
     },
 
     hidden: {
-      // Remove inactive tabs from hit testing, including web map controls.
       display: "none",
     },
   });

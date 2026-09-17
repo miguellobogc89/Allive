@@ -116,6 +116,15 @@ function AppContent() {
     setNotificationRefreshKey,
   ] = useState(0);
 
+  const [
+  videoViewerMode,
+  setVideoViewerMode,
+] = useState<
+  "live" |
+  "replay" |
+  null
+>(null);
+
   const emitStartLiveRef =
     useRef<
       (() => void) | null
@@ -425,6 +434,14 @@ function AppContent() {
     !foregroundScreen &&
     activeTab !== "emit";
 
+    const bottomNavMode =
+  videoViewerMode ??
+  (
+    activeTab === "emit"
+      ? "emit"
+      : "main"
+  );
+
   return (
     <SafeAreaView
       style={
@@ -459,6 +476,10 @@ function AppContent() {
   requestedReplayId={
     requestedReplayId
   }
+
+  onVideoViewerVisibleChange={
+  setVideoViewerMode
+}
   unreadNotifications={
     unreadNotifications
   }
@@ -486,36 +507,35 @@ function AppContent() {
         {foregroundScreen}
       </BlurTargetView>
 
-      {activeTab ===
-        "emit" &&
-      emitIsLive ? null : (
-        <BottomNav
-          blurTarget={
-            blurTargetRef
-          }
-          activeTab={
-            activeTab
-          }
-          onTabPress={
-            changeTab
-          }
-          emitCanStart={
-            emitCameraReady
-          }
-          emitIsConnecting={
-            emitIsConnecting
-          }
-          onEmitStart={
-            activeTab ===
-            "emit"
-              ? () => {
-                  emitStartLiveRef
-                    .current?.();
-                }
-              : undefined
-          }
-        />
-      )}
+<BottomNav
+  mode={
+    bottomNavMode
+  }
+  blurTarget={
+    blurTargetRef
+  }
+  activeTab={
+    activeTab
+  }
+  onTabPress={
+    changeTab
+  }
+  emitCanStart={
+    emitCameraReady
+  }
+  emitIsConnecting={
+    emitIsConnecting
+  }
+  onEmitStart={
+    activeTab ===
+    "emit"
+      ? () => {
+          emitStartLiveRef
+            .current?.();
+        }
+      : undefined
+  }
+/>
     </SafeAreaView>
   );
 }

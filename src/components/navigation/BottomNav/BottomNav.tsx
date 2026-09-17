@@ -5,6 +5,8 @@ import type {
 } from "react";
 
 import {
+  StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -25,34 +27,50 @@ import {
 } from "../../ui/LiquidSurface";
 
 import {
-  bottomNavItems,
-} from "./bottomNav.config";
+  BottomNavLive,
+} from "./BottomNavLive";
 
 import {
-  BottomNavEmit,
-} from "./BottomNavEmit";
+  BottomNavMain,
+} from "./BottomNavMain";
 
 import {
-  BottomNavTab,
-} from "./BottomNavTab";
+  BottomNavReplay,
+} from "./BottomNavReplay";
 
 import {
   styles,
 } from "./bottomNav.styles";
 
+export type BottomNavMode =
+  | "main"
+  | "live"
+  | "replay"
+  | "emit";
+
 type BottomNavProps = {
+  mode?: BottomNavMode;
+
   activeTab: AppTab;
+
   onTabPress: (
     tab: AppTab,
   ) => void;
+
   emitCanStart?: boolean;
+
   emitIsConnecting?: boolean;
+
   onEmitStart?: () => void;
+
   compact?: boolean;
-  blurTarget?: RefObject<View | null>;
+
+  blurTarget?:
+    RefObject<View | null>;
 };
 
 export function BottomNav({
+  mode = "main",
   activeTab,
   onTabPress,
   emitCanStart = true,
@@ -68,6 +86,45 @@ export function BottomNav({
     compact
       ? 50
       : 58;
+
+  function renderContent() {
+    if (mode === "live") {
+      return (
+        <BottomNavLive />
+      );
+    }
+
+    if (
+      mode === "replay"
+    ) {
+      return (
+        <BottomNavReplay />
+      );
+    }
+
+    return (
+      <BottomNavMain
+        activeTab={
+          activeTab
+        }
+        onTabPress={
+          onTabPress
+        }
+        emitCanStart={
+          emitCanStart
+        }
+        emitIsConnecting={
+          emitIsConnecting
+        }
+        onEmitStart={
+          onEmitStart
+        }
+        compact={
+          compact
+        }
+      />
+    );
+  }
 
   return (
     <View
@@ -87,80 +144,63 @@ export function BottomNav({
         },
       ]}
     >
+      <View
+        pointerEvents="none"
+        style={
+          localStyles.debugLabel
+        }
+      >
+        <Text
+          style={
+            localStyles.debugText
+          }
+        >
+          BOTTOMNAV ·{" "}
+          {mode.toUpperCase()}
+        </Text>
+      </View>
+
       <LiquidSurface
         variant="dark"
-        blurTarget={blurTarget}
+        blurTarget={
+          blurTarget
+        }
         style={[
           styles.pill,
           compact &&
             styles.pillCompact,
         ]}
       >
-        {bottomNavItems.map(
-          (item) => {
-            if (
-              item.id === "emit"
-            ) {
-              const startMode =
-                activeTab ===
-                  "emit" &&
-                Boolean(
-                  onEmitStart,
-                );
-
-              return (
-                <BottomNavEmit
-                  key={item.id}
-                  startMode={
-                    startMode
-                  }
-                  canStart={
-                    emitCanStart
-                  }
-                  isConnecting={
-                    emitIsConnecting
-                  }
-                  compact={
-                    compact
-                  }
-                  onPress={() => {
-                    if (
-                      startMode
-                    ) {
-                      onEmitStart?.();
-
-                      return;
-                    }
-
-                    onTabPress(
-                      "emit",
-                    );
-                  }}
-                />
-              );
-            }
-
-            return (
-              <BottomNavTab
-                key={item.id}
-                item={item}
-                isActive={
-                  activeTab ===
-                  item.id
-                }
-                compact={
-                  compact
-                }
-                onPress={() =>
-                  onTabPress(
-                    item.id,
-                  )
-                }
-              />
-            );
-          },
-        )}
+        {renderContent()}
       </LiquidSurface>
     </View>
   );
 }
+
+const localStyles =
+  StyleSheet.create({
+    debugLabel: {
+      position: "absolute",
+      bottom: "100%",
+      alignSelf: "center",
+
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+
+      marginBottom: 3,
+
+      borderRadius: 6,
+
+      backgroundColor:
+        "rgba(255,255,255,0.92)",
+
+      zIndex: 100,
+    },
+
+    debugText: {
+      color: "#000000",
+      fontSize: 10,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+    },
+  });
