@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import {
   LinearGradient,
 } from "expo-linear-gradient";
 
@@ -13,6 +17,7 @@ import {
   Animated,
   Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -33,10 +38,6 @@ import {
 } from "../../viewer/navigation/LiveViewerNavigation";
 
 import {
-  ReplayLikeButton,
-} from "../controls";
-
-import {
   ReplayPlaybackControls,
 } from "../player/ReplayPlaybackControls";
 
@@ -54,6 +55,7 @@ type ReplayOverlayProps = {
 
   liked: boolean;
   likeLoading?: boolean;
+
   onLikePress: () => void;
 
   followLoading?: boolean;
@@ -77,19 +79,53 @@ type ReplayOverlayProps = {
   duration?: number;
 
   onPlaybackToggle?: () => void;
+
   onSeek?: (
     time: number,
   ) => void;
+
   onSkipBackward?: () => void;
   onSkipForward?: () => void;
   onToggleMute?: () => void;
 };
+
+function formatCount(
+  count: number,
+) {
+  if (count >= 1000000) {
+    const value =
+      count / 1000000;
+
+    return `${value.toFixed(
+      value >= 10
+        ? 0
+        : 1,
+    )}M`;
+  }
+
+  if (count >= 1000) {
+    const value =
+      count / 1000;
+
+    return `${value.toFixed(
+      value >= 10
+        ? 0
+        : 1,
+    )}K`;
+  }
+
+  return String(
+    count,
+  );
+}
 
 export function ReplayOverlay({
   replay,
 
   currentIndex,
   totalReplays,
+
+  likes,
 
   liked,
   likeLoading = false,
@@ -125,24 +161,9 @@ export function ReplayOverlay({
     setContentVisible,
   ] = useState(true);
 
-  const topOpacity =
+  const contentOpacity =
     useRef(
       new Animated.Value(1),
-    ).current;
-
-  const topTranslateY =
-    useRef(
-      new Animated.Value(0),
-    ).current;
-
-  const bottomOpacity =
-    useRef(
-      new Animated.Value(1),
-    ).current;
-
-  const bottomTranslateY =
-    useRef(
-      new Animated.Value(0),
     ).current;
 
   function toggleContent() {
@@ -153,55 +174,20 @@ export function ReplayOverlay({
       nextVisible,
     );
 
-    Animated.parallel([
-      Animated.timing(
-        topOpacity,
-        {
-          toValue:
-            nextVisible
-              ? 1
-              : 0,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
+    Animated.timing(
+      contentOpacity,
+      {
+        toValue:
+          nextVisible
+            ? 1
+            : 0,
 
-      Animated.timing(
-        topTranslateY,
-        {
-          toValue:
-            nextVisible
-              ? 0
-              : -14,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
+        duration: 160,
 
-      Animated.timing(
-        bottomOpacity,
-        {
-          toValue:
-            nextVisible
-              ? 1
-              : 0,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
-
-      Animated.timing(
-        bottomTranslateY,
-        {
-          toValue:
-            nextVisible
-              ? 0
-              : 14,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
-    ]).start();
+        useNativeDriver:
+          true,
+      },
+    ).start();
   }
 
   function handleSurfacePress() {
@@ -209,16 +195,12 @@ export function ReplayOverlay({
       onPlaybackToggle
     ) {
       onPlaybackToggle();
+
       return;
     }
 
     toggleContent();
   }
-
-  const playbackMode =
-    Boolean(
-      onPlaybackToggle,
-    );
 
   const hasPlaybackControls =
     Boolean(
@@ -229,21 +211,35 @@ export function ReplayOverlay({
         onToggleMute,
     );
 
+  /*
+   * Los comentarios del LIVE
+   * todavía no están conectados
+   * aquí como histórico.
+   *
+   * Dejamos el contador preparado
+   * visualmente en 0 hasta conectar
+   * esa fuente de datos.
+   */
+  const replayCommentCount =
+    0;
+
   return (
     <View
-      style={styles.overlay}
+      style={
+        styles.overlay
+      }
       pointerEvents="box-none"
     >
       <LinearGradient
         colors={[
           "rgba(0,0,0,0)",
-          "rgba(0,0,0,0.08)",
-          "rgba(0,0,0,0.22)",
-          "rgba(0,0,0,0.48)",
+          "rgba(0,0,0,0.04)",
+          "rgba(0,0,0,0.18)",
+          "rgba(0,0,0,0.58)",
         ]}
         locations={[
           0,
-          0.35,
+          0.42,
           0.7,
           1,
         ]}
@@ -263,7 +259,9 @@ export function ReplayOverlay({
       />
 
       <View
-        style={styles.header}
+        style={
+          styles.header
+        }
         pointerEvents="box-none"
       >
         <VideoViewerHeader
@@ -272,13 +270,14 @@ export function ReplayOverlay({
             replay.peakViewerCount ??
             0
           }
-          onClose={onClose}
+          onClose={
+            onClose
+          }
         />
       </View>
 
       <Animated.View
         pointerEvents={
-          playbackMode ||
           contentVisible
             ? "box-none"
             : "none"
@@ -286,23 +285,16 @@ export function ReplayOverlay({
         style={[
           styles.identityLayer,
 
-          playbackMode
-            ? undefined
-            : {
-                opacity:
-                  topOpacity,
-
-                transform: [
-                  {
-                    translateY:
-                      topTranslateY,
-                  },
-                ],
-              },
+          {
+            opacity:
+              contentOpacity,
+          },
         ]}
       >
         <LiveViewerIdentity
-          live={replay}
+          live={
+            replay
+          }
           followLoading={
             followLoading
           }
@@ -320,38 +312,122 @@ export function ReplayOverlay({
 
       <Animated.View
         pointerEvents={
-          playbackMode ||
           contentVisible
-            ? "auto"
+            ? "box-none"
             : "none"
         }
         style={[
-          styles.likeLayer,
+          styles.actionsLayer,
 
-          playbackMode
-            ? undefined
-            : {
-                opacity:
-                  bottomOpacity,
-
-                transform: [
-                  {
-                    translateY:
-                      bottomTranslateY,
-                  },
-                ],
-              },
+          {
+            opacity:
+              contentOpacity,
+          },
         ]}
       >
-        <ReplayLikeButton
-          liked={liked}
-          loading={
-            likeLoading
+        <View
+          style={
+            styles.actionItem
           }
-          onPress={
-            onLikePress
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              liked
+                ? "Quitar me gusta"
+                : "Me gusta"
+            }
+            disabled={
+              likeLoading
+            }
+            hitSlop={8}
+            onPress={
+              onLikePress
+            }
+            style={({
+              pressed,
+            }) => [
+              styles.actionButton,
+
+              pressed &&
+                styles.actionPressed,
+
+              likeLoading &&
+                styles.actionDisabled,
+            ]}
+          >
+            <Ionicons
+              name={
+                liked
+                  ? "heart"
+                  : "heart-outline"
+              }
+              size={30}
+              color={
+                liked
+                  ? "#FF3048"
+                  : "#FFFFFF"
+              }
+            />
+          </Pressable>
+
+          <Text
+            style={
+              styles.actionCount
+            }
+          >
+            {formatCount(
+              likes,
+            )}
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.actionItem
           }
-        />
+        >
+          <View
+            style={
+              styles.actionButton
+            }
+          >
+            <Ionicons
+              name="chatbubble-outline"
+              size={27}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <Text
+            style={
+              styles.actionCount
+            }
+          >
+            {formatCount(
+              replayCommentCount,
+            )}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.actionItem,
+            styles.futureAction,
+          ]}
+        >
+          <View
+            style={
+              styles.actionButton
+            }
+          >
+            <Ionicons
+              name="arrow-redo-outline"
+              size={28}
+              color="#FFFFFF"
+            />
+          </View>
+        </View>
       </Animated.View>
 
       {hasPlaybackControls ? (
@@ -421,17 +497,19 @@ const styles =
     },
 
     bottomGradient: {
-      position: "absolute",
+      position:
+        "absolute",
 
       left: 0,
       right: 0,
       bottom: 0,
 
-      height: 190,
+      height: 300,
     },
 
     header: {
-      position: "absolute",
+      position:
+        "absolute",
 
       top: 18,
       left: 0,
@@ -441,21 +519,82 @@ const styles =
     },
 
     identityLayer: {
-      position: "absolute",
+      position:
+        "absolute",
 
-      top: 80,
       left: spacing.md,
-      right: spacing.md,
+      right: 88,
+      bottom: 42,
 
       zIndex: 20,
     },
 
-    likeLayer: {
-      position: "absolute",
+    actionsLayer: {
+      position:
+        "absolute",
 
-      right: spacing.md,
-      bottom: 28,
+      right: 12,
+      bottom: 48,
 
-      zIndex: 30,
+      zIndex: 40,
+
+      alignItems:
+        "center",
+
+      gap: 15,
+    },
+
+    actionItem: {
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+    },
+
+    actionButton: {
+      width: 46,
+      height: 42,
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+    },
+
+    actionCount: {
+      marginTop: -2,
+
+      color: "#FFFFFF",
+
+      fontSize: 12,
+      fontWeight: "700",
+
+      textShadowColor:
+        "rgba(0,0,0,0.9)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 1,
+      },
+
+      textShadowRadius: 3,
+    },
+
+    actionPressed: {
+      transform: [
+        {
+          scale: 0.9,
+        },
+      ],
+    },
+
+    actionDisabled: {
+      opacity: 0.5,
+    },
+
+    futureAction: {
+      opacity: 0.58,
     },
   });

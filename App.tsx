@@ -64,7 +64,7 @@ import {
 
 import {
   EmitScreen,
-} from "./src/screens/EmitScreen/EmitScreen";
+} from "./src/screens/EmitScreen/EmitScreen.web";
 
 import type {
   EmitScreenControls,

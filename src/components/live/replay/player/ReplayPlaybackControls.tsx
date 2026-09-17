@@ -6,11 +6,6 @@ import {
 } from "react";
 
 import {
-  Ionicons,
-} from "@expo/vector-icons";
-
-import {
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -24,7 +19,10 @@ type ReplayPlaybackControlsProps = {
   muted: boolean;
 
   onTogglePlayback: () => void;
-  onSeek: (time: number) => void;
+  onSeek: (
+    time: number,
+  ) => void;
+
   onSkipBackward: () => void;
   onSkipForward: () => void;
   onToggleMute: () => void;
@@ -36,7 +34,10 @@ function clamp(
   max: number,
 ) {
   return Math.min(
-    Math.max(value, min),
+    Math.max(
+      value,
+      min,
+    ),
     max,
   );
 }
@@ -48,7 +49,9 @@ function formatTime(
     Number.isFinite(seconds)
       ? Math.max(
           0,
-          Math.floor(seconds),
+          Math.floor(
+            seconds,
+          ),
         )
       : 0;
 
@@ -68,15 +71,7 @@ function formatTime(
 export function ReplayPlaybackControls({
   currentTime,
   duration,
-
-  paused,
-  muted,
-
-  onTogglePlayback,
   onSeek,
-  onSkipBackward,
-  onSkipForward,
-  onToggleMute,
 }: ReplayPlaybackControlsProps) {
   const [
     barWidth,
@@ -104,7 +99,9 @@ export function ReplayPlaybackControls({
       : 0;
 
   const safeCurrentTime =
-    Number.isFinite(currentTime)
+    Number.isFinite(
+      currentTime,
+    )
       ? clamp(
           currentTime,
           0,
@@ -138,7 +135,9 @@ export function ReplayPlaybackControls({
         null;
     }
 
-    setProgressActive(true);
+    setProgressActive(
+      true,
+    );
   }
 
   function scheduleProgressHide() {
@@ -151,14 +150,17 @@ export function ReplayPlaybackControls({
     }
 
     hideTimerRef.current =
-      setTimeout(() => {
-        setProgressActive(
-          false,
-        );
+      setTimeout(
+        () => {
+          setProgressActive(
+            false,
+          );
 
-        hideTimerRef.current =
-          null;
-      }, 1400);
+          hideTimerRef.current =
+            null;
+        },
+        1400,
+      );
   }
 
   function seekFromPosition(
@@ -186,298 +188,162 @@ export function ReplayPlaybackControls({
   }
 
   return (
-    <>
-      {paused ? (
+    <View
+      style={
+        styles.progressArea
+      }
+      pointerEvents="box-none"
+    >
+      {progressActive ? (
         <View
           style={
-            styles.centerControls
+            styles.timeRow
           }
-          pointerEvents="box-none"
+          pointerEvents="none"
         >
-          <Pressable
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed &&
-                styles.pressed,
-            ]}
-            onPress={
-              onToggleMute
-            }
-            accessibilityRole="button"
-            accessibilityLabel={
-              muted
-                ? "Activar sonido"
-                : "Silenciar"
+          <Text
+            style={
+              styles.timeText
             }
           >
-            <Ionicons
-              name={
-                muted
-                  ? "volume-mute"
-                  : "volume-high"
-              }
-              size={24}
-              color="#FFFFFF"
-            />
-          </Pressable>
+            {formatTime(
+              safeCurrentTime,
+            )}
+          </Text>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed &&
-                styles.pressed,
-            ]}
-            onPress={
-              onSkipBackward
+          <Text
+            style={
+              styles.timeText
             }
-            accessibilityRole="button"
-            accessibilityLabel="Retroceder 10 segundos"
           >
-            <Text
-              style={
-                styles.skipText
-              }
-            >
-              -10
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.playButton,
-              pressed &&
-                styles.pressed,
-            ]}
-            onPress={
-              onTogglePlayback
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Reproducir"
-          >
-            <Ionicons
-              name="play"
-              size={34}
-              color="#FFFFFF"
-            />
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed &&
-                styles.pressed,
-            ]}
-            onPress={
-              onSkipForward
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Avanzar 15 segundos"
-          >
-            <Text
-              style={
-                styles.skipText
-              }
-            >
-              +15
-            </Text>
-          </Pressable>
+            {formatTime(
+              safeDuration,
+            )}
+          </Text>
         </View>
       ) : null}
 
       <View
         style={
-          styles.progressArea
+          styles.progressTouchArea
         }
-        pointerEvents="box-none"
+        onLayout={(
+          event,
+        ) => {
+          setBarWidth(
+            event.nativeEvent
+              .layout.width,
+          );
+        }}
+        onStartShouldSetResponder={() =>
+          true
+        }
+        onMoveShouldSetResponder={() =>
+          true
+        }
+        onResponderGrant={(
+          event,
+        ) => {
+          activateProgress();
+
+          seekFromPosition(
+            event.nativeEvent
+              .locationX,
+          );
+        }}
+        onResponderMove={(
+          event,
+        ) => {
+          activateProgress();
+
+          seekFromPosition(
+            event.nativeEvent
+              .locationX,
+          );
+        }}
+        onResponderRelease={() => {
+          scheduleProgressHide();
+        }}
+        onResponderTerminate={() => {
+          scheduleProgressHide();
+        }}
       >
-        {progressActive ? (
-          <Text
-            style={
-              styles.timeText
-            }
-            pointerEvents="none"
-          >
-            {formatTime(
-              safeCurrentTime,
-            )}{" / "}
-            {formatTime(
-              safeDuration,
-            )}
-          </Text>
-        ) : null}
-
         <View
-          style={
-            styles.progressTouchArea
-          }
-          onLayout={(
-            event,
-          ) => {
-            setBarWidth(
-              event.nativeEvent
-                .layout.width,
-            );
-          }}
-          onStartShouldSetResponder={() =>
-            true
-          }
-          onMoveShouldSetResponder={() =>
-            true
-          }
-          onResponderGrant={(
-            event,
-          ) => {
-            activateProgress();
+          pointerEvents="none"
+          style={[
+            styles.track,
 
-            seekFromPosition(
-              event.nativeEvent
-                .locationX,
-            );
-          }}
-          onResponderMove={(
-            event,
-          ) => {
-            activateProgress();
-
-            seekFromPosition(
-              event.nativeEvent
-                .locationX,
-            );
-          }}
-          onResponderRelease={() => {
-            scheduleProgressHide();
-          }}
-          onResponderTerminate={() => {
-            scheduleProgressHide();
-          }}
+            progressActive &&
+              styles.trackActive,
+          ]}
         >
           <View
             style={[
-              styles.track,
-              progressActive &&
-                styles.trackActive,
-            ]}
-            pointerEvents="none"
-          >
-            <View
-              style={[
-                styles.fill,
-                {
-                  width:
-                    `${progress * 100}%`,
-                },
-              ]}
-            />
-          </View>
+              styles.fill,
 
-          {progressActive ? (
-            <View
-              pointerEvents="none"
-              style={[
-                styles.thumb,
-                {
-                  left:
-                    `${progress * 100}%`,
-                },
-              ]}
-            />
-          ) : null}
+              {
+                width:
+                  `${progress * 100}%`,
+              },
+            ]}
+          />
         </View>
+
+        {progressActive ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.thumb,
+
+              {
+                left:
+                  `${progress * 100}%`,
+              },
+            ]}
+          />
+        ) : null}
       </View>
-    </>
+    </View>
   );
 }
 
 const styles =
   StyleSheet.create({
-    centerControls: {
+    progressArea: {
       position:
         "absolute",
 
       left: 0,
       right: 0,
-      top: "50%",
-
-      marginTop: -34,
-
-      zIndex: 70,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      gap: 14,
-    },
-
-    secondaryButton: {
-      width: 52,
-      height: 52,
-
-      borderRadius: 26,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      backgroundColor:
-        "rgba(0,0,0,0.52)",
-    },
-
-    playButton: {
-      width: 68,
-      height: 68,
-
-      borderRadius: 34,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      backgroundColor:
-        "rgba(0,0,0,0.64)",
-    },
-
-    skipText: {
-      color: "#FFFFFF",
-
-      fontSize: 14,
-      fontWeight: "700",
-    },
-
-    pressed: {
-      opacity: 0.68,
-    },
-
-    progressArea: {
-      position:
-        "absolute",
-
-      left: 14,
-      right: 14,
-      bottom: 4,
+      bottom: 0,
 
       zIndex: 80,
     },
 
+    timeRow: {
+      position:
+        "absolute",
+
+      left: 12,
+      right: 12,
+      bottom: 13,
+
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "space-between",
+    },
+
     timeText: {
-      marginBottom: 2,
+      color:
+        "rgba(255,255,255,0.92)",
 
-      color: "#FFFFFF",
-
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: "600",
 
       textShadowColor:
-        "rgba(0,0,0,0.75)",
+        "rgba(0,0,0,0.8)",
 
       textShadowOffset: {
         width: 0,
@@ -488,16 +354,14 @@ const styles =
     },
 
     progressTouchArea: {
-      height: 24,
+      height: 22,
 
       justifyContent:
-        "center",
+        "flex-end",
     },
 
     track: {
       height: 2,
-
-      borderRadius: 999,
 
       overflow:
         "hidden",
@@ -510,7 +374,7 @@ const styles =
       height: 4,
 
       backgroundColor:
-        "rgba(255,255,255,0.52)",
+        "rgba(255,255,255,0.50)",
     },
 
     fill: {
@@ -524,15 +388,14 @@ const styles =
       position:
         "absolute",
 
-      top: "50%",
+      bottom: -4,
 
-      width: 12,
-      height: 12,
+      width: 10,
+      height: 10,
 
-      marginLeft: -6,
-      marginTop: -6,
+      marginLeft: -5,
 
-      borderRadius: 6,
+      borderRadius: 5,
 
       backgroundColor:
         "#FFFFFF",

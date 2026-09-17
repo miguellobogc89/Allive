@@ -39,10 +39,6 @@ import {
 } from "./BottomNavMain";
 
 import {
-  BottomNavReplay,
-} from "./BottomNavReplay";
-
-import {
   styles,
 } from "./bottomNav.styles";
 
@@ -99,6 +95,15 @@ export function BottomNav({
   const insets =
     useSafeAreaInsets();
 
+  /*
+   * Replay no utiliza BottomNav.
+   * Todos sus controles viven sobre
+   * el propio vídeo.
+   */
+  if (mode === "replay") {
+    return null;
+  }
+
   const pillHeight =
     compact
       ? 50
@@ -108,14 +113,6 @@ export function BottomNav({
     if (mode === "live") {
       return (
         <BottomNavLive />
-      );
-    }
-
-    if (
-      mode === "replay"
-    ) {
-      return (
-        <BottomNavReplay />
       );
     }
 
@@ -188,13 +185,16 @@ export function BottomNav({
       pointerEvents="box-none"
       style={[
         styles.container,
+
         compact &&
           styles.containerCompact,
+
         {
           height:
             pillHeight +
             insets.bottom +
             spacing.md,
+
           paddingBottom:
             insets.bottom +
             spacing.xs,
@@ -224,6 +224,7 @@ export function BottomNav({
         }
         style={[
           styles.pill,
+
           compact &&
             styles.pillCompact,
         ]}
@@ -238,6 +239,7 @@ const localStyles =
   StyleSheet.create({
     debugLabel: {
       position: "absolute",
+
       bottom: "100%",
       alignSelf: "center",
 
@@ -256,8 +258,10 @@ const localStyles =
 
     debugText: {
       color: "#000000",
+
       fontSize: 10,
       fontWeight: "800",
+
       letterSpacing: 0.5,
     },
   });
