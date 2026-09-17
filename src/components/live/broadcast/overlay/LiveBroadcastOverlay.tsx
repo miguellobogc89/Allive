@@ -496,27 +496,26 @@ export function LiveBroadcastOverlay({
             },
           ]}
         >
-          {isLive &&
-            hasMetadata && (
-              <Pressable
-                onPress={
-                  openStartMetadata
-                }
-                style={
-                  styles.topMetadata
-                }
-              >
-                <LiveBroadcastMetadata
-                  eventName={
-                    eventName
-                  }
-                  title={title}
-                  location={
-                    metadataLocation
-                  }
-                />
-              </Pressable>
-            )}
+{hasMetadata && (
+  <Pressable
+    onPress={
+      openStartMetadata
+    }
+    style={
+      styles.bottomMetadata
+    }
+  >
+    <LiveBroadcastMetadata
+      eventName={
+        eventName
+      }
+      title={title}
+      location={
+        metadataLocation
+      }
+    />
+  </Pressable>
+)}
 
           <LiveTimedCommentsLayer
             comments={comments}
@@ -611,11 +610,14 @@ const styles =
       ...StyleSheet.absoluteFill,
     },
 
-    topMetadata: {
-      position: "absolute",
-      top: 70,
-      left: 18,
-      right: 96,
-      zIndex: 24,
-    },
+bottomMetadata: {
+  position: "absolute",
+
+  left: 30,
+  right: 108,
+
+  bottom: 103,
+
+  zIndex: 24,
+},
   });

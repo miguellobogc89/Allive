@@ -5,8 +5,6 @@ import type {
 } from "react";
 
 import {
-  StyleSheet,
-  Text,
   View,
 } from "react-native";
 
@@ -201,22 +199,6 @@ export function BottomNav({
         },
       ]}
     >
-      <View
-        pointerEvents="none"
-        style={
-          localStyles.debugLabel
-        }
-      >
-        <Text
-          style={
-            localStyles.debugText
-          }
-        >
-          BOTTOMNAV ·{" "}
-          {mode.toUpperCase()}
-        </Text>
-      </View>
-
       <LiquidSurface
         variant="dark"
         blurTarget={
@@ -234,34 +216,3 @@ export function BottomNav({
     </View>
   );
 }
-
-const localStyles =
-  StyleSheet.create({
-    debugLabel: {
-      position: "absolute",
-
-      bottom: "100%",
-      alignSelf: "center",
-
-      paddingHorizontal: 9,
-      paddingVertical: 4,
-
-      marginBottom: 3,
-
-      borderRadius: 6,
-
-      backgroundColor:
-        "rgba(255,255,255,0.92)",
-
-      zIndex: 100,
-    },
-
-    debugText: {
-      color: "#000000",
-
-      fontSize: 10,
-      fontWeight: "800",
-
-      letterSpacing: 0.5,
-    },
-  });

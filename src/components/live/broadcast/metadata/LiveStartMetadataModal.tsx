@@ -24,12 +24,6 @@ import type {
 } from "../../../../api/locationApi";
 
 import {
-  colors,
-  radius,
-  spacing,
-} from "../../../../styles";
-
-import {
   LiveLocationPicker,
 } from "../location/LiveLocationPicker";
 
@@ -83,189 +77,111 @@ export function LiveStartMetadataModal({
   locationName,
   locationCoordinates,
   selectedLocationPlace,
-  locationVisible,
   onChangeTitle,
   onChangeEventName,
   onChangeLocationPlace,
-  onChangeLocationVisible,
   onAccept,
   onClose,
 }: LiveStartMetadataModalProps) {
-  const opacity =
+  const backgroundOpacity =
     useRef(
       new Animated.Value(0),
-    ).current;
-
-  const translateY =
-    useRef(
-      new Animated.Value(14),
     ).current;
 
   const [
     mounted,
     setMounted,
-  ] = useState(
-    visible,
-  );
+  ] = useState(visible);
 
   const [
     locationPickerVisible,
     setLocationPickerVisible,
-  ] = useState(
-    false,
-  );
+  ] = useState(false);
 
-  useEffect(
-    () => {
-      if (visible) {
-        setMounted(
-          true,
-        );
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
 
-        opacity.stopAnimation();
-        translateY.stopAnimation();
+      backgroundOpacity.stopAnimation();
 
-        opacity.setValue(
-          0,
-        );
-
-        translateY.setValue(
-          14,
-        );
-
-        requestAnimationFrame(
-          () => {
-            Animated.parallel([
-              Animated.timing(
-                opacity,
-                {
-                  toValue: 1,
-                  duration: 220,
-                  useNativeDriver:
-                    true,
-                },
-              ),
-
-              Animated.timing(
-                translateY,
-                {
-                  toValue: 0,
-                  duration: 240,
-                  useNativeDriver:
-                    true,
-                },
-              ),
-            ]).start();
-          },
-        );
-
-        return;
-      }
-
-      setLocationPickerVisible(
-        false,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      opacity.stopAnimation();
-      translateY.stopAnimation();
-
-      Animated.parallel([
-        Animated.timing(
-          opacity,
-          {
-            toValue: 0,
-            duration: 160,
-            useNativeDriver:
-              true,
-          },
-        ),
-
-        Animated.timing(
-          translateY,
-          {
-            toValue: -10,
-            duration: 180,
-            useNativeDriver:
-              true,
-          },
-        ),
-      ]).start(
-        ({
-          finished,
-        }) => {
-          if (
-            finished
-          ) {
-            setMounted(
-              false,
-            );
-          }
+      requestAnimationFrame(
+        () => {
+          Animated.timing(
+            backgroundOpacity,
+            {
+              toValue: 1,
+              duration: 180,
+              useNativeDriver:
+                true,
+            },
+          ).start();
         },
       );
-    },
-    [
-      visible,
-      opacity,
-      translateY,
-      mounted,
-    ],
-  );
+
+      return;
+    }
+
+    setLocationPickerVisible(
+      false,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    backgroundOpacity.stopAnimation();
+
+    Animated.timing(
+      backgroundOpacity,
+      {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver:
+          true,
+      },
+    ).start(
+      ({ finished }) => {
+        if (finished) {
+          setMounted(false);
+        }
+      },
+    );
+  }, [
+    visible,
+    mounted,
+    backgroundOpacity,
+  ]);
 
   if (!mounted) {
     return null;
   }
 
+  function closeEditor() {
+    onAccept();
+    onClose();
+  }
+
   let displayedLocationName =
     locationName;
 
-  if (
-    selectedLocationPlace
-  ) {
+  if (selectedLocationPlace) {
     displayedLocationName =
       selectedLocationPlace.name;
   }
 
-  if (
-    !displayedLocationName
-  ) {
+  if (!displayedLocationName) {
     displayedLocationName =
-      "Detectando ubicación…";
+      "Ubicación actual";
   }
 
-  let pickerIcon:
+  let locationChevron:
     | "chevron-down"
     | "chevron-up" =
     "chevron-down";
 
-  if (
-    locationPickerVisible
-  ) {
-    pickerIcon =
+  if (locationPickerVisible) {
+    locationChevron =
       "chevron-up";
-  }
-
-  let visibleIconColor =
-    "rgba(255,255,255,0.48)";
-
-  if (
-    locationVisible
-  ) {
-    visibleIconColor =
-      "#FFFFFF";
-  }
-
-  let hiddenIconColor =
-    "rgba(255,255,255,0.48)";
-
-  if (
-    !locationVisible
-  ) {
-    hiddenIconColor =
-      "#FFFFFF";
   }
 
   let layerPointerEvents:
@@ -283,186 +199,90 @@ export function LiveStartMetadataModal({
       pointerEvents={
         layerPointerEvents
       }
-      style={
-        styles.layer
-      }
+      style={styles.layer}
     >
+      {/*
+       * Toda la pantalla fuera del
+       * bloque cierra la edición.
+       */}
       <Pressable
         style={
           StyleSheet.absoluteFill
         }
         onPress={
-          onClose
+          closeEditor
         }
-      >
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.backdrop,
-            {
-              opacity,
-            },
-          ]}
-        />
-      </Pressable>
+      />
 
       <View
         pointerEvents="box-none"
         style={
-          styles.centerStage
+          styles.metadataPosition
         }
       >
         <Animated.View
           style={[
-            styles.card,
-            {
-              opacity,
+            styles.metadataBlock,
 
-              transform: [
-                {
-                  translateY,
-                },
-              ],
+            {
+              backgroundColor:
+                backgroundOpacity.interpolate(
+                  {
+                    inputRange: [
+                      0,
+                      1,
+                    ],
+
+                    outputRange: [
+                      "rgba(16,18,22,0)",
+                      "rgba(16,18,22,0.76)",
+                    ],
+                  },
+                ),
             },
           ]}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-            hitSlop={10}
-            onPress={
-              onClose
+          {/*
+           * EVENTO
+           *
+           * Mismo tamaño que
+           * LiveBroadcastMetadata.
+           */}
+          <TextInput
+            value={eventName}
+            onChangeText={
+              onChangeEventName
             }
-            style={({
-              pressed,
-            }) => [
-              styles.closeButton,
-
-              pressed &&
-                styles.closeButtonPressed,
+            placeholder="Nombre del evento"
+            placeholderTextColor="rgba(255,255,255,0.58)"
+            maxLength={100}
+            multiline
+            blurOnSubmit
+            style={[
+              styles.input,
+              styles.eventInput,
             ]}
-          >
-            <Ionicons
-              name="close"
-              size={22}
-              color="rgba(255,255,255,0.78)"
-            />
-          </Pressable>
+          />
 
+          {/*
+           * UBICACIÓN
+           */}
           <View
             style={
-              styles.content
+              styles.locationArea
             }
           >
-            <TextInput
-              value={
-                title
-              }
-              onChangeText={
-                onChangeTitle
-              }
-              placeholder="¿Qué está pasando?"
-              placeholderTextColor="rgba(255,255,255,0.55)"
-              maxLength={120}
-              style={[
-                styles.input,
-                styles.titleInput,
-              ]}
-            />
-
-            <TextInput
-              value={
-                eventName
-              }
-              onChangeText={
-                onChangeEventName
-              }
-              placeholder="¿Cómo se llama el evento?"
-              placeholderTextColor="rgba(255,255,255,0.55)"
-              maxLength={100}
-              style={
-                styles.input
-              }
-            />
-
-            <View
-              style={
-                styles.locationBlock
-              }
-            >
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => {
-                  setLocationPickerVisible(
-                    (
-                      current,
-                    ) =>
-                      !current,
-                  );
-                }}
-                style={({
-                  pressed,
-                }) => [
-                  styles.locationIdentity,
-
-                  pressed &&
-                    styles.locationIdentityPressed,
-                ]}
+            {locationPickerVisible && (
+              <View
+                style={
+                  styles.locationPickerAbove
+                }
               >
-                <View
-                  style={
-                    styles.locationIcon
-                  }
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={18}
-                    color="rgba(255,255,255,0.75)"
-                  />
-                </View>
-
-                <View
-                  style={
-                    styles.locationContent
-                  }
-                >
-                  <Text
-                    style={
-                      styles.locationLabel
-                    }
-                  >
-                    Ubicación
-                  </Text>
-
-                  <Text
-                    numberOfLines={
-                      1
-                    }
-                    style={
-                      styles.locationText
-                    }
-                  >
-                    {
-                      displayedLocationName
-                    }
-                  </Text>
-                </View>
-
-                <Ionicons
-                  name={
-                    pickerIcon
-                  }
-                  size={17}
-                  color="rgba(255,255,255,0.45)"
-                />
-              </Pressable>
-
-              {locationPickerVisible && (
                 <LiveLocationPicker
                   visible
                   automaticLocationName={
                     locationName ||
-                    "Detectando ubicación…"
+                    "Ubicación actual"
                   }
                   coordinates={
                     locationCoordinates
@@ -470,137 +290,92 @@ export function LiveStartMetadataModal({
                   selectedPlace={
                     selectedLocationPlace
                   }
-                  onSelectPlace={
-                    onChangeLocationPlace
-                  }
+                  onSelectPlace={(
+                    place,
+                  ) => {
+                    onChangeLocationPlace(
+                      place,
+                    );
+
+                    setLocationPickerVisible(
+                      false,
+                    );
+                  }}
                   onClose={() => {
                     setLocationPickerVisible(
                       false,
                     );
                   }}
                 />
-              )}
-
-              <View
-                style={
-                  styles.visibilityRow
-                }
-              >
-                <Text
-                  style={
-                    styles.visibilityLabel
-                  }
-                >
-                  Mostrar ubicación
-                </Text>
-
-                <View
-                  style={
-                    styles.visibilitySelector
-                  }
-                >
-                  <Pressable
-                    onPress={() => {
-                      onChangeLocationVisible(
-                        true,
-                      );
-                    }}
-                    style={({
-                      pressed,
-                    }) => [
-                      styles.visibilityOption,
-
-                      locationVisible &&
-                        styles.visibilityOptionActive,
-
-                      pressed &&
-                        styles.visibilityOptionPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name="eye-outline"
-                      size={15}
-                      color={
-                        visibleIconColor
-                      }
-                    />
-
-                    <Text
-                      style={[
-                        styles.visibilityText,
-
-                        locationVisible &&
-                          styles.visibilityTextActive,
-                      ]}
-                    >
-                      Visible
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => {
-                      onChangeLocationVisible(
-                        false,
-                      );
-                    }}
-                    style={({
-                      pressed,
-                    }) => [
-                      styles.visibilityOption,
-
-                      !locationVisible &&
-                        styles.visibilityOptionActive,
-
-                      pressed &&
-                        styles.visibilityOptionPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name="eye-off-outline"
-                      size={15}
-                      color={
-                        hiddenIconColor
-                      }
-                    />
-
-                    <Text
-                      style={[
-                        styles.visibilityText,
-
-                        !locationVisible &&
-                          styles.visibilityTextActive,
-                      ]}
-                    >
-                      Oculta
-                    </Text>
-                  </Pressable>
-                </View>
               </View>
-            </View>
+            )}
 
             <Pressable
               accessibilityRole="button"
-              onPress={
-                onAccept
-              }
+              accessibilityLabel="Editar ubicación"
+              onPress={() => {
+                setLocationPickerVisible(
+                  (current) =>
+                    !current,
+                );
+              }}
               style={({
                 pressed,
               }) => [
-                styles.acceptButton,
+                styles.locationRow,
 
                 pressed &&
-                  styles.acceptButtonPressed,
+                  styles.pressed,
               ]}
             >
+              <Ionicons
+                name="location-outline"
+                size={13}
+                color="rgba(255,255,255,0.78)"
+              />
+
               <Text
+                numberOfLines={1}
                 style={
-                  styles.acceptButtonText
+                  styles.locationText
                 }
               >
-                Aceptar
+                {
+                  displayedLocationName
+                }
               </Text>
+
+              <Ionicons
+                name={
+                  locationChevron
+                }
+                size={13}
+                color="rgba(255,255,255,0.58)"
+              />
             </Pressable>
           </View>
+
+          {/*
+           * TÍTULO / DESCRIPCIÓN
+           *
+           * Mismo tamaño que
+           * LiveBroadcastTitle.
+           */}
+          <TextInput
+            value={title}
+            onChangeText={
+              onChangeTitle
+            }
+            placeholder="¿Qué está pasando?"
+            placeholderTextColor="rgba(255,255,255,0.52)"
+            maxLength={120}
+            multiline
+            blurOnSubmit
+            style={[
+              styles.input,
+              styles.titleInput,
+            ]}
+          />
         </Animated.View>
       </View>
     </View>
@@ -615,354 +390,133 @@ const styles =
       zIndex: 50,
     },
 
-    backdrop: {
-      ...StyleSheet.absoluteFill,
+    /*
+     * MISMA zona en la que
+     * quedará el metadata cuando
+     * desaparezca el editor.
+     */
+    metadataPosition: {
+      position: "absolute",
 
-      backgroundColor:
-        "rgba(0,0,0,0.18)",
+      left: 18,
+      right: 96,
+
+      bottom: 92,
+
+      zIndex: 60,
     },
 
-    centerStage: {
-      ...StyleSheet.absoluteFill,
+    metadataBlock: {
+      position: "relative",
 
-      alignItems:
-        "center",
+      width: "100%",
 
-      justifyContent:
-        "center",
+      paddingHorizontal: 12,
+      paddingVertical: 11,
 
-      paddingHorizontal:
-        24,
-    },
-
-    card: {
-      position:
-        "relative",
-
-      width:
-        "100%",
-
-      maxWidth:
-        420,
-
-      padding:
-        spacing.lg,
-
-      borderRadius:
-        20,
-
-      backgroundColor:
-        "rgba(12,14,17,0.86)",
-
-      overflow:
-        "visible",
-    },
-
-    closeButton: {
-      position:
-        "absolute",
-
-      top: 10,
-      right: 10,
-
-      width: 34,
-      height: 34,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      borderRadius:
-        17,
-
-      zIndex: 2,
-    },
-
-    closeButtonPressed: {
-      backgroundColor:
-        "rgba(255,255,255,0.08)",
-    },
-
-    content: {
-      gap:
-        spacing.md,
-
-      paddingTop:
-        24,
-
-      overflow:
-        "visible",
-    },
-
-    input: {
-      minHeight:
-        48,
-
-      paddingHorizontal:
-        14,
-
-      color:
-        "#FFFFFF",
-
-      fontSize:
-        14,
-
-      fontWeight:
-        "500",
-
-      borderWidth:
-        1,
-
-      borderColor:
-        "rgba(255,255,255,0.24)",
-
-      borderRadius:
-        radius.md,
-
-      backgroundColor:
-        "rgba(255,255,255,0.06)",
-
-      outlineWidth:
-        0,
-    },
-
-    titleInput: {
-      borderColor:
-        "rgba(255,255,255,0.46)",
-
-      fontSize:
-        15,
-
-      fontWeight:
-        "600",
-    },
-
-    locationBlock: {
-      position:
-        "relative",
-
-      zIndex:
-        20,
-
-      gap:
-        10,
-
-      paddingHorizontal:
-        2,
-
-      paddingVertical:
-        4,
-
-      overflow:
-        "visible",
-    },
-
-    locationIdentity: {
-      minHeight:
-        42,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap:
-        10,
-
-      paddingVertical:
-        3,
-
-      borderRadius:
-        10,
-
-      zIndex:
-        22,
-    },
-
-    locationIdentityPressed: {
-      opacity:
-        0.72,
-    },
-
-    locationIcon: {
-      width: 30,
-      height: 30,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      borderRadius:
-        15,
-
-      backgroundColor:
-        "rgba(255,255,255,0.07)",
-    },
-
-    locationContent: {
-      flex: 1,
-
-      minWidth:
-        0,
-    },
-
-    locationLabel: {
-      marginBottom:
-        2,
-
-      color:
-        "rgba(255,255,255,0.46)",
-
-      fontSize:
-        11,
-
-      fontWeight:
-        "500",
-    },
-
-    locationText: {
-      color:
-        "#FFFFFF",
-
-      fontSize:
-        14,
-
-      fontWeight:
-        "600",
-    },
-
-    visibilityRow: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "space-between",
-
-      gap:
-        spacing.sm,
-    },
-
-    visibilityLabel: {
-      color:
-        "rgba(255,255,255,0.58)",
-
-      fontSize:
-        12,
-
-      fontWeight:
-        "500",
-    },
-
-    visibilitySelector: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 4,
-
-      padding: 3,
-
-      borderRadius:
-        10,
-
-      backgroundColor:
-        "rgba(255,255,255,0.07)",
-    },
-
-    visibilityOption: {
-      height: 30,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
+      borderRadius: 14,
 
       gap: 5,
 
-      paddingHorizontal:
-        9,
-
-      borderRadius:
-        8,
+      overflow: "visible",
     },
 
-    visibilityOptionActive: {
-      backgroundColor:
-        "rgba(255,255,255,0.14)",
-    },
+    input: {
+      width: "100%",
 
-    visibilityOptionPressed: {
-      opacity:
-        0.72,
-    },
+      padding: 0,
+      margin: 0,
 
-    visibilityText: {
-      color:
-        "rgba(255,255,255,0.48)",
+      borderWidth: 0,
 
-      fontSize:
-        11,
-
-      fontWeight:
-        "600",
-    },
-
-    visibilityTextActive: {
-      color:
-        "#FFFFFF",
-    },
-
-    acceptButton: {
-      height:
-        46,
-
-      marginTop:
-        4,
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "center",
-
-      borderRadius:
-        radius.md,
+      color: "#FFFFFF",
 
       backgroundColor:
-        colors.accent,
+        "transparent",
+
+      outlineWidth: 0,
+
+      textShadowColor:
+        "rgba(0,0,0,0.9)",
+
+      textShadowOffset: {
+        width: 0,
+        height: 2,
+      },
+
+      textShadowRadius: 4,
     },
 
-    acceptButtonPressed: {
-      opacity:
-        0.82,
+    eventInput: {
+      minHeight: 34,
 
-      transform: [
-        {
-          scale:
-            0.99,
-        },
-      ],
+      fontSize: 30,
+      lineHeight: 34,
+
+      fontWeight: "900",
+
+      letterSpacing: -0.5,
+
+      textShadowRadius: 5,
     },
 
-    acceptButtonText: {
+    locationArea: {
+      position: "relative",
+
+      zIndex: 100,
+
+      overflow: "visible",
+    },
+
+    locationRow: {
+      minHeight: 18,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      gap: 4,
+    },
+
+    locationText: {
+      flex: 1,
+
       color:
-        "#FFFFFF",
+        "rgba(255,255,255,0.78)",
 
-      fontSize:
-        14,
+      fontSize: 12,
 
-      fontWeight:
-        "700",
+      fontWeight: "500",
+    },
+
+    /*
+     * IMPORTANTE:
+     * el selector nace justo encima
+     * de la línea de ubicación.
+     */
+    locationPickerAbove: {
+      position: "absolute",
+
+      left: -8,
+      right: -8,
+
+      bottom: 24,
+
+      zIndex: 200,
+
+      overflow: "visible",
+    },
+
+    titleInput: {
+      minHeight: 20,
+
+      fontSize: 15,
+      lineHeight: 20,
+
+      fontWeight: "600",
+    },
+
+    pressed: {
+      opacity: 0.72,
     },
   });

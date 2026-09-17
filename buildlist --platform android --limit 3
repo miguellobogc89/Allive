@@ -1,0 +1,75 @@
+[1mdiff --git a/src/components/navigation/BottomNav/BottomNav.tsx b/src/components/navigation/BottomNav/BottomNav.tsx[m
+[1mindex 725da02..431e826 100644[m
+[1m--- a/src/components/navigation/BottomNav/BottomNav.tsx[m
+[1m+++ b/src/components/navigation/BottomNav/BottomNav.tsx[m
+[36m@@ -5,8 +5,6 @@[m [mimport type {[m
+ } from "react";[m
+ [m
+ import {[m
+[31m-  StyleSheet,[m
+[31m-  Text,[m
+   View,[m
+ } from "react-native";[m
+ [m
+[36m@@ -201,22 +199,6 @@[m [mexport function BottomNav({[m
+         },[m
+       ]}[m
+     >[m
+[31m-      <View[m
+[31m-        pointerEvents="none"[m
+[31m-        style={[m
+[31m-          localStyles.debugLabel[m
+[31m-        }[m
+[31m-      >[m
+[31m-        <Text[m
+[31m-          style={[m
+[31m-            localStyles.debugText[m
+[31m-          }[m
+[31m-        >[m
+[31m-          BOTTOMNAV ·{" "}[m
+[31m-          {mode.toUpperCase()}[m
+[31m-        </Text>[m
+[31m-      </View>[m
+[31m-[m
+       <LiquidSurface[m
+         variant="dark"[m
+         blurTarget={[m
+[36m@@ -233,35 +215,4 @@[m [mexport function BottomNav({[m
+       </LiquidSurface>[m
+     </View>[m
+   );[m
+[31m-}[m
+[31m-[m
+[31m-const localStyles =[m
+[31m-  StyleSheet.create({[m
+[31m-    debugLabel: {[m
+[31m-      position: "absolute",[m
+[31m-[m
+[31m-      bottom: "100%",[m
+[31m-      alignSelf: "center",[m
+[31m-[m
+[31m-      paddingHorizontal: 9,[m
+[31m-      paddingVertical: 4,[m
+[31m-[m
+[31m-      marginBottom: 3,[m
+[31m-[m
+[31m-      borderRadius: 6,[m
+[31m-[m
+[31m-      backgroundColor:[m
+[31m-        "rgba(255,255,255,0.92)",[m
+[31m-[m
+[31m-      zIndex: 100,[m
+[31m-    },[m
+[31m-[m
+[31m-    debugText: {[m
+[31m-      color: "#000000",[m
+[31m-[m
+[31m-      fontSize: 10,[m
+[31m-      fontWeight: "800",[m
+[31m-[m
+[31m-      letterSpacing: 0.5,[m
+[31m-    },[m
+[31m-  });[m
+\ No newline at end of file[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
