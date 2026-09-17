@@ -95,6 +95,7 @@ export function EmitScreen({
   onStatusChange,
   onStartLiveReady,
   onFinishLiveReady,
+  onControlsReady,
   onClose,
 }: EmitScreenProps) {
   const roomRef =
@@ -166,6 +167,11 @@ export function EmitScreen({
     isLive,
     setIsLive,
   ] = useState(false);
+
+  const [
+  microphoneEnabled,
+  setMicrophoneEnabled,
+] = useState(true);
 
   const [
     finishModalVisible,
@@ -279,22 +285,24 @@ export function EmitScreen({
     };
   }
 
-  useEffect(() => {
-    if (!onStatusChange) {
-      return;
-    }
+useEffect(() => {
+  if (!onStatusChange) {
+    return;
+  }
 
-    onStatusChange({
-      isLive,
-      isConnecting,
-      cameraReady,
-    });
-  }, [
-    cameraReady,
-    isConnecting,
+  onStatusChange({
     isLive,
-    onStatusChange,
-  ]);
+    isConnecting,
+    cameraReady,
+    microphoneEnabled,
+  });
+}, [
+  cameraReady,
+  isConnecting,
+  isLive,
+  microphoneEnabled,
+  onStatusChange,
+]);
 
   useEffect(() => {
     if (onStartLiveReady) {
@@ -474,6 +482,30 @@ export function EmitScreen({
     };
   }, []);
 
+  useEffect(() => {
+  if (!onControlsReady) {
+    return;
+  }
+
+  onControlsReady({
+    toggleMicrophone: () => {
+      void toggleMicrophone();
+    },
+
+    switchCamera: () => {
+      void switchCamera();
+    },
+  });
+
+  return () => {
+    onControlsReady(null);
+  };
+}, [
+  isLive,
+  microphoneEnabled,
+  onControlsReady,
+]);
+
   function clearPreview() {
     stopPreviewStream(
       previewStreamRef.current,
@@ -506,6 +538,179 @@ export function EmitScreen({
     thumbnailCaptureRef.current =
       null;
   }
+
+  async function toggleMicrophone() {
+  const nextEnabled =
+    !microphoneEnabled;
+
+  const room =
+    roomRef.current;
+
+  if (room && isLive) {
+    try {
+      await room
+        .localParticipant
+        .setMicrophoneEnabled(
+          nextEnabled,
+        );
+    } catch (caughtError) {
+      console.error(
+        "No se pudo cambiar el estado del micrófono:",
+        caughtError,
+      );
+
+      return;
+    }
+  }
+
+  const previewStream =
+    previewStreamRef.current;
+
+  if (previewStream) {
+    previewStream
+      .getAudioTracks()
+      .forEach((track) => {
+        track.enabled =
+          nextEnabled;
+      });
+  }
+
+  setMicrophoneEnabled(
+    nextEnabled,
+  );
+}
+
+async function switchCamera() {
+  const room =
+    roomRef.current;
+
+  if (room && isLive) {
+    try {
+      const publication =
+        room.localParticipant
+          .getTrackPublication(
+            Track.Source.Camera,
+          );
+
+      const currentTrack =
+        publication
+          ?.track
+          ?.mediaStreamTrack;
+
+      const currentFacingMode =
+        currentTrack
+          ?.getSettings()
+          .facingMode;
+
+      const nextFacingMode =
+        currentFacingMode ===
+        "user"
+          ? "environment"
+          : "user";
+
+      await room
+        .localParticipant
+        .setCameraEnabled(
+          false,
+        );
+
+      await room
+        .localParticipant
+        .setCameraEnabled(
+          true,
+          {
+            facingMode:
+              nextFacingMode,
+          },
+        );
+
+      clearLiveVideo();
+
+      if (
+        localVideoRef.current
+      ) {
+        liveVideoElementRef.current =
+          attachLiveCamera(
+            room,
+            localVideoRef.current,
+          );
+      }
+
+      return;
+    } catch (caughtError) {
+      console.error(
+        "No se pudo cambiar la cámara del LIVE:",
+        caughtError,
+      );
+
+      return;
+    }
+  }
+
+  const currentStream =
+    previewStreamRef.current;
+
+  const currentVideoTrack =
+    currentStream
+      ?.getVideoTracks()[0];
+
+  const currentFacingMode =
+    currentVideoTrack
+      ?.getSettings()
+      .facingMode;
+
+  const nextFacingMode =
+    currentFacingMode === "user"
+      ? "environment"
+      : "user";
+
+  try {
+    clearPreview();
+
+    const stream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+          video: {
+            facingMode: {
+              ideal:
+                nextFacingMode,
+            },
+          },
+          audio: true,
+        });
+
+    stream
+      .getAudioTracks()
+      .forEach((track) => {
+        track.enabled =
+          microphoneEnabled;
+      });
+
+    previewStreamRef.current =
+      stream;
+
+    if (
+      localVideoRef.current
+    ) {
+      previewVideoElementRef.current =
+        attachPreviewStream(
+          localVideoRef.current,
+          stream,
+        );
+    }
+
+    setCameraReady(true);
+    setCameraError(null);
+  } catch (caughtError) {
+    console.error(
+      "No se pudo cambiar la cámara:",
+      caughtError,
+    );
+
+    await restorePreview();
+  }
+}
 
   async function restorePreview() {
     if (
@@ -866,11 +1071,11 @@ if (cameraTrack) {
   );
 }
 
-      await room
-        .localParticipant
-        .setMicrophoneEnabled(
-          true,
-        );
+await room
+  .localParticipant
+  .setMicrophoneEnabled(
+    microphoneEnabled,
+  );
 
       if (
         !localVideoRef.current

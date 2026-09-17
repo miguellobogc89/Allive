@@ -1,4 +1,4 @@
-// src/screens/EmitScreen.native.tsx
+// src/screens/EmitScreen/native/EmitScreen.native.tsx
 
 import {
   Ionicons,
@@ -37,10 +37,6 @@ import {
 } from "../../../components/live/broadcast/LiveBroadcastSurface.native";
 
 import {
-  CameraSwitchControl,
-} from "../../../components/live/broadcast/bottom-nav/CameraSwitchControl";
-
-import {
   useBroadcastLocation,
 } from "../../../components/live/useBroadcastLocation.native";
 
@@ -49,28 +45,27 @@ import {
 } from "../../../styles";
 
 import {
-  emitScreenStyles as styles,
-} from "../EmitScreen.styles";
-
-import {
   LiveBroadcastScreen,
 } from "../../LiveBroadcastScreen";
 
-type EmitScreenProps = {
-  onStatusChange?: (status: {
-    isLive: boolean;
-    isConnecting: boolean;
-    cameraReady: boolean;
-  }) => void;
+import {
+  EmitBackButton,
+} from "../components/EmitBackButton";
 
-  onStartLiveReady?: (
-    startLive: (() => void) | null,
-  ) => void;
-};
+import {
+  emitScreenStyles as styles,
+} from "../EmitScreen.styles";
+
+import type {
+  EmitScreenProps,
+} from "../emitScreen.types";
 
 export function EmitScreen({
   onStatusChange,
   onStartLiveReady,
+  onFinishLiveReady,
+  onControlsReady,
+  onClose,
 }: EmitScreenProps) {
   const {
     token,
@@ -93,6 +88,11 @@ export function EmitScreen({
     isLive,
     setIsLive,
   ] = useState(false);
+
+  const [
+    microphoneEnabled,
+    setMicrophoneEnabled,
+  ] = useState(true);
 
   const [
     title,
@@ -152,9 +152,7 @@ export function EmitScreen({
 
   function toggleCamera() {
     setFacing(
-      (
-        current,
-      ) => {
+      (current) => {
         if (
           current === "back"
         ) {
@@ -164,6 +162,34 @@ export function EmitScreen({
         return "back";
       },
     );
+  }
+
+  function toggleMicrophone() {
+    setMicrophoneEnabled(
+      (current) =>
+        !current,
+    );
+  }
+
+  function startLive() {
+    if (
+      !isAuthenticated ||
+      !token ||
+      !cameraReady ||
+      isLive
+    ) {
+      return;
+    }
+
+    setIsLive(true);
+  }
+
+  function finishLive() {
+    if (!isLive) {
+      return;
+    }
+
+    setIsLive(false);
   }
 
   useEffect(
@@ -177,11 +203,13 @@ export function EmitScreen({
         isConnecting:
           false,
         cameraReady,
+        microphoneEnabled,
       });
     },
     [
       cameraReady,
       isLive,
+      microphoneEnabled,
       onStatusChange,
     ],
   );
@@ -193,44 +221,78 @@ export function EmitScreen({
         !token ||
         !cameraReady
       ) {
-        if (
-          onStartLiveReady
-        ) {
-          onStartLiveReady(
-            null,
-          );
-        }
+        onStartLiveReady?.(
+          null,
+        );
 
         return;
       }
 
-      if (
-        onStartLiveReady
-      ) {
-        onStartLiveReady(
-          () => {
-            setIsLive(
-              true,
-            );
-          },
-        );
-      }
+      onStartLiveReady?.(
+        startLive,
+      );
 
       return () => {
-        if (
-          onStartLiveReady
-        ) {
-          onStartLiveReady(
-            null,
-          );
-        }
+        onStartLiveReady?.(
+          null,
+        );
       };
     },
     [
       cameraReady,
       isAuthenticated,
+      isLive,
       onStartLiveReady,
       token,
+    ],
+  );
+
+  useEffect(
+    () => {
+      if (!isLive) {
+        onFinishLiveReady?.(
+          null,
+        );
+
+        return;
+      }
+
+      onFinishLiveReady?.(
+        finishLive,
+      );
+
+      return () => {
+        onFinishLiveReady?.(
+          null,
+        );
+      };
+    },
+    [
+      isLive,
+      onFinishLiveReady,
+    ],
+  );
+
+  useEffect(
+    () => {
+      if (!onControlsReady) {
+        return;
+      }
+
+      onControlsReady({
+        toggleMicrophone,
+        switchCamera:
+          toggleCamera,
+      });
+
+      return () => {
+        onControlsReady(
+          null,
+        );
+      };
+    },
+    [
+      onControlsReady,
     ],
   );
 
@@ -365,11 +427,9 @@ export function EmitScreen({
         authToken={token}
         title={title}
         eventName={eventName}
-        onFinish={() => {
-          setIsLive(
-            false,
-          );
-        }}
+        onFinish={
+          finishLive
+        }
       />
     );
   }
@@ -389,47 +449,47 @@ export function EmitScreen({
         likes: 0,
         comments: [],
         error: null,
+
         title,
         eventName,
+
         locationName:
           displayedLocationName,
+
         locationCoordinates,
+
         selectedLocationPlace,
+
         onChangeTitle:
           setTitle,
+
         onChangeEventName:
           setEventName,
+
         onChangeLocationPlace:
           setSelectedLocationPlace,
-        onStartLive: () => {
-          setIsLive(
-            true,
-          );
-        },
-        onFinishLive: () => {
-          setIsLive(
-            false,
-          );
-        },
+
+        onStartLive:
+          startLive,
+
+        onFinishLive:
+          finishLive,
+
         onToggleMicrophone:
-          () => {},
+          toggleMicrophone,
+
         onOpenFilters:
           () => {},
+
         onSwitchCamera:
           toggleCamera,
       }}
     >
-      <View
-        style={
-          styles.previewCameraSwitch
+      <EmitBackButton
+        onPress={
+          onClose
         }
-      >
-        <CameraSwitchControl
-          onPress={
-            toggleCamera
-          }
-        />
-      </View>
+      />
     </LiveBroadcastStage>
   );
 }

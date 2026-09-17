@@ -15,10 +15,6 @@ import {
 } from "react-native-safe-area-context";
 
 import {
-  BottomNavEmit,
-} from "./BottomNavEmit";
-
-import {
   type AppTab,
 } from "../../../navigation/navigation.types";
 
@@ -29,6 +25,10 @@ import {
 import {
   LiquidSurface,
 } from "../../ui/LiquidSurface";
+
+import {
+  BottomNavEmit,
+} from "./BottomNavEmit";
 
 import {
   BottomNavLive,
@@ -62,14 +62,16 @@ type BottomNavProps = {
   ) => void;
 
   emitCanStart?: boolean;
-
   emitIsConnecting?: boolean;
-
   emitIsLive?: boolean;
+  emitMicrophoneEnabled?: boolean;
 
   onEmitFinish?: () => void;
-
   onEmitStart?: () => void;
+  onEmitToggleMicrophone?: () => void;
+  onEmitSwitchCamera?: () => void;
+  onEmitOpenFilters?: () => void;
+  onEmitOpenMore?: () => void;
 
   compact?: boolean;
 
@@ -84,8 +86,13 @@ export function BottomNav({
   emitCanStart = true,
   emitIsConnecting = false,
   emitIsLive = false,
+  emitMicrophoneEnabled = true,
   onEmitStart,
   onEmitFinish,
+  onEmitToggleMicrophone,
+  onEmitSwitchCamera,
+  onEmitOpenFilters,
+  onEmitOpenMore,
   compact = false,
   blurTarget,
 }: BottomNavProps) {
@@ -112,30 +119,45 @@ export function BottomNav({
       );
     }
 
-if (mode === "emit") {
-  return (
-    <BottomNavEmit
-      isLive={
-        emitIsLive
-      }
-      canStart={
-        emitCanStart
-      }
-      isConnecting={
-        emitIsConnecting
-      }
-      compact={
-        compact
-      }
-      onStart={
-        onEmitStart
-      }
-      onFinish={
-        onEmitFinish
-      }
-    />
-  );
-}
+    if (mode === "emit") {
+      return (
+        <BottomNavEmit
+          isLive={
+            emitIsLive
+          }
+          canStart={
+            emitCanStart
+          }
+          isConnecting={
+            emitIsConnecting
+          }
+          microphoneEnabled={
+            emitMicrophoneEnabled
+          }
+          compact={
+            compact
+          }
+          onStart={
+            onEmitStart
+          }
+          onFinish={
+            onEmitFinish
+          }
+          onToggleMicrophone={
+            onEmitToggleMicrophone
+          }
+          onSwitchCamera={
+            onEmitSwitchCamera
+          }
+          onOpenFilters={
+            onEmitOpenFilters
+          }
+          onOpenMore={
+            onEmitOpenMore
+          }
+        />
+      );
+    }
 
     return (
       <BottomNavMain

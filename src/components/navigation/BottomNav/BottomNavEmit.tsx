@@ -2,6 +2,7 @@
 
 import {
   Mic,
+  MicOff,
   MoreHorizontal,
   RefreshCw,
   Sparkles,
@@ -18,6 +19,7 @@ type BottomNavEmitProps = {
   isLive: boolean;
   canStart: boolean;
   isConnecting: boolean;
+  microphoneEnabled: boolean;
   compact: boolean;
 
   onStart?: () => void;
@@ -33,6 +35,7 @@ export function BottomNavEmit({
   isLive,
   canStart,
   isConnecting,
+  microphoneEnabled,
   compact,
   onStart,
   onFinish,
@@ -54,22 +57,46 @@ export function BottomNavEmit({
     <View style={styles.container}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Micrófono"
-        onPress={onToggleMicrophone}
-        style={styles.action}
+        accessibilityLabel={
+          microphoneEnabled
+            ? "Silenciar micrófono"
+            : "Activar micrófono"
+        }
+        onPress={
+          onToggleMicrophone
+        }
+        style={({ pressed }) => [
+          styles.action,
+          pressed &&
+            styles.actionPressed,
+        ]}
       >
-        <Mic
-          size={iconSize}
-          color="#FFFFFF"
-          strokeWidth={2.2}
-        />
+        {microphoneEnabled ? (
+          <Mic
+            size={iconSize}
+            color="#FFFFFF"
+            strokeWidth={2.2}
+          />
+        ) : (
+          <MicOff
+            size={iconSize}
+            color="#FFFFFF"
+            strokeWidth={2.2}
+          />
+        )}
       </Pressable>
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Filtros"
-        onPress={onOpenFilters}
-        style={styles.action}
+        onPress={
+          onOpenFilters
+        }
+        style={({ pressed }) => [
+          styles.action,
+          pressed &&
+            styles.actionPressed,
+        ]}
       >
         <Sparkles
           size={iconSize}
@@ -130,8 +157,14 @@ export function BottomNavEmit({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Cambiar cámara"
-        onPress={onSwitchCamera}
-        style={styles.action}
+        onPress={
+          onSwitchCamera
+        }
+        style={({ pressed }) => [
+          styles.action,
+          pressed &&
+            styles.actionPressed,
+        ]}
       >
         <RefreshCw
           size={iconSize}
@@ -143,8 +176,14 @@ export function BottomNavEmit({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Más opciones"
-        onPress={onOpenMore}
-        style={styles.action}
+        onPress={
+          onOpenMore
+        }
+        style={({ pressed }) => [
+          styles.action,
+          pressed &&
+            styles.actionPressed,
+        ]}
       >
         <MoreHorizontal
           size={
@@ -176,6 +215,15 @@ const styles =
       height: "100%",
       alignItems: "center",
       justifyContent: "center",
+    },
+
+    actionPressed: {
+      opacity: 0.6,
+      transform: [
+        {
+          scale: 0.92,
+        },
+      ],
     },
 
     liveButton: {
