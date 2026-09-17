@@ -22,39 +22,39 @@ import {
 
 import type {
   LocationPlace,
-} from "../api/locationApi";
+} from "../../../api/locationApi";
 
 import {
   useAuth,
-} from "../auth/AuthContext";
+} from "../../../auth/AuthContext";
 
 import {
   LiveBroadcastStage,
-} from "../components/live/broadcast";
+} from "../../../components/live/broadcast";
 
 import {
   LiveBroadcastSurface,
-} from "../components/live/broadcast/LiveBroadcastSurface.native";
+} from "../../../components/live/broadcast/LiveBroadcastSurface.native";
 
 import {
   CameraSwitchControl,
-} from "../components/live/broadcast/bottom-nav/CameraSwitchControl";
+} from "../../../components/live/broadcast/bottom-nav/CameraSwitchControl";
 
 import {
   useBroadcastLocation,
-} from "../components/live/useBroadcastLocation.native";
+} from "../../../components/live/useBroadcastLocation.native";
 
 import {
   tokens,
-} from "../styles";
+} from "../../../styles";
 
 import {
   emitScreenStyles as styles,
-} from "./EmitScreen.styles";
+} from "../EmitScreen.styles";
 
 import {
   LiveBroadcastScreen,
-} from "./LiveBroadcastScreen";
+} from "../../LiveBroadcastScreen";
 
 type EmitScreenProps = {
   onStatusChange?: (status: {

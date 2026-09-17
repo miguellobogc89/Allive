@@ -4,7 +4,7 @@ import {
 
 import {
   tokens,
-} from "../styles";
+} from "../../styles";
 
 export const emitScreenStyles =
   StyleSheet.create({
