@@ -5,7 +5,7 @@ import {
   MoreHorizontal,
   RefreshCw,
   Sparkles,
-  Video,
+  Square,
 } from "lucide-react-native";
 
 import {
@@ -15,11 +15,14 @@ import {
 } from "react-native";
 
 type BottomNavEmitProps = {
+  isLive: boolean;
   canStart: boolean;
   isConnecting: boolean;
   compact: boolean;
 
   onStart?: () => void;
+  onFinish?: () => void;
+
   onToggleMicrophone?: () => void;
   onOpenFilters?: () => void;
   onSwitchCamera?: () => void;
@@ -27,10 +30,12 @@ type BottomNavEmitProps = {
 };
 
 export function BottomNavEmit({
+  isLive,
   canStart,
   isConnecting,
   compact,
   onStart,
+  onFinish,
   onToggleMicrophone,
   onOpenFilters,
   onSwitchCamera,
@@ -41,120 +46,117 @@ export function BottomNavEmit({
       ? 21
       : 23;
 
-  const startDisabled =
-    !canStart ||
-    isConnecting;
+  const disabled =
+    isConnecting ||
+    (!isLive && !canStart);
 
   return (
     <View style={styles.container}>
-      <EmitAction
-        label="Micrófono"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Micrófono"
         onPress={onToggleMicrophone}
+        style={styles.action}
       >
         <Mic
           size={iconSize}
           color="#FFFFFF"
-          strokeWidth={2.3}
+          strokeWidth={2.2}
         />
-      </EmitAction>
+      </Pressable>
 
-      <EmitAction
-        label="Filtros"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Filtros"
         onPress={onOpenFilters}
+        style={styles.action}
       >
         <Sparkles
           size={iconSize}
           color="#FFFFFF"
-          strokeWidth={2.3}
+          strokeWidth={2.2}
         />
-      </EmitAction>
+      </Pressable>
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={
-          isConnecting
-            ? "Iniciando directo"
+          isLive
+            ? "Finalizar directo"
             : "Iniciar directo"
         }
-        accessibilityState={{
-          disabled: startDisabled,
-        }}
-        disabled={startDisabled}
-        onPress={onStart}
+        disabled={disabled}
+        onPress={
+          isLive
+            ? onFinish
+            : onStart
+        }
         style={({ pressed }) => [
-          styles.action,
+          styles.liveButton,
+
+          compact &&
+            styles.liveButtonCompact,
+
+          disabled &&
+            styles.liveButtonDisabled,
+
           pressed &&
-            !startDisabled &&
-            styles.pressed,
+            !disabled &&
+            styles.liveButtonPressed,
         ]}
       >
-        <View
-          style={[
-            styles.startButton,
-            compact &&
-              styles.startButtonCompact,
-            startDisabled &&
-              styles.disabled,
-          ]}
-        >
-          <Video
-            size={iconSize}
+        {isLive ? (
+          <Square
+            size={
+              compact
+                ? 15
+                : 17
+            }
             color="#FFFFFF"
-            strokeWidth={2.5}
+            fill="#FFFFFF"
+            strokeWidth={2}
           />
-        </View>
+        ) : (
+          <View
+            style={[
+              styles.recordDot,
+              compact &&
+                styles.recordDotCompact,
+            ]}
+          />
+        )}
       </Pressable>
 
-      <EmitAction
-        label="Cambiar cámara"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Cambiar cámara"
         onPress={onSwitchCamera}
+        style={styles.action}
       >
         <RefreshCw
           size={iconSize}
           color="#FFFFFF"
-          strokeWidth={2.3}
+          strokeWidth={2.2}
         />
-      </EmitAction>
+      </Pressable>
 
-      <EmitAction
-        label="Más opciones"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Más opciones"
         onPress={onOpenMore}
+        style={styles.action}
       >
         <MoreHorizontal
-          size={iconSize + 2}
+          size={
+            compact
+              ? 23
+              : 25
+          }
           color="#FFFFFF"
-          strokeWidth={2.4}
+          strokeWidth={2.3}
         />
-      </EmitAction>
+      </Pressable>
     </View>
-  );
-}
-
-type EmitActionProps = {
-  label: string;
-  onPress?: () => void;
-  children: React.ReactNode;
-};
-
-function EmitAction({
-  label,
-  onPress,
-  children,
-}: EmitActionProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={6}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.action,
-        pressed &&
-          styles.pressed,
-      ]}
-    >
-      {children}
-    </Pressable>
   );
 }
 
@@ -162,11 +164,11 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-      height: "100%",
       flexDirection: "row",
       alignItems: "center",
       justifyContent:
-        "space-between",
+        "space-around",
+      paddingHorizontal: 8,
     },
 
     action: {
@@ -176,32 +178,52 @@ const styles =
       justifyContent: "center",
     },
 
-    startButton: {
-      width: 45,
-      height: 39,
+    liveButton: {
+      width: 48,
+      height: 40,
+
       alignItems: "center",
       justifyContent: "center",
+
       borderRadius: 20,
+
       backgroundColor:
-        "rgba(255,59,48,0.88)",
+        "#F04444",
     },
 
-    startButtonCompact: {
-      width: 41,
-      height: 35,
+    liveButtonCompact: {
+      width: 44,
+      height: 36,
       borderRadius: 18,
     },
 
-    disabled: {
+    liveButtonDisabled: {
       opacity: 0.45,
     },
 
-    pressed: {
-      opacity: 0.68,
+    liveButtonPressed: {
+      opacity: 0.78,
+
       transform: [
         {
-          scale: 0.92,
+          scale: 0.94,
         },
       ],
+    },
+
+    recordDot: {
+      width: 20,
+      height: 20,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        "#FFFFFF",
+    },
+
+    recordDotCompact: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
     },
   });

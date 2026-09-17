@@ -29,10 +29,6 @@ import {
 } from "../../shared";
 
 import {
-  LiveBroadcastBottomNav,
-} from "../bottom-nav";
-
-import {
   LiveBroadcastHeader,
 } from "../header";
 
@@ -530,51 +526,6 @@ export function LiveBroadcastOverlay({
             }
           />
         </Animated.View>
-      )}
-
-      {isLive && (
-        <LiveBroadcastBottomNav
-          isLive={isLive}
-          isConnecting={
-            isConnecting
-          }
-          cameraReady={
-            cameraReady
-          }
-          microphoneEnabled={
-            microphoneEnabled
-          }
-          moreEnabled={
-            moreEnabled
-          }
-          microphoneControlEnabled={
-            microphoneControlEnabled
-          }
-          filtersEnabled={
-            filtersEnabled
-          }
-          cameraSwitchEnabled={
-            cameraSwitchEnabled
-          }
-          onOpenMore={
-            toggleMoreMenu
-          }
-          onToggleMicrophone={
-            handleToggleMicrophone
-          }
-          onOpenFilters={
-            handleOpenFilters
-          }
-          onSwitchCamera={
-            handleSwitchCamera
-          }
-          onStartLive={
-            onStartLive
-          }
-          onFinishLive={
-            onFinishLive
-          }
-        />
       )}
 
       {isLive && (

@@ -65,6 +65,10 @@ type BottomNavProps = {
 
   emitIsConnecting?: boolean;
 
+  emitIsLive?: boolean;
+
+  onEmitFinish?: () => void;
+
   onEmitStart?: () => void;
 
   compact?: boolean;
@@ -79,7 +83,9 @@ export function BottomNav({
   onTabPress,
   emitCanStart = true,
   emitIsConnecting = false,
+  emitIsLive = false,
   onEmitStart,
+  onEmitFinish,
   compact = false,
   blurTarget,
 }: BottomNavProps) {
@@ -106,24 +112,30 @@ export function BottomNav({
       );
     }
 
-    if (mode === "emit") {
-      return (
-        <BottomNavEmit
-          canStart={
-            emitCanStart
-          }
-          isConnecting={
-            emitIsConnecting
-          }
-          compact={
-            compact
-          }
-          onStart={
-            onEmitStart
-          }
-        />
-      );
-    }
+if (mode === "emit") {
+  return (
+    <BottomNavEmit
+      isLive={
+        emitIsLive
+      }
+      canStart={
+        emitCanStart
+      }
+      isConnecting={
+        emitIsConnecting
+      }
+      compact={
+        compact
+      }
+      onStart={
+        onEmitStart
+      }
+      onFinish={
+        onEmitFinish
+      }
+    />
+  );
+}
 
     return (
       <BottomNavMain

@@ -130,6 +130,11 @@ function AppContent() {
       (() => void) | null
     >(null);
 
+    const emitFinishLiveRef =
+  useRef<
+    (() => void) | null
+  >(null);
+
   const [
     emitIsLive,
     setEmitIsLive,
@@ -372,6 +377,15 @@ function AppContent() {
       startLive;
   }
 
+  function handleEmitFinishReady(
+    finishLive:
+      | (() => void)
+      | null,
+  ) {
+    emitFinishLiveRef.current =
+      finishLive;
+  }
+
   function renderForegroundScreen() {
     if (
       notificationsVisible
@@ -419,6 +433,9 @@ function AppContent() {
   }
   onStartLiveReady={
     handleEmitStartReady
+  }
+  onFinishLiveReady={
+    handleEmitFinishReady
   }
   onClose={
     goBack
@@ -526,9 +543,21 @@ function AppContent() {
   emitCanStart={
     emitCameraReady
   }
+  emitIsLive={
+    emitIsLive
+  }
   emitIsConnecting={
     emitIsConnecting
   }
+
+  onEmitFinish={
+  activeTab === "emit"
+    ? () => {
+        emitFinishLiveRef
+          .current?.();
+      }
+    : undefined
+}
   onEmitStart={
     activeTab ===
     "emit"

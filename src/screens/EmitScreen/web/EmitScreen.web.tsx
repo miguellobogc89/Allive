@@ -13,7 +13,7 @@ import {
 } from "livekit-client";
 
 import {
-  X,
+  ArrowLeft,
 } from "lucide-react-native";
 
 import {
@@ -94,6 +94,7 @@ import type {
 export function EmitScreen({
   onStatusChange,
   onStartLiveReady,
+  onFinishLiveReady,
   onClose,
 }: EmitScreenProps) {
   const roomRef =
@@ -321,6 +322,44 @@ export function EmitScreen({
     liveLocation,
     onStartLiveReady,
     title,
+    token,
+  ]);
+
+  useEffect(() => {
+    if (onFinishLiveReady) {
+      onFinishLiveReady(
+        () => {
+          const finishPromise =
+            finishLive();
+
+          finishLivePromiseRef.current =
+            finishPromise;
+
+          void finishPromise.finally(
+            () => {
+              if (
+                finishLivePromiseRef.current ===
+                finishPromise
+              ) {
+                finishLivePromiseRef.current =
+                  null;
+              }
+            },
+          );
+        },
+      );
+    }
+
+    return () => {
+      if (onFinishLiveReady) {
+        onFinishLiveReady(
+          null,
+        );
+      }
+    };
+  }, [
+    isLive,
+    onFinishLiveReady,
     token,
   ]);
 
@@ -1318,11 +1357,11 @@ if (cameraTrack) {
                 localStyles.closeButtonPressed,
             ]}
           >
-            <X
-              size={23}
-              color="#FFFFFF"
-              strokeWidth={2.4}
-            />
+          <ArrowLeft
+            size={24}
+            color="#FFFFFF"
+            strokeWidth={2.4}
+          />
           </Pressable>
         )}
     </LiveBroadcastStage>
@@ -1335,7 +1374,7 @@ const localStyles =
       position: "absolute",
 
       top: 16,
-      right: 16,
+      left: 16,
 
       width: 42,
       height: 42,

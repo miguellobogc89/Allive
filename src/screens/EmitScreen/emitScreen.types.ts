@@ -11,6 +11,14 @@ export type EmitScreenProps = {
     status: EmitScreenStatus,
   ) => void;
 
+  onClose?: () => void;
+
+  onFinishLiveReady?: (
+    finishLive:
+      | (() => void)
+      | null,
+  ) => void;
+
   onStartLiveReady?: (
     startLive:
       | (() => void)
