@@ -6,8 +6,8 @@ import {
 } from "react-native";
 
 import {
-  MapScreen,
-} from "../screens/MapScreen";
+  HotScreen,
+} from "../screens/HotScreen";
 
 import {
   NowScreen,
@@ -23,7 +23,7 @@ import {
 
 type PersistentTab =
   | "now"
-  | "map"
+  | "hot"
   | "search"
   | "profile";
 
@@ -84,11 +84,7 @@ export function PersistentTabScreens({
   onOpenNotifications,
 }: Props) {
   return (
-    <View
-      style={
-        styles.container
-      }
-    >
+    <View style={styles.container}>
       <View
         style={[
           styles.screen,
@@ -125,9 +121,7 @@ export function PersistentTabScreens({
               return;
             }
 
-            if (
-              requestedReplayId
-            ) {
+            if (requestedReplayId) {
               onVideoViewerVisibleChange?.(
                 "replay",
               );
@@ -156,23 +150,16 @@ export function PersistentTabScreens({
       <View
         style={[
           styles.screen,
-          activeTab !== "map" &&
+          activeTab !== "hot" &&
             styles.hidden,
         ]}
         pointerEvents={
-          activeTab === "map"
+          activeTab === "hot"
             ? "auto"
             : "none"
         }
       >
-        <MapScreen
-          onOpenLive={
-            onOpenLive
-          }
-          onOpenReplay={
-            onOpenReplay
-          }
-        />
+        <HotScreen />
       </View>
 
       <View

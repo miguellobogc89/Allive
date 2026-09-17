@@ -1,9 +1,9 @@
 // src/components/navigation/BottomNav/bottomNav.config.ts
 
 import {
-  House,
-  MapPin,
+  Flame,
   Search,
+  SquarePlay,
   UserRound,
   Video,
   type LucideIcon,
@@ -20,13 +20,13 @@ export type BottomNavItem = {
 export const bottomNavItems: BottomNavItem[] = [
   {
     id: "now",
-    label: "Inicio",
-    Icon: House,
+    label: "Now",
+    Icon: SquarePlay,
   },
   {
-    id: "map",
-    label: "Mapa",
-    Icon: MapPin,
+    id: "hot",
+    label: "Hot",
+    Icon: Flame,
   },
   {
     id: "emit",

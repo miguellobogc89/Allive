@@ -64,8 +64,10 @@ export const styles =
       height: 46,
     },
 
+// src/components/navigation/BottomNav/bottomNav.styles.ts
+
 tabIcon: {
-  width: 39,
+  width: 52,
   height: 39,
   alignItems: "center",
   justifyContent: "center",
@@ -73,14 +75,14 @@ tabIcon: {
 },
 
 tabIconCompact: {
-  width: 35,
+  width: 47,
   height: 35,
   borderRadius: 18,
 },
 
 tabIconActiveBackground: {
   position: "absolute",
-  width: 39,
+  width: 52,
   height: 39,
   borderRadius: 20,
   backgroundColor:
@@ -88,10 +90,12 @@ tabIconActiveBackground: {
 },
 
 tabIconActiveBackgroundCompact: {
-  width: 35,
+  width: 47,
   height: 35,
   borderRadius: 18,
 },
+
+
 
     emitWrapper: {
       flex: 1,

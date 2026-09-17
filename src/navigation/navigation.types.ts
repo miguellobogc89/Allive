@@ -2,7 +2,7 @@
 
 export type AppTab =
   | "now"
-  | "map"
+  | "hot"
   | "emit"
   | "search"
   | "profile";

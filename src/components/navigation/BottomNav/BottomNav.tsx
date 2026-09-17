@@ -15,6 +15,10 @@ import {
 } from "react-native-safe-area-context";
 
 import {
+  BottomNavEmit,
+} from "./BottomNavEmit";
+
+import {
   type AppTab,
 } from "../../../navigation/navigation.types";
 
@@ -99,6 +103,25 @@ export function BottomNav({
     ) {
       return (
         <BottomNavReplay />
+      );
+    }
+
+    if (mode === "emit") {
+      return (
+        <BottomNavEmit
+          canStart={
+            emitCanStart
+          }
+          isConnecting={
+            emitIsConnecting
+          }
+          compact={
+            compact
+          }
+          onStart={
+            onEmitStart
+          }
+        />
       );
     }
 

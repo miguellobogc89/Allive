@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useState,
 } from "react";
 
@@ -69,6 +70,10 @@ type NowScreenProps = {
 
   onOpenSearch?: () => void;
 
+  onVideoViewerVisibleChange?: (
+  visible: boolean,
+) => void;
+
   onOpenNotifications?: () => void;
 
   onOpenUser?: (
@@ -84,6 +89,7 @@ export function NowScreen({
   onOpenSearch,
   onOpenNotifications,
   onOpenUser,
+  onVideoViewerVisibleChange,
 }: NowScreenProps) {
   const {
     token,
@@ -110,12 +116,35 @@ export function NowScreen({
     string | null
   >(null);
 
-  const {
-    lives,
-    gridItems,
-    loading,
-    error,
-  } = useNowFeed({
+const videoViewerVisible =
+  Boolean(
+    requestedLiveId ||
+    requestedReplayId ||
+    selectedLiveId ||
+    selectedReplayId,
+  );
+
+useEffect(() => {
+  onVideoViewerVisibleChange?.(
+    videoViewerVisible,
+  );
+
+  return () => {
+    onVideoViewerVisibleChange?.(
+      false,
+    );
+  };
+}, [
+  videoViewerVisible,
+  onVideoViewerVisibleChange,
+]);
+
+const {
+  lives,
+  gridItems,
+  loading,
+  error,
+} = useNowFeed({
     requestedLiveId,
     requestedReplayId,
   });

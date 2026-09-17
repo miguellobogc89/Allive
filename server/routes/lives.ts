@@ -322,7 +322,7 @@ export function registerLiveRoutes(
               replay_visible_until:
                 true,
 
-              peakViewerCount:
+              peak_viewer_count:
                 true,
 
               creator: {
@@ -405,7 +405,7 @@ export function registerLiveRoutes(
                   replay.replay_visible_until,
 
                 peakViewerCount:
-                  replay.peakViewerCount,
+                  replay.peak_viewer_count,
 
                 likeCount:
                   replay._count
@@ -489,7 +489,7 @@ export function registerLiveRoutes(
                 replay_visible_until:
                   true,
 
-                peakViewerCount:
+                peak_viewer_count:
                   true,
 
                 creator: {
@@ -561,7 +561,7 @@ replayVisibleUntil:
   replay.replay_visible_until,
 
 peakViewerCount:
-  replay.peakViewerCount,
+  replay.peak_viewer_count,
 
 likeCount:
   replay._count
