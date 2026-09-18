@@ -5,5 +5,9 @@ export {
 } from "./AppOverlayLayout";
 
 export {
+  AppOverlaySlot,
+} from "./AppOverlaySlot";
+
+export {
   appOverlayLayout,
 } from "./overlayLayout.config";

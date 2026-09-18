@@ -7,13 +7,15 @@ import {
 import {
   useEffect,
   useRef,
+  useState,
 } from "react";
 
 import {
   Animated,
   Pressable,
   StyleSheet,
-  useWindowDimensions,
+  View,
+  type LayoutChangeEvent,
 } from "react-native";
 
 type LiveBroadcastMoreMenuProps = {
@@ -38,86 +40,68 @@ export function LiveBroadcastMoreMenu({
   onToggleAudience,
   onToggleComments,
 }: LiveBroadcastMoreMenuProps) {
-  const {
-    width,
-  } = useWindowDimensions();
+  const [
+    containerWidth,
+    setContainerWidth,
+  ] = useState(0);
 
-  const scale = Math.min(
-    1.08,
-    Math.max(
-      0.90,
-      width / 400,
-    ),
-  );
-
-  /*
-   * DEBE coincidir con BottomNav.
-   */
-  const horizontalInset =
-    16 * scale;
-
-  const bottomInset =
-    14 * scale;
-
-  const controlAreaHeight =
-    64 * scale;
-
-  const availableWidth =
-    width -
-    horizontalInset * 2;
-
-  const columnWidth =
-    availableWidth / 5;
-
-  /*
-   * Centro exacto de la quinta columna.
-   *
-   * Al usar este mismo cálculo que BottomNav,
-   * el menú queda matemáticamente alineado
-   * con el botón "...".
-   */
-const actionSize =
-  42 * scale;
-
-const actionGap =
-  8 * scale;
-
-const menuBottom =
-  bottomInset +
-  controlAreaHeight +
-  8 * scale;
-
-/*
- * El menú ocupa exactamente la quinta
- * columna de BottomNav.
- *
- * No calculamos el centro del botón:
- * reutilizamos físicamente su columna.
- */
-const menuLeft =
-  horizontalInset +
-  columnWidth * 4;
+  const [
+    containerHeight,
+    setContainerHeight,
+  ] = useState(0);
 
   const opacity =
     useRef(
-      new Animated.Value(0),
+      new Animated.Value(
+        visible ? 1 : 0,
+      ),
     ).current;
 
   const translateY =
     useRef(
-      new Animated.Value(12),
+      new Animated.Value(
+        visible ? 0 : 12,
+      ),
     ).current;
+
+  function handleLayout(
+    event: LayoutChangeEvent,
+  ) {
+    const {
+      width,
+      height,
+    } = event.nativeEvent.layout;
+
+    setContainerWidth(width);
+    setContainerHeight(height);
+  }
+
+  /*
+   * Todos los tamaños salen de la caja.
+   * No de la pantalla.
+   */
+  const availableItemHeight =
+    containerHeight > 0
+      ? containerHeight / 4
+      : 0;
+
+  const actionSize =
+    containerWidth > 0 &&
+    availableItemHeight > 0
+      ? Math.min(
+          containerWidth * 0.82,
+          availableItemHeight * 0.78,
+        )
+      : 40;
+
+  const iconSize =
+    actionSize * 0.46;
 
   useEffect(() => {
     opacity.stopAnimation();
     translateY.stopAnimation();
 
     if (visible) {
-      opacity.setValue(0);
-      translateY.setValue(
-        12 * scale,
-      );
-
       Animated.parallel([
         Animated.timing(
           opacity,
@@ -154,9 +138,7 @@ const menuLeft =
       Animated.timing(
         translateY,
         {
-          toValue:
-            -8 * scale,
-
+          toValue: 10,
           duration: 150,
           useNativeDriver: true,
         },
@@ -166,11 +148,13 @@ const menuLeft =
     visible,
     opacity,
     translateY,
-    scale,
   ]);
 
   return (
     <Animated.View
+      onLayout={
+        handleLayout
+      }
       pointerEvents={
         visible
           ? "auto"
@@ -179,64 +163,87 @@ const menuLeft =
       style={[
         styles.container,
 
-    
-{
-  left: menuLeft,
-  bottom: menuBottom,
+        {
+          opacity,
 
-  width: columnWidth,
-
-  gap: actionGap,
-
-  opacity,
-
-  transform: [
-    {
-      translateY,
-    },
-  ],
-},
+          transform: [
+            {
+              translateY,
+            },
+          ],
+        },
       ]}
     >
-<TechnicalAction
-  icon="flash-outline"
-  size={actionSize}
-  iconSize={20 * scale}
-  onPress={() => {}}
-/>
+      <View
+        style={
+          styles.actionSlot
+        }
+      >
+        <TechnicalAction
+          icon="flash-outline"
+          size={actionSize}
+          iconSize={iconSize}
+          onPress={() => {}}
+        />
+      </View>
 
-<TechnicalAction
-  icon="create-outline"
-  size={actionSize}
-  iconSize={20 * scale}
-  onPress={onEdit}
-/>
+      <View
+        style={
+          styles.actionSlot
+        }
+      >
+        <TechnicalAction
+          icon="create-outline"
+          size={actionSize}
+          iconSize={iconSize}
+          onPress={onEdit}
+        />
+      </View>
 
-<TechnicalAction
-  icon={
-    audienceMode === "public"
-      ? "globe-outline"
-      : "people"
-  }
-  size={actionSize}
-  iconSize={20 * scale}
-  active={
-    audienceMode === "followers"
-  }
-  onPress={onToggleAudience}
-/>
+      <View
+        style={
+          styles.actionSlot
+        }
+      >
+        <TechnicalAction
+          icon={
+            audienceMode === "public"
+              ? "globe-outline"
+              : "people"
+          }
+          size={actionSize}
+          iconSize={iconSize}
+          active={
+            audienceMode ===
+            "followers"
+          }
+          onPress={
+            onToggleAudience
+          }
+        />
+      </View>
 
-<TechnicalAction
-  icon={
-    commentsEnabled
-      ? "chatbubble-ellipses-outline"
-      : "chatbubble-ellipses"
-  }
-  size={actionSize}
-  iconSize={20 * scale}
-  active={!commentsEnabled}
-  onPress={onToggleComments}
-/>
+      <View
+        style={
+          styles.actionSlot
+        }
+      >
+        <TechnicalAction
+          icon={
+            commentsEnabled
+              ? "chatbubble-ellipses-outline"
+              : "chatbubble-ellipses"
+          }
+          size={actionSize}
+          iconSize={iconSize}
+          active={
+            !commentsEnabled
+          }
+          onPress={
+            onToggleComments
+          }
+        />
+      </View>
     </Animated.View>
   );
 }
@@ -265,7 +272,9 @@ function TechnicalAction({
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={
+        onPress
+      }
       style={({
         pressed,
       }) => [
@@ -274,6 +283,7 @@ function TechnicalAction({
         {
           width: size,
           height: size,
+
           borderRadius:
             size / 2,
         },
@@ -297,9 +307,36 @@ function TechnicalAction({
         }
       />
 
-      <Animated.View
+      <View
         style={[
           styles.statusDot,
+
+          {
+            top:
+              actionSizeDotOffset(
+                size,
+              ),
+
+            right:
+              actionSizeDotOffset(
+                size,
+              ),
+
+            width:
+              actionStatusDotSize(
+                size,
+              ),
+
+            height:
+              actionStatusDotSize(
+                size,
+              ),
+
+            borderRadius:
+              actionStatusDotSize(
+                size,
+              ) / 2,
+          },
 
           active
             ? styles.statusDotActive
@@ -310,14 +347,40 @@ function TechnicalAction({
   );
 }
 
+function actionStatusDotSize(
+  size: number,
+) {
+  return Math.max(
+    3,
+    size * 0.095,
+  );
+}
+
+function actionSizeDotOffset(
+  size: number,
+) {
+  return Math.max(
+    4,
+    size * 0.12,
+  );
+}
+
 const styles =
   StyleSheet.create({
     container: {
-      position: "absolute",
+      width: "100%",
+      height: "100%",
+
+      alignItems: "stretch",
+      justifyContent:
+        "space-between",
+    },
+
+    actionSlot: {
+      flex: 1,
 
       alignItems: "center",
-
-      zIndex: 35,
+      justifyContent: "center",
     },
 
     action: {
@@ -353,14 +416,6 @@ const styles =
 
     statusDot: {
       position: "absolute",
-
-      top: 5,
-      right: 5,
-
-      width: 4,
-      height: 4,
-
-      borderRadius: 2,
 
       backgroundColor:
         "transparent",

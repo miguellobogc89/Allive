@@ -1,7 +1,10 @@
 // src/components/layout/AppOverlayLayout.tsx
 
-import type {
-  ReactNode,
+import {
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
 } from "react";
 
 import {
@@ -13,6 +16,12 @@ import {
 import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
+import {
+  AppOverlaySlotContext,
+  type AppOverlaySlotName,
+  type AppOverlaySlots,
+} from "./AppOverlaySlotContext";
 
 import {
   appOverlayLayout,
@@ -30,6 +39,14 @@ type AppOverlayLayoutProps = {
   bottomControls?: ReactNode;
 };
 
+const EMPTY_SLOTS: AppOverlaySlots = {
+  header: null,
+  sideActions: null,
+  comments: null,
+  metadata: null,
+  bottomControls: null,
+};
+
 export function AppOverlayLayout({
   children,
   header,
@@ -45,6 +62,48 @@ export function AppOverlayLayout({
     width,
     height,
   } = useWindowDimensions();
+
+  const [
+    registeredSlots,
+    setRegisteredSlots,
+  ] = useState<AppOverlaySlots>(
+    EMPTY_SLOTS,
+  );
+
+  const setSlot =
+    useCallback(
+      (
+        name: AppOverlaySlotName,
+        content: ReactNode | null,
+      ) => {
+        setRegisteredSlots(
+          (current) => {
+            if (
+              current[name] ===
+              content
+            ) {
+              return current;
+            }
+
+            return {
+              ...current,
+              [name]: content,
+            };
+          },
+        );
+      },
+      [],
+    );
+
+  const slotContextValue =
+    useMemo(
+      () => ({
+        setSlot,
+      }),
+      [
+        setSlot,
+      ],
+    );
 
   const scale = Math.min(
     appOverlayLayout.scale.max,
@@ -116,154 +175,183 @@ export function AppOverlayLayout({
     sideWidth +
     12 * scale;
 
+  const resolvedHeader =
+    registeredSlots.header ??
+    header;
+
+  const resolvedSideActions =
+    registeredSlots.sideActions ??
+    sideActions;
+
+  const resolvedComments =
+    registeredSlots.comments ??
+    comments;
+
+  const resolvedMetadata =
+    registeredSlots.metadata ??
+    metadata;
+
+  const resolvedBottomControls =
+    registeredSlots.bottomControls ??
+    bottomControls;
+
   return (
-    <View
-      pointerEvents="box-none"
-      style={styles.root}
+    <AppOverlaySlotContext.Provider
+      value={
+        slotContextValue
+      }
     >
       <View
         pointerEvents="box-none"
-        style={styles.content}
+        style={styles.root}
       >
-        {children}
+        <View
+          pointerEvents="box-none"
+          style={styles.content}
+        >
+          {children}
+        </View>
+
+        {/* HEADER */}
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.zone,
+
+            SHOW_LAYOUT_GUIDES &&
+              styles.guide,
+
+            {
+              top:
+                insets.top +
+                appOverlayLayout.header.topGap *
+                  scale,
+
+              left:
+                horizontalMargin,
+
+              right:
+                horizontalMargin,
+
+              height:
+                headerHeight,
+            },
+          ]}
+        >
+          {resolvedHeader}
+        </View>
+
+        {/* SIDE ACTIONS */}
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.zone,
+            styles.sideZone,
+
+            SHOW_LAYOUT_GUIDES &&
+              styles.guide,
+
+            {
+              right:
+                horizontalMargin,
+
+              bottom:
+                sideBottom,
+
+              width:
+                sideWidth,
+
+              height:
+                sideHeight,
+            },
+          ]}
+        >
+          {resolvedSideActions}
+        </View>
+
+        {/* COMMENTS */}
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.zone,
+
+            SHOW_LAYOUT_GUIDES &&
+              styles.guide,
+
+            {
+              left:
+                horizontalMargin,
+
+              right:
+                contentRight,
+
+              bottom:
+                commentsBottom,
+
+              height:
+                commentsHeight,
+            },
+          ]}
+        >
+          {resolvedComments}
+        </View>
+
+        {/* METADATA */}
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.zone,
+
+            SHOW_LAYOUT_GUIDES &&
+              styles.guide,
+
+            {
+              left:
+                horizontalMargin,
+
+              right:
+                contentRight,
+
+              bottom:
+                metadataBottom,
+
+              height:
+                metadataHeight,
+            },
+          ]}
+        >
+          {resolvedMetadata}
+        </View>
+
+        {/* BOTTOM CONTROLS */}
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.zone,
+            styles.bottomZone,
+
+            SHOW_LAYOUT_GUIDES &&
+              styles.guide,
+
+            {
+              left:
+                horizontalMargin,
+
+              right:
+                horizontalMargin,
+
+              bottom:
+                controlsBottom,
+
+              height:
+                controlsHeight,
+            },
+          ]}
+        >
+          {resolvedBottomControls}
+        </View>
       </View>
-
-      {/* HEADER */}
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.zone,
-          SHOW_LAYOUT_GUIDES &&
-            styles.guide,
-          {
-            top:
-              insets.top +
-              appOverlayLayout.header.topGap *
-                scale,
-
-            left:
-              horizontalMargin,
-
-            right:
-              horizontalMargin,
-
-            height:
-              headerHeight,
-          },
-        ]}
-      >
-        {header}
-      </View>
-
-      {/* SIDE ACTIONS */}
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.zone,
-          styles.sideZone,
-
-          SHOW_LAYOUT_GUIDES &&
-            styles.guide,
-
-          {
-            right:
-              horizontalMargin,
-
-            bottom:
-              sideBottom,
-
-            width:
-              sideWidth,
-
-            height:
-              sideHeight,
-          },
-        ]}
-      >
-        {sideActions}
-      </View>
-
-      {/* COMMENTS */}
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.zone,
-
-          SHOW_LAYOUT_GUIDES &&
-            styles.guide,
-
-          {
-            left:
-              horizontalMargin,
-
-            right:
-              contentRight,
-
-            bottom:
-              commentsBottom,
-
-            height:
-              commentsHeight,
-          },
-        ]}
-      >
-        {comments}
-      </View>
-
-      {/* METADATA */}
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.zone,
-
-          SHOW_LAYOUT_GUIDES &&
-            styles.guide,
-
-          {
-            left:
-              horizontalMargin,
-
-            right:
-              contentRight,
-
-            bottom:
-              metadataBottom,
-
-            height:
-              metadataHeight,
-          },
-        ]}
-      >
-        {metadata}
-      </View>
-
-      {/* BOTTOM CONTROLS */}
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.zone,
-
-          SHOW_LAYOUT_GUIDES &&
-            styles.guide,
-
-          {
-            left:
-              horizontalMargin,
-
-            right:
-              horizontalMargin,
-
-            bottom:
-              controlsBottom,
-
-            height:
-              controlsHeight,
-          },
-        ]}
-      >
-        {bottomControls}
-      </View>
-    </View>
+    </AppOverlaySlotContext.Provider>
   );
 }
 
@@ -292,5 +380,10 @@ const styles =
     sideZone: {
       alignItems: "stretch",
       justifyContent: "flex-end",
+    },
+
+    bottomZone: {
+      alignItems: "stretch",
+      justifyContent: "center",
     },
   });

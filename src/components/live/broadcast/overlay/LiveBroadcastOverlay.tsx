@@ -12,6 +12,10 @@ import {
   View,
 } from "react-native";
 
+import {
+  AppOverlaySlot,
+} from "../../../layout";
+
 import type {
   LocationPlace,
 } from "../../../../api/locationApi";
@@ -481,70 +485,82 @@ const [
         }
       />
 
-      {contentVisible && (
-        <Animated.View
-          pointerEvents="box-none"
-          style={[
-            styles.contentLayer,
-            {
-              opacity,
-              transform: [
-                {
-                  translateY,
-                },
-              ],
-            },
-          ]}
+            {contentVisible ? (
+        <AppOverlaySlot
+          name="comments"
         >
-{hasMetadata && (
-  <Pressable
-    onPress={
-      openStartMetadata
-    }
-    style={
-      styles.bottomMetadata
-    }
-  >
-    <LiveBroadcastMetadata
-      eventName={
-        eventName
-      }
-      title={title}
-      location={
-        metadataLocation
-      }
-    />
-  </Pressable>
-)}
-
-          <LiveTimedCommentsLayer
-            comments={comments}
-            visible={
-              isLive &&
-              commentsEnabled
+          <View
+            pointerEvents="box-none"
+            style={
+              styles.commentsSlot
             }
-          />
-        </Animated.View>
-      )}
+          >
+            <LiveTimedCommentsLayer
+              comments={
+                comments
+              }
+              visible={
+                isLive &&
+                commentsEnabled
+              }
+            />
+          </View>
+        </AppOverlaySlot>
+      ) : null}
 
-<LiveBroadcastMoreMenu
-  visible={true}
-  audienceMode={
-    audienceMode
-  }
-  commentsEnabled={
-    commentsEnabled
-  }
-  onEdit={
-    openStartMetadata
-  }
-  onToggleAudience={
-    toggleAudience
-  }
-  onToggleComments={
-    toggleComments
-  }
-/>
+      {contentVisible &&
+        hasMetadata ? (
+          <AppOverlaySlot
+            name="metadata"
+          >
+            <Pressable
+              onPress={
+                openStartMetadata
+              }
+              style={
+                styles.metadataSlot
+              }
+            >
+              <LiveBroadcastMetadata
+                eventName={
+                  eventName
+                }
+                title={
+                  title
+                }
+                location={
+                  metadataLocation
+                }
+              />
+            </Pressable>
+          </AppOverlaySlot>
+        ) : null}
+
+
+      <AppOverlaySlot
+        name="sideActions"
+      >
+        <LiveBroadcastMoreMenu
+          visible={
+            moreMenuVisible
+          }
+          audienceMode={
+            audienceMode
+          }
+          commentsEnabled={
+            commentsEnabled
+          }
+          onEdit={
+            openStartMetadata
+          }
+          onToggleAudience={
+            toggleAudience
+          }
+          onToggleComments={
+            toggleComments
+          }
+        />
+      </AppOverlaySlot>
 
       <LiveStartMetadataModal
         visible={
@@ -602,18 +618,19 @@ const styles =
       height: 190,
     },
 
-    contentLayer: {
-      ...StyleSheet.absoluteFill,
+    commentsSlot: {
+      width: "100%",
+      height: "100%",
+
+      overflow: "hidden",
+
+      justifyContent: "flex-end",
     },
 
-bottomMetadata: {
-  position: "absolute",
+    metadataSlot: {
+      width: "100%",
+      height: "100%",
 
-  left: 30,
-  right: 108,
-
-  bottom: 103,
-
-  zIndex: 24,
-},
+      justifyContent: "flex-end",
+    },
   });

@@ -12,20 +12,13 @@ import {
 
 import {
   Animated,
+  StyleSheet,
   View,
 } from "react-native";
 
 import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-
-import {
   type AppTab,
 } from "../../../navigation/navigation.types";
-
-import {
-  spacing,
-} from "../../../styles";
 
 import {
   LiquidSurface,
@@ -42,10 +35,6 @@ import {
 import {
   BottomNavMain,
 } from "./BottomNavMain";
-
-import {
-  styles,
-} from "./bottomNav.styles";
 
 export type BottomNavMode =
   | "main"
@@ -97,9 +86,6 @@ export function BottomNav({
   compact = false,
   blurTarget,
 }: BottomNavProps) {
-  const insets =
-    useSafeAreaInsets();
-
   const isEmit =
     mode === "emit";
 
@@ -137,10 +123,6 @@ export function BottomNav({
     if (isEmit) {
       setEmitLayerMounted(true);
 
-      /*
-       * Primero desaparece la navegación
-       * principal hacia abajo.
-       */
       Animated.parallel([
         Animated.timing(
           mainOpacity,
@@ -161,10 +143,6 @@ export function BottomNav({
         ),
       ]).start();
 
-      /*
-       * Los controles de emisión aparecen
-       * ligeramente después.
-       */
       emitOpacity.setValue(0);
 
       Animated.timing(
@@ -180,10 +158,6 @@ export function BottomNav({
       return;
     }
 
-    /*
-     * Al salir de Emitir hacemos
-     * exactamente la transición inversa.
-     */
     Animated.timing(
       emitOpacity,
       {
@@ -226,55 +200,33 @@ export function BottomNav({
     mainTranslateY,
   ]);
 
-  /*
-   * Replay sigue sin utilizar BottomNav.
-   */
   if (mode === "replay") {
     return null;
   }
 
-  const pillHeight =
-    compact
-      ? 50
-      : 58;
-
   /*
-   * LIVE viewer mantiene de momento
-   * su comportamiento existente.
+   * Desde este momento BottomNav NO conoce:
+   *
+   * - tamaño de pantalla
+   * - safe area
+   * - posición bottom
+   * - márgenes exteriores
+   *
+   * Solo ocupa el 100% de la zona
+   * que AppOverlayLayout le entrega.
    */
   if (mode === "live") {
     return (
       <View
         pointerEvents="box-none"
-        style={[
-          styles.container,
-
-          compact &&
-            styles.containerCompact,
-
-          {
-            height:
-              pillHeight +
-              insets.bottom +
-              spacing.md,
-
-            paddingBottom:
-              insets.bottom +
-              spacing.xs,
-          },
-        ]}
+        style={styles.root}
       >
         <LiquidSurface
           variant="dark"
           blurTarget={
             blurTarget
           }
-          style={[
-            styles.pill,
-
-            compact &&
-              styles.pillCompact,
-          ]}
+          style={styles.mainSurface}
         >
           <BottomNavLive />
         </LiquidSurface>
@@ -285,25 +237,8 @@ export function BottomNav({
   return (
     <View
       pointerEvents="box-none"
-      style={[
-        styles.container,
-
-        compact &&
-          styles.containerCompact,
-
-        {
-          height:
-            pillHeight +
-            insets.bottom +
-            spacing.md,
-
-          paddingBottom:
-            insets.bottom +
-            spacing.xs,
-        },
-      ]}
+      style={styles.root}
     >
-
       {/* NAVEGACIÓN NORMAL */}
       <Animated.View
         pointerEvents={
@@ -312,11 +247,11 @@ export function BottomNav({
             : "auto"
         }
         style={[
-          styles.animatedLayer,
+          styles.layer,
 
           {
-            height: pillHeight,
-            opacity: mainOpacity,
+            opacity:
+              mainOpacity,
 
             transform: [
               {
@@ -333,10 +268,10 @@ export function BottomNav({
             blurTarget
           }
           style={[
-            styles.pill,
+            styles.mainSurface,
 
             compact &&
-              styles.pillCompact,
+              styles.mainSurfaceCompact,
           ]}
         >
           <BottomNavMain
@@ -371,12 +306,12 @@ export function BottomNav({
               : "none"
           }
           style={[
-            styles.animatedLayer,
+            styles.layer,
             styles.emitLayer,
 
             {
-              height: pillHeight,
-              opacity: emitOpacity,
+              opacity:
+                emitOpacity,
             },
           ]}
         >
@@ -417,62 +352,47 @@ export function BottomNav({
           />
         </Animated.View>
       ) : null}
-
-{/* CONTROLES DE EMISIÓN */}
-{emitLayerMounted ? (
-  <Animated.View
-    pointerEvents={
-      isEmit
-        ? "auto"
-        : "none"
-    }
-    style={[
-      styles.animatedLayer,
-      styles.emitLayer,
-
-      {
-        height: pillHeight,
-        opacity: emitOpacity,
-      },
-    ]}
-  >
-    <BottomNavEmit
-      isLive={
-        emitIsLive
-      }
-      canStart={
-        emitCanStart
-      }
-      isConnecting={
-        emitIsConnecting
-      }
-      microphoneEnabled={
-        emitMicrophoneEnabled
-      }
-      compact={
-        compact
-      }
-      onStart={
-        onEmitStart
-      }
-      onFinish={
-        onEmitFinish
-      }
-      onToggleMicrophone={
-        onEmitToggleMicrophone
-      }
-      onSwitchCamera={
-        onEmitSwitchCamera
-      }
-      onOpenFilters={
-        onEmitOpenFilters
-      }
-      onOpenMore={
-        onEmitOpenMore
-      }
-    />
-  </Animated.View>
-) : null}
     </View>
   );
 }
+
+const styles =
+  StyleSheet.create({
+    root: {
+      width: "100%",
+      height: "100%",
+      position: "relative",
+    },
+
+    layer: {
+      ...StyleSheet.absoluteFill,
+
+      alignItems: "stretch",
+      justifyContent: "center",
+    },
+
+    mainSurface: {
+      width: "100%",
+      height: "100%",
+
+      flexDirection: "row",
+      alignItems: "center",
+
+      borderRadius: 999,
+    },
+
+    mainSurfaceCompact: {
+      width: "100%",
+      height: "100%",
+    },
+
+    /*
+     * Emitir no tiene fondo.
+     * El componente ocupa exactamente
+     * la misma caja que BottomNavMain.
+     */
+    emitLayer: {
+      backgroundColor:
+        "transparent",
+    },
+  });

@@ -505,7 +505,70 @@ function AppContent() {
     styles.content
   }
 >
-  <AppOverlayLayout>
+  <AppOverlayLayout
+  bottomControls={
+    <BottomNav
+      mode={
+        bottomNavMode
+      }
+      blurTarget={
+        blurTargetRef
+      }
+      activeTab={
+        activeTab
+      }
+      onTabPress={
+        changeTab
+      }
+      emitCanStart={
+        emitCameraReady
+      }
+      emitIsLive={
+        emitIsLive
+      }
+      emitIsConnecting={
+        emitIsConnecting
+      }
+      emitMicrophoneEnabled={
+        emitMicrophoneEnabled
+      }
+      onEmitFinish={
+        activeTab === "emit"
+          ? () => {
+              emitFinishLiveRef
+                .current?.();
+            }
+          : undefined
+      }
+      onEmitStart={
+        activeTab === "emit"
+          ? () => {
+              emitStartLiveRef
+                .current?.();
+            }
+          : undefined
+      }
+      onEmitToggleMicrophone={
+        activeTab === "emit"
+          ? () => {
+              emitToggleMicrophoneRef
+                .current?.();
+            }
+          : undefined
+      }
+      onEmitSwitchCamera={
+        activeTab === "emit"
+          ? () => {
+              emitSwitchCameraRef
+                .current?.();
+            }
+          : undefined
+      }
+    />
+  }
+>
+  
+
     <View
       style={{
         flex: 1,
@@ -557,64 +620,7 @@ function AppContent() {
   </AppOverlayLayout>
 </BlurTargetView>
 
-      <BottomNav
-        mode={
-          bottomNavMode
-        }
-        blurTarget={
-          blurTargetRef
-        }
-        activeTab={
-          activeTab
-        }
-        onTabPress={
-          changeTab
-        }
-        emitCanStart={
-          emitCameraReady
-        }
-        emitIsLive={
-          emitIsLive
-        }
-        emitIsConnecting={
-          emitIsConnecting
-        }
-        emitMicrophoneEnabled={
-          emitMicrophoneEnabled
-        }
-        onEmitFinish={
-          activeTab === "emit"
-            ? () => {
-                emitFinishLiveRef
-                  .current?.();
-              }
-            : undefined
-        }
-        onEmitStart={
-          activeTab === "emit"
-            ? () => {
-                emitStartLiveRef
-                  .current?.();
-              }
-            : undefined
-        }
-        onEmitToggleMicrophone={
-          activeTab === "emit"
-            ? () => {
-                emitToggleMicrophoneRef
-                  .current?.();
-              }
-            : undefined
-        }
-        onEmitSwitchCamera={
-          activeTab === "emit"
-            ? () => {
-                emitSwitchCameraRef
-                  .current?.();
-              }
-            : undefined
-        }
-      />
+   
     </SafeAreaView>
   );
 }
