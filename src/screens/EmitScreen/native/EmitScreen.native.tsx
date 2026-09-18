@@ -26,6 +26,10 @@ import type {
   LocationPlace,
 } from "../../../api/locationApi";
 
+import type {
+  BroadcastLocation,
+} from "../../../components/live/broadcastTypes";
+
 import {
   useAuth,
 } from "../../../auth/AuthContext";
@@ -126,35 +130,28 @@ export function EmitScreen({
 
   const cameraReady = Boolean(permission?.granted) && previewReady && !cameraError;
 
-  let displayedLocationName:
-    | string
-    | null = null;
+let effectiveLocation: BroadcastLocation | null = null;
 
-  if (location) {
-    displayedLocationName =
-      location.placeName;
-  }
+if (selectedLocationPlace) {
+  effectiveLocation = {
+    latitude: selectedLocationPlace.latitude,
+    longitude: selectedLocationPlace.longitude,
+    placeName: selectedLocationPlace.name,
+  };
+} else if (location) {
+  effectiveLocation = location;
+}
 
-  if (selectedLocationPlace) {
-    displayedLocationName =
-      selectedLocationPlace.name;
-  }
+const displayedLocationName =
+  effectiveLocation?.placeName ?? null;
 
-  let locationCoordinates:
-    | {
-        latitude: number;
-        longitude: number;
+const locationCoordinates =
+  effectiveLocation
+    ? {
+        latitude: effectiveLocation.latitude,
+        longitude: effectiveLocation.longitude,
       }
-    | null = null;
-
-  if (location) {
-    locationCoordinates = {
-      latitude:
-        location.latitude,
-      longitude:
-        location.longitude,
-    };
-  }
+    : null;
 
   const toggleCamera = useCallback(() => {
     if (broadcastRequestedRef.current) return;
@@ -341,6 +338,7 @@ export function EmitScreen({
     return (
       <LiveBroadcastScreen
         facing={facing}
+        location={effectiveLocation}
         initialMicrophoneEnabled={microphoneEnabled}
         onMicrophoneEnabledChange={setMicrophoneEnabled}
         onFacingChange={setFacing}

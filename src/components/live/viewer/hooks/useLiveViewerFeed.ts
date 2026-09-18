@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -24,6 +25,9 @@ type UseLiveViewerFeedOptions = {
   refreshIntervalMs: number;
   loadLives: () => Promise<ActiveLive[]>;
   onNoLivesAvailable?: () => void;
+  onActiveLiveEnded?: (
+    endedLiveId: string,
+  ) => void;
   refreshErrorLabel?: string;
 };
 
@@ -33,6 +37,7 @@ export function useLiveViewerFeed({
   refreshIntervalMs,
   loadLives,
   onNoLivesAvailable,
+  onActiveLiveEnded,
   refreshErrorLabel =
     "Allive NOW refresh error:",
 }: UseLiveViewerFeedOptions) {
@@ -59,6 +64,27 @@ export function useLiveViewerFeed({
   const activeLive =
     lives[currentIndex] ??
     null;
+
+  /*
+   * Guardamos el LIVE que el
+   * espectador estaba viendo.
+   *
+   * Así podemos distinguir entre:
+   * - una actualización normal
+   * - el LIVE actual desapareciendo
+   *   porque el emisor lo ha terminado.
+   */
+  const activeLiveIdRef =
+    useRef<string | null>(
+      null,
+    );
+
+  useEffect(() => {
+    activeLiveIdRef.current =
+      activeLive?.id ?? null;
+  }, [
+    activeLive?.id,
+  ]);
 
   useEffect(() => {
     if (
@@ -95,6 +121,43 @@ export function useLiveViewerFeed({
           const nextLives =
             await loadLives();
 
+          const previousActiveLiveId =
+            activeLiveIdRef.current;
+
+          const activeLiveStillExists =
+            previousActiveLiveId
+              ? nextLives.some(
+                  (live) =>
+                    live.id ===
+                    previousActiveLiveId,
+                )
+              : true;
+
+          const activeLiveEnded =
+            Boolean(
+              previousActiveLiveId &&
+                !activeLiveStillExists,
+            );
+
+          if (
+            activeLiveEnded &&
+            previousActiveLiveId
+          ) {
+            /*
+             * Limpiamos inmediatamente
+             * la referencia para evitar
+             * disparar varias veces el
+             * mismo final de LIVE durante
+             * los siguientes refresh.
+             */
+            activeLiveIdRef.current =
+              null;
+
+            onActiveLiveEnded?.(
+              previousActiveLiveId,
+            );
+          }
+
           if (
             nextLives.length ===
             0
@@ -117,6 +180,23 @@ export function useLiveViewerFeed({
                 previousLives[
                   currentIndex
                 ];
+
+              /*
+               * Si el LIVE actual ha
+               * terminado, dejamos que
+               * el índice actual apunte
+               * al contenido que ocupa
+               * ahora esa posición.
+               *
+               * Si era el último,
+               * setCurrentIndex lo
+               * ajustará posteriormente.
+               */
+              if (
+                activeLiveEnded
+              ) {
+                return nextLives;
+              }
 
               if (
                 !currentLive
@@ -142,10 +222,9 @@ export function useLiveViewerFeed({
                 stillActiveIndex !==
                 currentIndex
               ) {
-                const reordered =
-                  [
-                    ...nextLives,
-                  ];
+                const reordered = [
+                  ...nextLives,
+                ];
 
                 const [
                   stillActiveLive,
@@ -196,6 +275,7 @@ export function useLiveViewerFeed({
       [
         currentIndex,
         loadLives,
+        onActiveLiveEnded,
         onNoLivesAvailable,
         refreshErrorLabel,
       ],
@@ -244,10 +324,8 @@ export function useLiveViewerFeed({
           lives.length <=
           1
             ? index
-            : index <=
-                0
-              ? lives.length -
-                1
+            : index <= 0
+              ? lives.length - 1
               : index - 1,
       );
     }, [
@@ -262,8 +340,7 @@ export function useLiveViewerFeed({
           1
             ? index
             : index >=
-                lives.length -
-                  1
+                lives.length - 1
               ? 0
               : index + 1,
       );

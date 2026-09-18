@@ -19,6 +19,13 @@ type NowLiveViewerProps = {
   onOpenUser?: (
     userId: string,
   ) => void;
+
+  onLiveEnded?: (
+    endedLiveId: string,
+  ) => void;
+
+  onNoLivesAvailable?:
+    () => void;
 };
 
 export function NowLiveViewer({
@@ -26,6 +33,8 @@ export function NowLiveViewer({
   selectedLiveId = null,
   onClose,
   onOpenUser,
+  onLiveEnded,
+  onNoLivesAvailable,
 }: NowLiveViewerProps) {
   return (
     <LiveViewerScreen
@@ -38,6 +47,12 @@ export function NowLiveViewer({
       }
       onOpenUser={
         onOpenUser
+      }
+      onLiveEnded={
+        onLiveEnded
+      }
+      onNoLivesAvailable={
+        onNoLivesAvailable
       }
     />
   );

@@ -76,21 +76,32 @@ type LiveViewerScreenBaseProps = {
   refreshIntervalMs: number;
   loadLives: () => Promise<ActiveLive[]>;
   refreshErrorLabel?: string;
+
   renderLoading: () => ReactNode;
+
   renderVideoSurface: (
     options:
       RenderVideoSurfaceOptions,
   ) => ReactNode;
+
   onNoLivesAvailable?: () => void;
+
+  onActiveLiveEnded?: (
+    endedLiveId: string,
+  ) => void;
+
   onOpenUser?: (
     userId: string,
   ) => void;
+
   onNavigationReady?: (
     navigation:
       LiveViewerNavigation,
   ) => void;
+
   showNavigation?: boolean;
-    onClose?: () => void;
+
+  onClose?: () => void;
 };
 
 export function LiveViewerScreenBase({
@@ -102,10 +113,11 @@ export function LiveViewerScreenBase({
   renderLoading,
   renderVideoSurface,
   onNoLivesAvailable,
+  onActiveLiveEnded,
   onOpenUser,
   onNavigationReady,
   showNavigation = true,
-    onClose,
+  onClose,
 }: LiveViewerScreenBaseProps) {
   const {
     identity,
@@ -126,6 +138,7 @@ export function LiveViewerScreenBase({
     refreshIntervalMs,
     loadLives,
     onNoLivesAvailable,
+    onActiveLiveEnded,
     refreshErrorLabel,
   });
 
@@ -186,7 +199,7 @@ export function LiveViewerScreenBase({
               styles.emptyTitle
             }
           >
-            No hay directos actualmente
+            No hay directos ni replays disponibles actualmente
           </Text>
 
           <Text
@@ -194,7 +207,7 @@ export function LiveViewerScreenBase({
               styles.emptySubtitle
             }
           >
-            Puedes ver los replays mientras tanto.
+            Vuelve más tarde para ver nuevo contenido.
           </Text>
         </View>
       )}

@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import {
+  Alert,
   View,
 } from "react-native";
 
@@ -66,16 +67,16 @@ type NowScreenProps = {
   unreadNotifications?: number;
 
   onCloseRequestedVideo?:
-  () => void;
+    () => void;
 
   onOpenSearch?: () => void;
 
-onVideoViewerVisibleChange?: (
-  mode:
-    | "live"
-    | "replay"
-    | null,
-) => void;
+  onVideoViewerVisibleChange?: (
+    mode:
+      | "live"
+      | "replay"
+      | null,
+  ) => void;
 
   onOpenNotifications?: () => void;
 
@@ -119,47 +120,40 @@ export function NowScreen({
     string | null
   >(null);
 
-const videoViewerVisible =
-  Boolean(
-    requestedLiveId ||
-    requestedReplayId ||
-    selectedLiveId ||
-    selectedReplayId,
-  );
+  const videoViewerMode:
+    | "live"
+    | "replay"
+    | null =
+      requestedReplayId ||
+      selectedReplayId
+        ? "replay"
+        : requestedLiveId ||
+            selectedLiveId
+          ? "live"
+          : null;
 
-const videoViewerMode:
-  | "live"
-  | "replay"
-  | null =
-    requestedReplayId ||
-    selectedReplayId
-      ? "replay"
-      : requestedLiveId ||
-          selectedLiveId
-        ? "live"
-        : null;
-
-useEffect(() => {
-  onVideoViewerVisibleChange?.(
-    videoViewerMode,
-  );
-
-  return () => {
+  useEffect(() => {
     onVideoViewerVisibleChange?.(
-      null,
+      videoViewerMode,
     );
-  };
-}, [
-  videoViewerMode,
-  onVideoViewerVisibleChange,
-]);
 
-const {
-  lives,
-  gridItems,
-  loading,
-  error,
-} = useNowFeed({
+    return () => {
+      onVideoViewerVisibleChange?.(
+        null,
+      );
+    };
+  }, [
+    videoViewerMode,
+    onVideoViewerVisibleChange,
+  ]);
+
+  const {
+    lives,
+    replays,
+    gridItems,
+    loading,
+    error,
+  } = useNowFeed({
     requestedLiveId,
     requestedReplayId,
   });
@@ -205,55 +199,166 @@ const {
       [],
     );
 
-const closeLive =
-  useCallback(() => {
-    if (requestedLiveId) {
-      onCloseRequestedVideo?.();
-      return;
-    }
+  const closeLive =
+    useCallback(() => {
+      if (
+        requestedLiveId
+      ) {
+        onCloseRequestedVideo?.();
 
-    setSelectedLiveId(
-      null,
+        return;
+      }
+
+      setSelectedLiveId(
+        null,
+      );
+    }, [
+      requestedLiveId,
+      onCloseRequestedVideo,
+    ]);
+
+  const closeReplay =
+    useCallback(() => {
+      if (
+        requestedReplayId
+      ) {
+        onCloseRequestedVideo?.();
+
+        return;
+      }
+
+      setSelectedReplayId(
+        null,
+      );
+    }, [
+      requestedReplayId,
+      onCloseRequestedVideo,
+    ]);
+
+  /*
+   * El viewer nativo nos informa
+   * cuando detecta que el LIVE que
+   * estábamos viendo ha desaparecido
+   * del feed de directos activos.
+   */
+  const handleLiveEnded =
+    useCallback(
+      (
+        endedLiveId: string,
+      ) => {
+        Alert.alert(
+          "LIVE finalizado",
+          "Este LIVE ha finalizado",
+        );
+
+        /*
+         * No cerramos aquí el viewer.
+         *
+         * useLiveViewerFeed ya elimina
+         * el LIVE terminado y, si hay
+         * otro LIVE activo, mantiene
+         * al espectador dentro del
+         * viewer mostrando el siguiente.
+         */
+        if (
+          selectedLiveId ===
+          endedLiveId
+        ) {
+          /*
+           * Conservamos selectedLiveId
+           * mientras el viewer gestiona
+           * internamente el cambio.
+           *
+           * Se limpiará únicamente si
+           * comprobamos que ya no queda
+           * ningún LIVE.
+           */
+          return;
+        }
+      },
+      [
+        selectedLiveId,
+      ],
     );
-  }, [
-    requestedLiveId,
-    onCloseRequestedVideo,
-  ]);
 
-const closeReplay =
-  useCallback(() => {
-    if (requestedReplayId) {
-      onCloseRequestedVideo?.();
-      return;
-    }
+  /*
+   * Se ejecuta cuando el viewer
+   * confirma que no queda ningún
+   * LIVE activo.
+   */
+  const handleNoLivesAvailable =
+    useCallback(() => {
+      /*
+       * Si tenemos algún Replay en NOW,
+       * continuamos automáticamente con
+       * el primero disponible.
+       */
+      const nextReplay =
+        replays[0] ??
+        null;
 
-    setSelectedReplayId(
-      null,
-    );
-  }, [
-    requestedReplayId,
-    onCloseRequestedVideo,
-  ]);
+      if (
+        nextReplay
+      ) {
+        /*
+         * Si llegamos al LIVE desde una
+         * navegación externa, cerramos
+         * primero esa petición para que
+         * requestedLiveId deje de tener
+         * prioridad en NowScreen.
+         */
+        if (
+          requestedLiveId
+        ) {
+          onCloseRequestedVideo?.();
+        }
+
+        setSelectedLiveId(
+          null,
+        );
+
+        setSelectedReplayId(
+          nextReplay.id,
+        );
+
+        return;
+      }
+
+      /*
+       * No quedan LIVE ni Replay.
+       *
+       * No cerramos el viewer:
+       * LiveViewerScreenBase mostrará
+       * el estado fullscreen:
+       *
+       * "No hay directos ni replays
+       * disponibles actualmente"
+       */
+    }, [
+      replays,
+      requestedLiveId,
+      onCloseRequestedVideo,
+    ]);
 
   if (
     requestedReplayId ||
     selectedReplayId
   ) {
     return (
-<NowReplayViewer
-  requestedReplayId={
-    requestedReplayId
-  }
-  selectedReplayId={
-    selectedReplayId
-  }
-  onClose={
-    closeReplay
-  }
-  onOpenUser={
-    onOpenUser
-  }
-/>
+      <NowReplayViewer
+        requestedReplayId={
+          requestedReplayId
+        }
+        selectedReplayId={
+          selectedReplayId
+        }
+        onClose={
+          closeReplay
+        }
+        onOpenUser={
+          onOpenUser
+        }
+      />
     );
   }
 
@@ -277,6 +382,12 @@ const closeReplay =
         }
         onOpenUser={
           onOpenUser
+        }
+        onLiveEnded={
+          handleLiveEnded
+        }
+        onNoLivesAvailable={
+          handleNoLivesAvailable
         }
       />
     );
@@ -371,7 +482,7 @@ const closeReplay =
             followingError
           }
           emptyTitle="No hay contenido nuevo"
-          emptyDescription="Cuando las personas que sigues hagan un directo o guarden un replay, aparecer\u00e1 aqu\u00ed."
+          emptyDescription="Cuando las personas que sigues hagan un directo o guarden un replay, aparecerá aquí."
           onItemPress={
             openItem
           }

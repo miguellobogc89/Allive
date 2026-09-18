@@ -62,6 +62,10 @@ import type {
   LiveKitTokenResponse,
 } from "../components/live/types";
 
+import type {
+  BroadcastLocation,
+} from "../components/live/broadcastTypes";
+
 import {
   tokens,
 } from "../styles";
@@ -87,6 +91,7 @@ type LiveBroadcastScreenProps = {
   authToken: string;
   title: string;
   eventName: string;
+  location: BroadcastLocation | null;
   onFinish: () => void;
 };
 
@@ -215,6 +220,7 @@ export function LiveBroadcastScreen({
   authToken,
   title,
   eventName,
+  location,
   onFinish,
 }: LiveBroadcastScreenProps) {
   const [connection, setConnection] = useState<NativeLiveConnection | null>(null);
@@ -312,9 +318,15 @@ export function LiveBroadcastScreen({
           return;
         }
         const roomName = createLiveRoomName();
-        createdLiveSessionId = await registerLiveInBackend(
-          roomName, { title, eventName, location: null }, authToken,
-        );
+createdLiveSessionId = await registerLiveInBackend(
+  roomName,
+  {
+    title,
+    eventName,
+    location,
+  },
+  authToken,
+);
         if (cancelled) {
           await markLiveAsEnded(createdLiveSessionId, authToken);
           return;
@@ -356,7 +368,7 @@ export function LiveBroadcastScreen({
         });
       }
     };
-  }, [authToken, eventName, title, room, reportError, disconnectCamera]);
+  }, [authToken, eventName, title, location, room, reportError, disconnectCamera]);
 
   const publishInitialMedia = useCallback(() => {
     if (startupAttempted.current || !mountedRef.current || finishingRef.current) return;

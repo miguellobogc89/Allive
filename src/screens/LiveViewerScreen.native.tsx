@@ -51,6 +51,13 @@ type LiveViewerScreenProps = {
     userId: string,
   ) => void;
 
+  onLiveEnded?: (
+    endedLiveId: string,
+  ) => void;
+
+  onNoLivesAvailable?:
+    () => void;
+
   onNavigationReady?: (
     navigation:
       LiveViewerNavigation,
@@ -61,6 +68,8 @@ export function LiveViewerScreen({
   requestedLiveId = null,
   onClose,
   onOpenUser,
+  onLiveEnded,
+  onNoLivesAvailable,
   onNavigationReady,
 }: LiveViewerScreenProps) {
   const loadLives =
@@ -89,7 +98,7 @@ export function LiveViewerScreen({
           )
         ) {
           throw new Error(
-            "Respuesta inv\u00c3\u00a1lida del servidor.",
+            "Respuesta inválida del servidor.",
           );
         }
 
@@ -152,6 +161,12 @@ export function LiveViewerScreen({
           }
         />
       )}
+      onActiveLiveEnded={
+        onLiveEnded
+      }
+      onNoLivesAvailable={
+        onNoLivesAvailable
+      }
       onClose={
         onClose
       }
