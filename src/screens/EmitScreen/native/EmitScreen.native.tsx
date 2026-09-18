@@ -10,7 +10,9 @@ import {
 } from "expo-camera";
 
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -58,6 +60,7 @@ import {
 
 import type {
   EmitScreenProps,
+  EmitScreenStatus,
 } from "../emitScreen.types";
 
 export function EmitScreen({
@@ -84,10 +87,16 @@ export function EmitScreen({
     "back",
   );
 
-  const [
-    isLive,
-    setIsLive,
-  ] = useState(false);
+  const [broadcastRequested, setBroadcastRequested] = useState(false);
+  const broadcastRequestedRef = useRef(false);
+  const [previewReady, setPreviewReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [broadcastStatus, setBroadcastStatus] = useState<EmitScreenStatus>({
+    isLive: false,
+    isConnecting: true,
+    cameraReady: false,
+    microphoneEnabled: false,
+  });
 
   const [
     microphoneEnabled,
@@ -115,10 +124,7 @@ export function EmitScreen({
     location,
   } = useBroadcastLocation();
 
-  const cameraReady =
-    Boolean(
-      permission?.granted,
-    );
+  const cameraReady = Boolean(permission?.granted) && previewReady && !cameraError;
 
   let displayedLocationName:
     | string
@@ -150,151 +156,62 @@ export function EmitScreen({
     };
   }
 
-  function toggleCamera() {
-    setFacing(
-      (current) => {
-        if (
-          current === "back"
-        ) {
-          return "front";
-        }
+  const toggleCamera = useCallback(() => {
+    if (broadcastRequestedRef.current) return;
+    setPreviewReady(false);
+    setCameraError(null);
+    setFacing((current) => current === "back" ? "front" : "back");
+  }, []);
 
-        return "back";
-      },
-    );
-  }
+  const toggleMicrophone = useCallback(() => {
+    if (broadcastRequestedRef.current) return;
+    // Before connecting this is a preference; during LIVE the room owns the control.
+    setMicrophoneEnabled((current) => !current);
+  }, []);
 
-  function toggleMicrophone() {
-    setMicrophoneEnabled(
-      (current) =>
-        !current,
-    );
-  }
+  const startLive = useCallback(() => {
+    if (!isAuthenticated || !token || !cameraReady || broadcastRequestedRef.current) return;
+    broadcastRequestedRef.current = true;
+    setBroadcastStatus({
+      isLive: false,
+      isConnecting: true,
+      cameraReady: false,
+      microphoneEnabled: false,
+    });
+    setPreviewReady(false);
+    setBroadcastRequested(true);
+  }, [isAuthenticated, token, cameraReady]);
 
-  function startLive() {
-    if (
-      !isAuthenticated ||
-      !token ||
-      !cameraReady ||
-      isLive
-    ) {
-      return;
-    }
+  const finishLive = useCallback(() => {
+    broadcastRequestedRef.current = false;
+    setPreviewReady(false);
+    setCameraError(null);
+    setBroadcastRequested(false);
+  }, []);
 
-    setIsLive(true);
-  }
-
-  function finishLive() {
-    if (!isLive) {
-      return;
-    }
-
-    setIsLive(false);
-  }
-
-  useEffect(
-    () => {
-      if (!onStatusChange) {
-        return;
-      }
-
-      onStatusChange({
-        isLive,
-        isConnecting:
-          false,
-        cameraReady,
-        microphoneEnabled,
-      });
-    },
-    [
+  useEffect(() => {
+    onStatusChange?.(broadcastRequested ? broadcastStatus : {
+      isLive: false,
+      isConnecting: false,
       cameraReady,
-      isLive,
       microphoneEnabled,
-      onStatusChange,
-    ],
-  );
+    });
+  }, [broadcastRequested, broadcastStatus, cameraReady, microphoneEnabled, onStatusChange]);
 
-  useEffect(
-    () => {
-      if (
-        !isAuthenticated ||
-        !token ||
-        !cameraReady
-      ) {
-        onStartLiveReady?.(
-          null,
-        );
+  useEffect(() => {
+    onStartLiveReady?.(
+      !broadcastRequested && isAuthenticated && token && cameraReady ? startLive : null,
+    );
+    return () => onStartLiveReady?.(null);
+  }, [broadcastRequested, isAuthenticated, token, cameraReady, startLive, onStartLiveReady]);
 
-        return;
-      }
-
-      onStartLiveReady?.(
-        startLive,
-      );
-
-      return () => {
-        onStartLiveReady?.(
-          null,
-        );
-      };
-    },
-    [
-      cameraReady,
-      isAuthenticated,
-      isLive,
-      onStartLiveReady,
-      token,
-    ],
-  );
-
-  useEffect(
-    () => {
-      if (!isLive) {
-        onFinishLiveReady?.(
-          null,
-        );
-
-        return;
-      }
-
-      onFinishLiveReady?.(
-        finishLive,
-      );
-
-      return () => {
-        onFinishLiveReady?.(
-          null,
-        );
-      };
-    },
-    [
-      isLive,
-      onFinishLiveReady,
-    ],
-  );
-
-  useEffect(
-    () => {
-      if (!onControlsReady) {
-        return;
-      }
-
-      onControlsReady({
-        toggleMicrophone,
-        switchCamera:
-          toggleCamera,
-      });
-
-      return () => {
-        onControlsReady(
-          null,
-        );
-      };
-    },
-    [
-      onControlsReady,
-    ],
-  );
+  useEffect(() => {
+    // The mounted broadcast screen registers its own real room controls and finish action.
+    if (broadcastRequested) return;
+    onFinishLiveReady?.(null);
+    onControlsReady?.({ toggleMicrophone, switchCamera: toggleCamera });
+    return () => onControlsReady?.(null);
+  }, [broadcastRequested, onControlsReady, onFinishLiveReady, toggleMicrophone, toggleCamera]);
 
   if (
     !isAuthenticated ||
@@ -420,10 +337,16 @@ export function EmitScreen({
     );
   }
 
-  if (isLive) {
+  if (broadcastRequested) {
     return (
       <LiveBroadcastScreen
         facing={facing}
+        initialMicrophoneEnabled={microphoneEnabled}
+        onMicrophoneEnabledChange={setMicrophoneEnabled}
+        onFacingChange={setFacing}
+        onStatusChange={setBroadcastStatus}
+        onControlsReady={onControlsReady}
+        onFinishLiveReady={onFinishLiveReady}
         authToken={token}
         title={title}
         eventName={eventName}
@@ -439,16 +362,27 @@ export function EmitScreen({
       media={
         <LiveBroadcastSurface
           facing={facing}
+          cameraReady={cameraReady}
+          cameraError={cameraError}
+          onCameraReady={() => {
+            setCameraError(null);
+            setPreviewReady(true);
+          }}
+          onMountError={({ message }) => {
+            setPreviewReady(false);
+            setCameraError(message || "No se ha podido preparar la cámara.");
+          }}
         />
       }
       overlay={{
         isLive: false,
         isConnecting: false,
-        cameraReady: true,
+        cameraReady,
+        microphoneEnabled,
         viewers: 0,
         likes: 0,
         comments: [],
-        error: null,
+        error: cameraError,
 
         title,
         eventName,

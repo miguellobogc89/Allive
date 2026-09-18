@@ -57,8 +57,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allive necesita acceso a tus fotos para elegir una imagen de perfil.",
-          "cameraPermission": "Allive necesita acceso a la cámara para hacer una foto de perfil.",
-          "microphonePermission": false
+          "cameraPermission": "Allive necesita acceso a la cámara para hacer una foto de perfil."
         }
       ],
       [

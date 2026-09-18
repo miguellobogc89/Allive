@@ -1,5 +1,6 @@
 import type {
   CameraType,
+  CameraMountError,
 } from "expo-camera";
 
 import {
@@ -8,6 +9,7 @@ import {
 
 import {
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 
@@ -17,10 +19,18 @@ import {
 
 type LiveBroadcastNativeSurfaceProps = {
   facing: CameraType;
+  cameraReady: boolean;
+  cameraError: string | null;
+  onCameraReady: () => void;
+  onMountError: (error: CameraMountError) => void;
 };
 
 export function LiveBroadcastSurface({
   facing,
+  cameraReady,
+  cameraError,
+  onCameraReady,
+  onMountError,
 }: LiveBroadcastNativeSurfaceProps) {
   return (
     <View
@@ -29,6 +39,9 @@ export function LiveBroadcastSurface({
       }
     >
       <CameraView
+        key={facing}
+        onCameraReady={onCameraReady}
+        onMountError={onMountError}
         style={
           StyleSheet.absoluteFill
         }
@@ -36,6 +49,13 @@ export function LiveBroadcastSurface({
           facing
         }
       />
+      {!cameraReady && (
+        <View style={styles.status} pointerEvents="none">
+          <Text style={cameraError ? styles.errorText : styles.statusText}>
+            {cameraError ?? "Preparando cámara..."}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
