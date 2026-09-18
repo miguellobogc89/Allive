@@ -41,18 +41,26 @@ export function LiveBroadcastHeader({
   return (
     <View
       pointerEvents="box-none"
-      style={styles.container}
+      style={
+        styles.container
+      }
     >
       <OverlayPill
-        style={styles.liveStatus}
+        style={
+          styles.liveStatus
+        }
       >
         <View
-          style={styles.liveBadge}
+          style={
+            styles.liveBadge
+          }
         >
           <LivePulse />
 
           <Text
-            style={styles.liveLabel}
+            style={
+              styles.liveLabel
+            }
           >
             LIVE
           </Text>
@@ -71,55 +79,62 @@ export function LiveBroadcastHeader({
 
 const styles =
   StyleSheet.create({
+    /*
+     * IMPORTANTE:
+     *
+     * Este componente ya no conoce
+     * su posición en pantalla.
+     *
+     * AppOverlayLayout decide dónde
+     * está el header.
+     */
     container: {
-      position: "absolute",
-
-      top: 14,
-      left: 18,
-      right: 18,
+      width: "100%",
+      height: "100%",
 
       flexDirection: "row",
       alignItems: "center",
+
       justifyContent:
         "space-between",
-
-      zIndex: 25,
     },
 
-liveStatus: {
-  gap: 8,
+    liveStatus: {
+      gap: 8,
 
-  paddingLeft: 0,
-  paddingVertical: 0,
+      paddingLeft: 0,
+      paddingVertical: 0,
 
-  overflow: "hidden",
-},
+      overflow: "hidden",
+    },
 
-liveBadge: {
-  alignSelf: "stretch",
+    liveBadge: {
+      alignSelf: "stretch",
 
-  paddingHorizontal: 8,
+      paddingHorizontal: 8,
 
-  flexDirection: "row",
-  alignItems: "center",
+      flexDirection: "row",
+      alignItems: "center",
 
-  gap: 5,
+      gap: 5,
 
-  borderRadius: 10,
+      borderRadius: 10,
 
-  backgroundColor:
-    "#FF3048",
+      backgroundColor:
+        "#FF3048",
 
-  shadowColor: "#000000",
-  shadowOffset: {
-    width: 5,
-    height: 0,
-  },
-  shadowOpacity: 0.32,
-  shadowRadius: 5,
+      shadowColor: "#000000",
 
-  zIndex: 2,
-},
+      shadowOffset: {
+        width: 5,
+        height: 0,
+      },
+
+      shadowOpacity: 0.32,
+      shadowRadius: 5,
+
+      zIndex: 2,
+    },
 
     liveLabel: {
       color: "#FFFFFF",

@@ -476,14 +476,18 @@ const [
         }}
       />
 
-      <LiveBroadcastHeader
-        isLive={isLive}
-        viewers={viewers}
-        likes={likes}
-        onFinishLive={
-          onFinishLive
-        }
-      />
+      <AppOverlaySlot
+        name="header"
+      >
+        <LiveBroadcastHeader
+          isLive={isLive}
+          viewers={viewers}
+          likes={likes}
+          onFinishLive={
+            onFinishLive
+          }
+        />
+      </AppOverlaySlot>
 
             {contentVisible ? (
         <AppOverlaySlot
