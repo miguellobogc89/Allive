@@ -12,7 +12,6 @@ import {
 
 import {
   colors,
-  layout,
 } from "../../../../styles";
 
 import {
@@ -44,25 +43,50 @@ export function LiveViewerBottomBar({
   onLikePress,
 }: Props) {
   return (
-    <View style={styles.container}>
-      <View style={styles.composer}>
+    <View
+      style={
+        styles.container
+      }
+    >
+      <View
+        style={
+          styles.composer
+        }
+      >
         <LiveCommentComposer
-          value={commentValue}
-          disabled={commentDisabled}
-          onChangeText={onCommentChange}
-          onSend={onCommentSend}
+          value={
+            commentValue
+          }
+          disabled={
+            commentDisabled
+          }
+          onChangeText={
+            onCommentChange
+          }
+          onSend={
+            onCommentSend
+          }
         />
       </View>
 
       <Pressable
-        style={[
+        style={({ pressed }) => [
           styles.likeButton,
+
           likeDisabled
             ? styles.likeDisabled
             : null,
+
+          pressed
+            ? styles.pressed
+            : null,
         ]}
-        disabled={likeDisabled}
-        onPress={onLikePress}
+        disabled={
+          likeDisabled
+        }
+        onPress={
+          onLikePress
+        }
       >
         <Ionicons
           name={
@@ -70,7 +94,7 @@ export function LiveViewerBottomBar({
               ? "heart"
               : "heart-outline"
           }
-          size={32}
+          size={28}
           color={
             liked
               ? colors.accent
@@ -82,37 +106,40 @@ export function LiveViewerBottomBar({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
+const styles =
+  StyleSheet.create({
+    container: {
+      width: "100%",
+      height: "100%",
 
-    left:
-      layout.screenHorizontalPadding,
-    right:
-      layout.screenHorizontalPadding,
-    bottom: 18,
+      flexDirection: "row",
+      alignItems: "center",
 
-    flexDirection: "row",
-    alignItems: "center",
+      gap: 10,
+    },
 
-    gap: 12,
+    composer: {
+      flex: 1,
 
-    zIndex: 25,
-  },
+      minWidth: 0,
 
-  composer: {
-    flex: 1,
-  },
+      justifyContent:
+        "center",
+    },
 
-  likeButton: {
-    width: 44,
-    height: 44,
+    likeButton: {
+      height: "100%",
+      aspectRatio: 1,
 
-    alignItems: "center",
-    justifyContent: "center",
-  },
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  likeDisabled: {
-    opacity: 0.5,
-  },
-});
+    likeDisabled: {
+      opacity: 0.5,
+    },
+
+    pressed: {
+      opacity: 0.65,
+    },
+  });

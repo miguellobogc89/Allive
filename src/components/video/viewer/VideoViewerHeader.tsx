@@ -121,14 +121,13 @@ export function VideoViewerHeader({
 
 const styles =
   StyleSheet.create({
-    container: {
-      width: "100%",
+container: {
+  width: "100%",
+  height: "100%",
 
-      flexDirection: "row",
-      alignItems: "center",
-
-      paddingHorizontal: 16,
-    },
+  flexDirection: "row",
+  alignItems: "center",
+},
 
     modeBadge: {
       minHeight: 28,

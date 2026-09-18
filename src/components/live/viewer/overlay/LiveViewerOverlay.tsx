@@ -9,13 +9,6 @@ import type {
 } from "livekit-client";
 
 import {
-  useRef,
-  useState,
-} from "react";
-
-import {
-  Animated,
-  Pressable,
   StyleSheet,
   View,
 } from "react-native";
@@ -23,6 +16,10 @@ import {
 import type {
   ViewerIdentity,
 } from "../../../../auth/types";
+
+import {
+  AppOverlaySlot,
+} from "../../../layout";
 
 import {
   LiveTimedCommentsLayer,
@@ -45,7 +42,7 @@ import {
 } from "../header/LiveViewerHeader";
 
 import {
-  LiveViewerIdentity as LiveViewerHeaderIdentity,
+  LiveViewerIdentity,
 } from "../header/LiveViewerIdentity";
 
 import {
@@ -109,31 +106,6 @@ export function LiveViewerOverlay({
   const creatorId =
     live.creator?.id;
 
-  const [
-    contentVisible,
-    setContentVisible,
-  ] = useState(true);
-
-  const topOpacity =
-    useRef(
-      new Animated.Value(1),
-    ).current;
-
-  const topTranslateY =
-    useRef(
-      new Animated.Value(0),
-    ).current;
-
-  const bottomOpacity =
-    useRef(
-      new Animated.Value(1),
-    ).current;
-
-  const bottomTranslateY =
-    useRef(
-      new Animated.Value(0),
-    ).current;
-
   const {
     comments,
     commentValue,
@@ -149,7 +121,6 @@ export function LiveViewerOverlay({
 
   const {
     liked,
-    likeCount,
     likeLoading,
     toggleLike,
   } = useLiveViewerLikes({
@@ -169,118 +140,11 @@ export function LiveViewerOverlay({
     authToken,
   });
 
-  function hideContent() {
-    if (!contentVisible) {
-      return;
-    }
-
-    Animated.parallel([
-      Animated.timing(
-        topOpacity,
-        {
-          toValue: 0,
-          duration: 160,
-          useNativeDriver: true,
-        },
-      ),
-
-      Animated.timing(
-        topTranslateY,
-        {
-          toValue: -14,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
-
-      Animated.timing(
-        bottomOpacity,
-        {
-          toValue: 0,
-          duration: 160,
-          useNativeDriver: true,
-        },
-      ),
-
-      Animated.timing(
-        bottomTranslateY,
-        {
-          toValue: 14,
-          duration: 180,
-          useNativeDriver: true,
-        },
-      ),
-    ]).start(() => {
-      setContentVisible(false);
-    });
-  }
-
-  function showContent() {
-    if (contentVisible) {
-      return;
-    }
-
-    setContentVisible(true);
-
-    topOpacity.setValue(0);
-    topTranslateY.setValue(-14);
-
-    bottomOpacity.setValue(0);
-    bottomTranslateY.setValue(14);
-
-    requestAnimationFrame(() => {
-      Animated.parallel([
-        Animated.timing(
-          topOpacity,
-          {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          },
-        ),
-
-        Animated.timing(
-          topTranslateY,
-          {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          },
-        ),
-
-        Animated.timing(
-          bottomOpacity,
-          {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          },
-        ),
-
-        Animated.timing(
-          bottomTranslateY,
-          {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          },
-        ),
-      ]).start();
-    });
-  }
-
-  function handleBackgroundPress() {
-    if (contentVisible) {
-      hideContent();
-      return;
-    }
-
-    showContent();
-  }
-
   return (
     <View
-      style={styles.overlay}
+      style={
+        styles.overlay
+      }
       pointerEvents="box-none"
     >
       <LinearGradient
@@ -302,24 +166,15 @@ export function LiveViewerOverlay({
         pointerEvents="none"
       />
 
-      <Pressable
-        style={
-          StyleSheet.absoluteFill
-        }
-        onPress={
-          handleBackgroundPress
-        }
-      />
-
-      <View
-        pointerEvents="box-none"
-        style={styles.header}
+      {/* HEADER */}
+      <AppOverlaySlot
+        name="header"
       >
         <View
-          pointerEvents="box-none"
           style={
-            styles.permanentHeader
+            styles.slotFill
           }
+          pointerEvents="box-none"
         >
           <LiveViewerHeader
             viewers={
@@ -330,40 +185,53 @@ export function LiveViewerOverlay({
             }
           />
         </View>
-      </View>
+      </AppOverlaySlot>
 
-      {contentVisible ? (
-        <Animated.View
+      {/* COMMENTS */}
+      <AppOverlaySlot
+        name="comments"
+      >
+        <View
+          style={
+            styles.commentsSlot
+          }
           pointerEvents="box-none"
-          style={[
-            styles.identityLayer,
-            {
-              opacity:
-                topOpacity,
-
-              transform: [
-                {
-                  translateY:
-                    topTranslateY,
-                },
-              ],
-            },
-          ]}
         >
-          <LiveViewerIdentityLayer
-            live={live}
+          <LiveTimedCommentsLayer
+            comments={
+              comments
+            }
+          />
+        </View>
+      </AppOverlaySlot>
+
+      {/* METADATA */}
+      <AppOverlaySlot
+        name="metadata"
+      >
+        <View
+          style={
+            styles.metadataSlot
+          }
+          pointerEvents="box-none"
+        >
+          <LiveViewerIdentity
+            live={
+              live
+            }
             followLoading={
               followLoading
             }
             isFollowing={
               followingCreator
             }
-            canFollow={
+            onFollowPress={
               canFollow
+                ? () => {
+                    void toggleFollow();
+                  }
+                : undefined
             }
-            onFollow={() => {
-              void toggleFollow();
-            }}
             onOpenCreator={
               creatorId
                 ? () => {
@@ -374,56 +242,39 @@ export function LiveViewerOverlay({
                 : undefined
             }
           />
-        </Animated.View>
-      ) : null}
+        </View>
+      </AppOverlaySlot>
 
-      {contentVisible ? (
-        <Animated.View
-          pointerEvents="box-none"
-          style={[
-            styles.bottomContent,
-            {
-              opacity:
-                bottomOpacity,
-
-              transform: [
-                {
-                  translateY:
-                    bottomTranslateY,
-                },
-              ],
-            },
-          ]}
-        >
-          <LiveTimedCommentsLayer
-            comments={comments}
-          />
-
-          <LiveViewerBottomBar
-            commentValue={
-              commentValue
-            }
-            commentDisabled={
-              !viewerIdentity ||
-              commentSending
-            }
-            liked={liked}
-            likeDisabled={
-              !viewerIdentity ||
-              likeLoading
-            }
-            onCommentChange={
-              setCommentValue
-            }
-            onCommentSend={() => {
-              void sendComment();
-            }}
-            onLikePress={() => {
-              void toggleLike();
-            }}
-          />
-        </Animated.View>
-      ) : null}
+      {/* BOTTOM CONTROLS */}
+      <AppOverlaySlot
+        name="bottomControls"
+      >
+        <LiveViewerBottomBar
+          commentValue={
+            commentValue
+          }
+          commentDisabled={
+            !viewerIdentity ||
+            commentSending
+          }
+          liked={
+            liked
+          }
+          likeDisabled={
+            !viewerIdentity ||
+            likeLoading
+          }
+          onCommentChange={
+            setCommentValue
+          }
+          onCommentSend={() => {
+            void sendComment();
+          }}
+          onLikePress={() => {
+            void toggleLike();
+          }}
+        />
+      </AppOverlaySlot>
 
       {showNavigation ? (
         <LiveViewerNavigation
@@ -445,44 +296,6 @@ export function LiveViewerOverlay({
   );
 }
 
-type IdentityLayerProps = {
-  live: ActiveLive;
-  followLoading: boolean;
-  isFollowing: boolean;
-  canFollow: boolean;
-  onFollow: () => void;
-  onOpenCreator?: () => void;
-};
-
-function LiveViewerIdentityLayer({
-  live,
-  followLoading,
-  isFollowing,
-  canFollow,
-  onFollow,
-  onOpenCreator,
-}: IdentityLayerProps) {
-  return (
-    <LiveViewerHeaderIdentity
-      live={live}
-      followLoading={
-        followLoading
-      }
-      isFollowing={
-        isFollowing
-      }
-      onFollowPress={
-        canFollow
-          ? onFollow
-          : undefined
-      }
-      onOpenCreator={
-        onOpenCreator
-      }
-    />
-  );
-}
-
 const styles =
   StyleSheet.create({
     overlay: {
@@ -501,33 +314,31 @@ const styles =
       height: 190,
     },
 
-    header: {
-      position: "absolute",
-
-      top: 18,
-      left: 0,
-      right: 0,
-
-      zIndex: 30,
-    },
-
-    permanentHeader: {
+    slotFill: {
       width: "100%",
+      height: "100%",
+
+      justifyContent:
+        "center",
     },
 
-identityLayer: {
-  position: "absolute",
+    commentsSlot: {
+      width: "100%",
+      height: "100%",
 
-  left: 16,
-  right: 16,
-  bottom: 92,
+      overflow: "hidden",
 
-  zIndex: 29,
-},
+      justifyContent:
+        "flex-end",
+    },
 
-    bottomContent: {
-      ...StyleSheet.absoluteFill,
+    metadataSlot: {
+      width: "100%",
+      height: "100%",
 
-      zIndex: 20,
+      overflow: "hidden",
+
+      justifyContent:
+        "flex-end",
     },
   });
