@@ -30,6 +30,10 @@ import {
 } from "./src/auth/AuthContext";
 
 import {
+  AppOverlayLayout,
+} from "./src/components/layout";
+
+import {
   getUnreadNotificationCount,
   markNotificationRead,
   type AlliveNotificationTarget,
@@ -493,63 +497,65 @@ function AppContent() {
         "top",
       ]}
     >
-      <BlurTargetView
-        ref={
-          blurTargetRef
-        }
-        style={
-          styles.content
-        }
-      >
-        <View
-          style={{
-            flex: 1,
+<BlurTargetView
+  ref={
+    blurTargetRef
+  }
+  style={
+    styles.content
+  }
+>
+  <AppOverlayLayout>
+    <View
+      style={{
+        flex: 1,
 
-            display:
-              showPersistentTabs
-                ? "flex"
-                : "none",
-          }}
-        >
-          <PersistentTabScreens
-            activeTab={
-              activeTab
-            }
-            requestedLiveId={
-              requestedLiveId
-            }
-            requestedReplayId={
-              requestedReplayId
-            }
-            onVideoViewerVisibleChange={
-              setVideoViewerMode
-            }
-            unreadNotifications={
-              unreadNotifications
-            }
-            onChangeTab={
-              changeTab
-            }
-            onOpenLive={
-              openLive
-            }
-            onOpenReplay={
-              openReplay
-            }
-            onCloseRequestedVideo={
-              goBack
-            }
-            onOpenUser={
-              openUser
-            }
-            onOpenNotifications={
-              openNotifications
-            }
-          />
-        </View>
+        display:
+          showPersistentTabs
+            ? "flex"
+            : "none",
+      }}
+    >
+      <PersistentTabScreens
+        activeTab={
+          activeTab
+        }
+        requestedLiveId={
+          requestedLiveId
+        }
+        requestedReplayId={
+          requestedReplayId
+        }
+        onVideoViewerVisibleChange={
+          setVideoViewerMode
+        }
+        unreadNotifications={
+          unreadNotifications
+        }
+        onChangeTab={
+          changeTab
+        }
+        onOpenLive={
+          openLive
+        }
+        onOpenReplay={
+          openReplay
+        }
+        onCloseRequestedVideo={
+          goBack
+        }
+        onOpenUser={
+          openUser
+        }
+        onOpenNotifications={
+          openNotifications
+        }
+      />
+    </View>
 
-        {foregroundScreen}
-      </BlurTargetView>
+    {foregroundScreen}
+  </AppOverlayLayout>
+</BlurTargetView>
 
       <BottomNav
         mode={

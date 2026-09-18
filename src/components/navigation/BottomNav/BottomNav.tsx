@@ -5,6 +5,13 @@ import type {
 } from "react";
 
 import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Animated,
   View,
 } from "react-native";
 
@@ -93,10 +100,134 @@ export function BottomNav({
   const insets =
     useSafeAreaInsets();
 
+  const isEmit =
+    mode === "emit";
+
+  const [
+    emitLayerMounted,
+    setEmitLayerMounted,
+  ] = useState(isEmit);
+
+  const mainOpacity =
+    useRef(
+      new Animated.Value(
+        isEmit ? 0 : 1,
+      ),
+    ).current;
+
+  const mainTranslateY =
+    useRef(
+      new Animated.Value(
+        isEmit ? 24 : 0,
+      ),
+    ).current;
+
+  const emitOpacity =
+    useRef(
+      new Animated.Value(
+        isEmit ? 1 : 0,
+      ),
+    ).current;
+
+  useEffect(() => {
+    mainOpacity.stopAnimation();
+    mainTranslateY.stopAnimation();
+    emitOpacity.stopAnimation();
+
+    if (isEmit) {
+      setEmitLayerMounted(true);
+
+      /*
+       * Primero desaparece la navegación
+       * principal hacia abajo.
+       */
+      Animated.parallel([
+        Animated.timing(
+          mainOpacity,
+          {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          },
+        ),
+
+        Animated.timing(
+          mainTranslateY,
+          {
+            toValue: 28,
+            duration: 180,
+            useNativeDriver: true,
+          },
+        ),
+      ]).start();
+
+      /*
+       * Los controles de emisión aparecen
+       * ligeramente después.
+       */
+      emitOpacity.setValue(0);
+
+      Animated.timing(
+        emitOpacity,
+        {
+          toValue: 1,
+          duration: 190,
+          delay: 100,
+          useNativeDriver: true,
+        },
+      ).start();
+
+      return;
+    }
+
+    /*
+     * Al salir de Emitir hacemos
+     * exactamente la transición inversa.
+     */
+    Animated.timing(
+      emitOpacity,
+      {
+        toValue: 0,
+        duration: 120,
+        useNativeDriver: true,
+      },
+    ).start(() => {
+      setEmitLayerMounted(false);
+    });
+
+    mainOpacity.setValue(0);
+    mainTranslateY.setValue(28);
+
+    Animated.parallel([
+      Animated.timing(
+        mainOpacity,
+        {
+          toValue: 1,
+          duration: 190,
+          delay: 70,
+          useNativeDriver: true,
+        },
+      ),
+
+      Animated.timing(
+        mainTranslateY,
+        {
+          toValue: 0,
+          duration: 210,
+          delay: 70,
+          useNativeDriver: true,
+        },
+      ),
+    ]).start();
+  }, [
+    isEmit,
+    emitOpacity,
+    mainOpacity,
+    mainTranslateY,
+  ]);
+
   /*
-   * Replay no utiliza BottomNav.
-   * Todos sus controles viven sobre
-   * el propio vídeo.
+   * Replay sigue sin utilizar BottomNav.
    */
   if (mode === "replay") {
     return null;
@@ -107,74 +238,47 @@ export function BottomNav({
       ? 50
       : 58;
 
-  function renderContent() {
-    if (mode === "live") {
-      return (
-        <BottomNavLive />
-      );
-    }
-
-    if (mode === "emit") {
-      return (
-        <BottomNavEmit
-          isLive={
-            emitIsLive
-          }
-          canStart={
-            emitCanStart
-          }
-          isConnecting={
-            emitIsConnecting
-          }
-          microphoneEnabled={
-            emitMicrophoneEnabled
-          }
-          compact={
-            compact
-          }
-          onStart={
-            onEmitStart
-          }
-          onFinish={
-            onEmitFinish
-          }
-          onToggleMicrophone={
-            onEmitToggleMicrophone
-          }
-          onSwitchCamera={
-            onEmitSwitchCamera
-          }
-          onOpenFilters={
-            onEmitOpenFilters
-          }
-          onOpenMore={
-            onEmitOpenMore
-          }
-        />
-      );
-    }
-
+  /*
+   * LIVE viewer mantiene de momento
+   * su comportamiento existente.
+   */
+  if (mode === "live") {
     return (
-      <BottomNavMain
-        activeTab={
-          activeTab
-        }
-        onTabPress={
-          onTabPress
-        }
-        emitCanStart={
-          emitCanStart
-        }
-        emitIsConnecting={
-          emitIsConnecting
-        }
-        onEmitStart={
-          onEmitStart
-        }
-        compact={
-          compact
-        }
-      />
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.container,
+
+          compact &&
+            styles.containerCompact,
+
+          {
+            height:
+              pillHeight +
+              insets.bottom +
+              spacing.md,
+
+            paddingBottom:
+              insets.bottom +
+              spacing.xs,
+          },
+        ]}
+      >
+        <LiquidSurface
+          variant="dark"
+          blurTarget={
+            blurTarget
+          }
+          style={[
+            styles.pill,
+
+            compact &&
+              styles.pillCompact,
+          ]}
+        >
+          <BottomNavLive />
+        </LiquidSurface>
+      </View>
     );
   }
 
@@ -199,20 +303,176 @@ export function BottomNav({
         },
       ]}
     >
-      <LiquidSurface
-        variant="dark"
-        blurTarget={
-          blurTarget
+
+      {/* NAVEGACIÓN NORMAL */}
+      <Animated.View
+        pointerEvents={
+          isEmit
+            ? "none"
+            : "auto"
         }
         style={[
-          styles.pill,
+          styles.animatedLayer,
 
-          compact &&
-            styles.pillCompact,
+          {
+            height: pillHeight,
+            opacity: mainOpacity,
+
+            transform: [
+              {
+                translateY:
+                  mainTranslateY,
+              },
+            ],
+          },
         ]}
       >
-        {renderContent()}
-      </LiquidSurface>
+        <LiquidSurface
+          variant="dark"
+          blurTarget={
+            blurTarget
+          }
+          style={[
+            styles.pill,
+
+            compact &&
+              styles.pillCompact,
+          ]}
+        >
+          <BottomNavMain
+            activeTab={
+              activeTab
+            }
+            onTabPress={
+              onTabPress
+            }
+            emitCanStart={
+              emitCanStart
+            }
+            emitIsConnecting={
+              emitIsConnecting
+            }
+            onEmitStart={
+              onEmitStart
+            }
+            compact={
+              compact
+            }
+          />
+        </LiquidSurface>
+      </Animated.View>
+
+      {/* CONTROLES DE EMISIÓN */}
+      {emitLayerMounted ? (
+        <Animated.View
+          pointerEvents={
+            isEmit
+              ? "auto"
+              : "none"
+          }
+          style={[
+            styles.animatedLayer,
+            styles.emitLayer,
+
+            {
+              height: pillHeight,
+              opacity: emitOpacity,
+            },
+          ]}
+        >
+          <BottomNavEmit
+            isLive={
+              emitIsLive
+            }
+            canStart={
+              emitCanStart
+            }
+            isConnecting={
+              emitIsConnecting
+            }
+            microphoneEnabled={
+              emitMicrophoneEnabled
+            }
+            compact={
+              compact
+            }
+            onStart={
+              onEmitStart
+            }
+            onFinish={
+              onEmitFinish
+            }
+            onToggleMicrophone={
+              onEmitToggleMicrophone
+            }
+            onSwitchCamera={
+              onEmitSwitchCamera
+            }
+            onOpenFilters={
+              onEmitOpenFilters
+            }
+            onOpenMore={
+              onEmitOpenMore
+            }
+          />
+        </Animated.View>
+      ) : null}
+
+{/* CONTROLES DE EMISIÓN */}
+{emitLayerMounted ? (
+  <Animated.View
+    pointerEvents={
+      isEmit
+        ? "auto"
+        : "none"
+    }
+    style={[
+      styles.animatedLayer,
+      styles.emitLayer,
+
+      {
+        height: pillHeight,
+        opacity: emitOpacity,
+      },
+    ]}
+  >
+    <BottomNavEmit
+      isLive={
+        emitIsLive
+      }
+      canStart={
+        emitCanStart
+      }
+      isConnecting={
+        emitIsConnecting
+      }
+      microphoneEnabled={
+        emitMicrophoneEnabled
+      }
+      compact={
+        compact
+      }
+      onStart={
+        onEmitStart
+      }
+      onFinish={
+        onEmitFinish
+      }
+      onToggleMicrophone={
+        onEmitToggleMicrophone
+      }
+      onSwitchCamera={
+        onEmitSwitchCamera
+      }
+      onOpenFilters={
+        onEmitOpenFilters
+      }
+      onOpenMore={
+        onEmitOpenMore
+      }
+    />
+  </Animated.View>
+) : null}
     </View>
   );
 }

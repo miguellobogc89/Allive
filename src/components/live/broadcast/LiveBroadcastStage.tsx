@@ -1,3 +1,5 @@
+// src/components/live/broadcast/LiveBroadcastStage.tsx
+
 import type {
   ComponentProps,
   ReactNode,
@@ -21,12 +23,15 @@ import {
 
 type LiveBroadcastStageProps = {
   media: ReactNode;
+
   overlay: ComponentProps<
     typeof LiveBroadcastOverlay
   >;
+
   finishModal?: ComponentProps<
     typeof LiveFinishModal
   > | null;
+
   children?: ReactNode;
 };
 

@@ -64,35 +64,51 @@ export const styles =
       height: 46,
     },
 
-// src/components/navigation/BottomNav/bottomNav.styles.ts
+    tabIcon: {
+      width: 52,
+      height: 39,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 20,
+    },
 
-tabIcon: {
-  width: 52,
-  height: 39,
+    tabIconCompact: {
+      width: 47,
+      height: 35,
+      borderRadius: 18,
+    },
+
+    tabIconActiveBackground: {
+      position: "absolute",
+      width: 52,
+      height: 39,
+      borderRadius: 20,
+      backgroundColor:
+        "rgba(255,255,255,0.13)",
+    },
+
+    tabIconActiveBackgroundCompact: {
+      width: 47,
+      height: 35,
+      borderRadius: 18,
+    },
+
+animatedLayer: {
+  position: "absolute",
+
+  left: spacing.lg,
+  right: spacing.lg,
+  bottom: 0,
+
   alignItems: "center",
   justifyContent: "center",
-  borderRadius: 20,
 },
 
-tabIconCompact: {
-  width: 47,
-  height: 35,
-  borderRadius: 18,
-},
+emitLayer: {
+  left: "8%",
+  right: "8%",
 
-tabIconActiveBackground: {
-  position: "absolute",
-  width: 52,
-  height: 39,
-  borderRadius: 20,
-  backgroundColor:
-    "rgba(255,255,255,0.13)",
-},
-
-tabIconActiveBackgroundCompact: {
-  width: 47,
-  height: 35,
-  borderRadius: 18,
+  backgroundColor: "transparent",
 },
 
 
