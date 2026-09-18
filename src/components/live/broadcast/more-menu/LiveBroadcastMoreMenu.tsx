@@ -1,20 +1,28 @@
 // src/components/live/broadcast/more-menu/LiveBroadcastMoreMenu.tsx
 
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
 import {
   useEffect,
   useRef,
 } from "react";
+
 import {
   Animated,
   Pressable,
   StyleSheet,
+  useWindowDimensions,
 } from "react-native";
 
 type LiveBroadcastMoreMenuProps = {
   visible: boolean;
 
-  audienceMode: "public" | "followers";
+  audienceMode:
+    | "public"
+    | "followers";
+
   commentsEnabled: boolean;
 
   onEdit: () => void;
@@ -30,6 +38,66 @@ export function LiveBroadcastMoreMenu({
   onToggleAudience,
   onToggleComments,
 }: LiveBroadcastMoreMenuProps) {
+  const {
+    width,
+  } = useWindowDimensions();
+
+  const scale = Math.min(
+    1.08,
+    Math.max(
+      0.90,
+      width / 400,
+    ),
+  );
+
+  /*
+   * DEBE coincidir con BottomNav.
+   */
+  const horizontalInset =
+    16 * scale;
+
+  const bottomInset =
+    14 * scale;
+
+  const controlAreaHeight =
+    64 * scale;
+
+  const availableWidth =
+    width -
+    horizontalInset * 2;
+
+  const columnWidth =
+    availableWidth / 5;
+
+  /*
+   * Centro exacto de la quinta columna.
+   *
+   * Al usar este mismo cálculo que BottomNav,
+   * el menú queda matemáticamente alineado
+   * con el botón "...".
+   */
+const actionSize =
+  42 * scale;
+
+const actionGap =
+  8 * scale;
+
+const menuBottom =
+  bottomInset +
+  controlAreaHeight +
+  8 * scale;
+
+/*
+ * El menú ocupa exactamente la quinta
+ * columna de BottomNav.
+ *
+ * No calculamos el centro del botón:
+ * reutilizamos físicamente su columna.
+ */
+const menuLeft =
+  horizontalInset +
+  columnWidth * 4;
+
   const opacity =
     useRef(
       new Animated.Value(0),
@@ -46,7 +114,9 @@ export function LiveBroadcastMoreMenu({
 
     if (visible) {
       opacity.setValue(0);
-      translateY.setValue(12);
+      translateY.setValue(
+        12 * scale,
+      );
 
       Animated.parallel([
         Animated.timing(
@@ -84,7 +154,9 @@ export function LiveBroadcastMoreMenu({
       Animated.timing(
         translateY,
         {
-          toValue: -8,
+          toValue:
+            -8 * scale,
+
           duration: 150,
           useNativeDriver: true,
         },
@@ -94,6 +166,7 @@ export function LiveBroadcastMoreMenu({
     visible,
     opacity,
     translateY,
+    scale,
   ]);
 
   return (
@@ -105,50 +178,65 @@ export function LiveBroadcastMoreMenu({
       }
       style={[
         styles.container,
-        {
-          opacity,
-          transform: [
-            {
-              translateY,
-            },
-          ],
-        },
+
+    
+{
+  left: menuLeft,
+  bottom: menuBottom,
+
+  width: columnWidth,
+
+  gap: actionGap,
+
+  opacity,
+
+  transform: [
+    {
+      translateY,
+    },
+  ],
+},
       ]}
     >
-      <TechnicalAction
-        icon="create-outline"
-        onPress={onEdit}
-      />
+<TechnicalAction
+  icon="flash-outline"
+  size={actionSize}
+  iconSize={20 * scale}
+  onPress={() => {}}
+/>
 
-      <TechnicalAction
-        icon={
-          audienceMode ===
-          "public"
-            ? "globe-outline"
-            : "people"
-        }
-        active={
-          audienceMode ===
-          "followers"
-        }
-        onPress={
-          onToggleAudience
-        }
-      />
+<TechnicalAction
+  icon="create-outline"
+  size={actionSize}
+  iconSize={20 * scale}
+  onPress={onEdit}
+/>
 
-      <TechnicalAction
-        icon={
-          commentsEnabled
-            ? "chatbubble-ellipses-outline"
-            : "chatbubble-ellipses"
-        }
-        active={
-          !commentsEnabled
-        }
-        onPress={
-          onToggleComments
-        }
-      />
+<TechnicalAction
+  icon={
+    audienceMode === "public"
+      ? "globe-outline"
+      : "people"
+  }
+  size={actionSize}
+  iconSize={20 * scale}
+  active={
+    audienceMode === "followers"
+  }
+  onPress={onToggleAudience}
+/>
+
+<TechnicalAction
+  icon={
+    commentsEnabled
+      ? "chatbubble-ellipses-outline"
+      : "chatbubble-ellipses"
+  }
+  size={actionSize}
+  iconSize={20 * scale}
+  active={!commentsEnabled}
+  onPress={onToggleComments}
+/>
     </Animated.View>
   );
 }
@@ -159,6 +247,9 @@ type TechnicalActionProps = {
       typeof Ionicons
     >["name"];
 
+  size: number;
+  iconSize: number;
+
   active?: boolean;
 
   onPress: () => void;
@@ -166,6 +257,8 @@ type TechnicalActionProps = {
 
 function TechnicalAction({
   icon,
+  size,
+  iconSize,
   active = false,
   onPress,
 }: TechnicalActionProps) {
@@ -178,6 +271,13 @@ function TechnicalAction({
       }) => [
         styles.action,
 
+        {
+          width: size,
+          height: size,
+          borderRadius:
+            size / 2,
+        },
+
         active
           ? styles.actionActive
           : null,
@@ -189,7 +289,7 @@ function TechnicalAction({
     >
       <Ionicons
         name={icon}
-        size={20}
+        size={iconSize}
         color={
           active
             ? "#FFFFFF"
@@ -215,24 +315,17 @@ const styles =
     container: {
       position: "absolute",
 
-      right: 22,
-      bottom: 92,
-
-      gap: 8,
+      alignItems: "center",
 
       zIndex: 35,
     },
 
     action: {
-      width: 42,
-      height: 42,
-
       alignItems: "center",
       justifyContent: "center",
 
-      borderRadius: 9,
-
       borderWidth: 1,
+
       borderColor:
         "rgba(255,255,255,0.16)",
 

@@ -52,8 +52,50 @@ export function LiveBroadcastBottomNav(
     height,
   } = useWindowDimensions();
 
-  const landscape =
-    width > height;
+  const landscape = width > height;
+
+  /*
+   * Escalado deliberadamente limitado.
+   *
+   * 320 px -> 0.90
+   * 360 px -> 0.90
+   * 390 px -> 0.975
+   * 400 px -> 1.00
+   * 432 px -> 1.08
+   *
+   * Evitamos que un móvil muy grande produzca
+   * controles desproporcionados.
+   */
+  const scale = Math.min(
+    1.08,
+    Math.max(
+      0.90,
+      width / 400,
+    ),
+  );
+
+  const horizontalInset =
+    16 * scale;
+
+  const bottomInset =
+    14 * scale;
+
+  const controlAreaHeight =
+    64 * scale;
+
+  /*
+   * Las cinco acciones viven siempre en
+   * cinco columnas idénticas.
+   *
+   * Esto es importante porque la columna 5
+   * será también el eje del menú desplegable.
+   */
+  const availableWidth =
+    width -
+    horizontalInset * 2;
+
+  const columnWidth =
+    availableWidth / 5;
 
   return (
     <View
@@ -63,120 +105,173 @@ export function LiveBroadcastBottomNav(
 
         landscape
           ? styles.rootLandscape
-          : styles.rootPortrait,
+          : null,
+
+        {
+          paddingHorizontal:
+            horizontalInset,
+
+          paddingBottom:
+            bottomInset,
+        },
       ]}
     >
       <View
         style={[
           styles.controls,
 
-          landscape
-            ? styles.controlsLandscape
-            : styles.controlsPortrait,
+          {
+            height:
+              controlAreaHeight,
+          },
         ]}
       >
-        <MoreControl
-          onPress={
-            props.onOpenMore
-          }
-          disabled={
-            props.moreEnabled ===
-            false
-          }
-        />
+        <View
+          style={[
+            styles.controlSlot,
+            {
+              width: columnWidth,
+            },
+          ]}
+        >
+          <MicrophoneControl
+            enabled={
+              props.microphoneEnabled
+            }
+            onPress={
+              props.onToggleMicrophone
+            }
+            disabled={
+              props.microphoneControlEnabled ===
+              false
+            }
+          />
+        </View>
 
-        <MicrophoneControl
-          enabled={
-            props.microphoneEnabled
-          }
-          onPress={
-            props.onToggleMicrophone
-          }
-          disabled={
-            props.microphoneControlEnabled ===
-            false
-          }
-        />
+        <View
+          style={[
+            styles.controlSlot,
+            {
+              width: columnWidth,
+            },
+          ]}
+        >
+          <FiltersControl
+            onPress={
+              props.onOpenFilters
+            }
+            disabled={
+              props.filtersEnabled ===
+              false
+            }
+          />
+        </View>
 
-        <StopLiveControl
-          onPress={
-            props.onFinishLive
-          }
-        />
+        <View
+          style={[
+            styles.controlSlot,
+            {
+              width: columnWidth,
+            },
+          ]}
+        >
+          <StopLiveControl
+            onPress={
+              props.onFinishLive
+            }
+          />
+        </View>
 
-        <FiltersControl
-          onPress={
-            props.onOpenFilters
-          }
-          disabled={
-            props.filtersEnabled ===
-            false
-          }
-        />
+        <View
+          style={[
+            styles.controlSlot,
+            {
+              width: columnWidth,
+            },
+          ]}
+        >
+          <CameraSwitchControl
+            onPress={
+              props.onSwitchCamera
+            }
+            disabled={
+              props.cameraSwitchEnabled ===
+              false
+            }
+          />
+        </View>
 
-        <CameraSwitchControl
-          onPress={
-            props.onSwitchCamera
-          }
-          disabled={
-            props.cameraSwitchEnabled ===
-            false
-          }
-        />
+        <View
+          style={[
+            styles.controlSlot,
+            {
+              width: columnWidth,
+            },
+          ]}
+        >
+          <MoreControl
+            onPress={
+              props.onOpenMore
+            }
+            disabled={
+              props.moreEnabled ===
+              false
+            }
+          />
+        </View>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    position: "absolute",
+const styles =
+  StyleSheet.create({
+    root: {
+      position: "absolute",
 
-    left: 0,
-    right: 0,
-    bottom: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
 
-    zIndex: 20,
+      zIndex: 20,
 
-    justifyContent: "flex-end",
-  },
+      justifyContent:
+        "flex-end",
 
-  rootPortrait: {
-    height: 104,
-  },
+      /*
+       * IMPORTANTE:
+       * ninguna superficie de fondo.
+       * El vídeo continúa visualmente
+       * hasta el límite inferior.
+       */
+      backgroundColor:
+        "transparent",
+    },
 
-  rootLandscape: {
-    height: 94,
-  },
+    rootLandscape: {
+      /*
+       * Por ahora no cambiamos la geometría
+       * horizontal. La refinaremos cuando
+       * trabajemos específicamente landscape.
+       */
+    },
 
-  controls: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+    controls: {
+      width: "100%",
 
-  controlsPortrait: {
-    width: "100%",
+      flexDirection: "row",
 
-    minHeight: 86,
+      alignItems: "center",
+      justifyContent: "center",
 
-    paddingHorizontal: 18,
-    paddingBottom: 18,
+      backgroundColor:
+        "transparent",
+    },
 
-    justifyContent:
-      "space-around",
-  },
+    controlSlot: {
+      height: "100%",
 
-  controlsLandscape: {
-    width: "55%",
-
-    minHeight: 82,
-
-    marginLeft: "45%",
-
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-
-    justifyContent:
-      "space-around",
-  },
-});
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });

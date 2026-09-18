@@ -149,10 +149,10 @@ export function LiveBroadcastOverlay({
     initialStartMetadataVisible,
   );
 
-  const [
-    moreMenuVisible,
-    setMoreMenuVisible,
-  ] = useState(false);
+const [
+  moreMenuVisible,
+  setMoreMenuVisible,
+] = useState(true);
 
   const [
     locationVisible,
@@ -527,28 +527,24 @@ export function LiveBroadcastOverlay({
         </Animated.View>
       )}
 
-      {isLive && (
-        <LiveBroadcastMoreMenu
-          visible={
-            moreMenuVisible
-          }
-          audienceMode={
-            audienceMode
-          }
-          commentsEnabled={
-            commentsEnabled
-          }
-          onEdit={
-            openStartMetadata
-          }
-          onToggleAudience={
-            toggleAudience
-          }
-          onToggleComments={
-            toggleComments
-          }
-        />
-      )}
+<LiveBroadcastMoreMenu
+  visible={true}
+  audienceMode={
+    audienceMode
+  }
+  commentsEnabled={
+    commentsEnabled
+  }
+  onEdit={
+    openStartMetadata
+  }
+  onToggleAudience={
+    toggleAudience
+  }
+  onToggleComments={
+    toggleComments
+  }
+/>
 
       <LiveStartMetadataModal
         visible={
