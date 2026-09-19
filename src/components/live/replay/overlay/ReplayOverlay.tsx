@@ -1,3 +1,4 @@
+
 // src/components/live/replay/overlay/ReplayOverlay.tsx
 
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +54,18 @@ type ReplayOverlayProps = {
   onSkipForward?: () => void;
   onToggleMute?: () => void;
 };
+
+function formatCount(count: number) {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)}M`;
+  }
+
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}K`;
+  }
+
+  return String(count);
+}
 
 export function ReplayOverlay({
   replay,
@@ -134,14 +147,11 @@ export function ReplayOverlay({
             accessibilityLabel="Retroceder 15 segundos"
           >
             <Ionicons
-              name="arrow-undo-outline"
-              size={24}
+              name="play-back"
+              size={26}
               color="#FFFFFF"
             />
-
-            <Text style={styles.skipText}>
-              15
-            </Text>
+            <Text style={styles.skipText}>15 s</Text>
           </Pressable>
 
           <Pressable
@@ -173,14 +183,11 @@ export function ReplayOverlay({
             accessibilityLabel="Avanzar 15 segundos"
           >
             <Ionicons
-              name="arrow-redo-outline"
-              size={24}
+              name="play-forward"
+              size={26}
               color="#FFFFFF"
             />
-
-            <Text style={styles.skipText}>
-              15
-            </Text>
+            <Text style={styles.skipText}>15 s</Text>
           </Pressable>
         </View>
       ) : null}
@@ -210,6 +217,59 @@ export function ReplayOverlay({
             onFollowPress={onFollowPress}
             onOpenCreator={onOpenCreator}
           />
+        </View>
+      </AppOverlaySlot>
+
+      <AppOverlaySlot name="sideActions">
+        <View
+          style={styles.sideActions}
+          pointerEvents="box-none"
+        >
+          <Pressable
+            style={[
+              styles.sideAction,
+              likeLoading && styles.disabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              liked
+                ? "Quitar me gusta"
+                : "Me gusta"
+            }
+            disabled={likeLoading}
+            onPress={onLikePress}
+          >
+            <Ionicons
+              name={liked ? "heart" : "heart-outline"}
+              size={30}
+              color={liked ? "#FF3048" : "#FFFFFF"}
+            />
+            <Text style={styles.actionCount}>
+              {formatCount(likes)}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.sideAction}
+            accessibilityRole="button"
+            accessibilityLabel={
+              playbackMuted
+                ? "Activar sonido"
+                : "Silenciar"
+            }
+            disabled={!onToggleMute}
+            onPress={onToggleMute}
+          >
+            <Ionicons
+              name={
+                playbackMuted
+                  ? "volume-mute-outline"
+                  : "volume-high-outline"
+              }
+              size={28}
+              color="#FFFFFF"
+            />
+          </Pressable>
         </View>
       </AppOverlaySlot>
 
@@ -275,6 +335,39 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
 
+  sideActions: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 20,
+    paddingBottom: 12,
+  },
+
+  sideAction: {
+    minWidth: 44,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+
+  actionCount: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    textShadowRadius: 3,
+  },
+
+  disabled: {
+    opacity: 0.5,
+  },
+
   pausedControls: {
     position: "absolute",
     left: 0,
@@ -316,10 +409,10 @@ const styles = StyleSheet.create({
 
   skipText: {
     position: "absolute",
-    bottom: 6,
+    bottom: 5,
     color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "400",
+    fontSize: 9,
+    fontWeight: "600",
   },
 
   controlPressed: {
