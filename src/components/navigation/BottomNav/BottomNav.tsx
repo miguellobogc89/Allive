@@ -29,10 +29,6 @@ import {
 } from "./BottomNavEmit";
 
 import {
-  BottomNavLive,
-} from "./BottomNavLive";
-
-import {
   BottomNavMain,
 } from "./BottomNavMain";
 
@@ -200,12 +196,21 @@ export function BottomNav({
     mainTranslateY,
   ]);
 
-  if (mode === "replay") {
+  /*
+   * LIVE y Replay gestionan sus controles
+   * directamente mediante AppOverlayLayout.
+   * BottomNav no dibuja ninguna barra
+   * en estos dos modos.
+   */
+  if (
+    mode === "live" ||
+    mode === "replay"
+  ) {
     return null;
   }
 
   /*
-   * Desde este momento BottomNav NO conoce:
+   * BottomNav no conoce:
    *
    * - tamaño de pantalla
    * - safe area
@@ -215,25 +220,6 @@ export function BottomNav({
    * Solo ocupa el 100% de la zona
    * que AppOverlayLayout le entrega.
    */
-  if (mode === "live") {
-    return (
-      <View
-        pointerEvents="box-none"
-        style={styles.root}
-      >
-        <LiquidSurface
-          variant="dark"
-          blurTarget={
-            blurTarget
-          }
-          style={styles.mainSurface}
-        >
-          <BottomNavLive />
-        </LiquidSurface>
-      </View>
-    );
-  }
-
   return (
     <View
       pointerEvents="box-none"

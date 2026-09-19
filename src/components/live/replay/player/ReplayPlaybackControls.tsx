@@ -314,16 +314,11 @@ export function ReplayPlaybackControls({
 
 const styles =
   StyleSheet.create({
-    progressArea: {
-      position:
-        "absolute",
-
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      zIndex: 80,
-    },
+progressArea: {
+  width: "100%",
+  height: "100%",
+  justifyContent: "flex-end",
+},
 
     timeRow: {
       position:
@@ -358,12 +353,11 @@ const styles =
       textShadowRadius: 3,
     },
 
-    progressTouchArea: {
-      height: 30,
-
-      justifyContent:
-        "flex-end",
-    },
+progressTouchArea: {
+  width: "100%",
+  height: "100%",
+  justifyContent: "flex-end",
+},
 
     track: {
       height: 3,
