@@ -37,6 +37,9 @@ type AppOverlayLayoutProps = {
   comments?: ReactNode;
   metadata?: ReactNode;
   bottomControls?: ReactNode;
+
+  reserveBottomSpace?: boolean;
+  replayMode?: boolean;
 };
 
 const EMPTY_SLOTS: AppOverlaySlots = {
@@ -54,9 +57,10 @@ export function AppOverlayLayout({
   comments,
   metadata,
   bottomControls,
+  reserveBottomSpace = false,
+  replayMode = false,
 }: AppOverlayLayoutProps) {
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
   const {
     width,
@@ -70,136 +74,115 @@ export function AppOverlayLayout({
     EMPTY_SLOTS,
   );
 
-  const setSlot =
-    useCallback(
-      (
-        name: AppOverlaySlotName,
-        content: ReactNode | null,
-      ) => {
-        setRegisteredSlots(
-          (current) => {
-            if (
-              current[name] ===
-              content
-            ) {
-              return current;
-            }
+  const setSlot = useCallback(
+    (
+      name: AppOverlaySlotName,
+      content: ReactNode | null,
+    ) => {
+      setRegisteredSlots((current) => {
+        if (current[name] === content) {
+          return current;
+        }
 
-            return {
-              ...current,
-              [name]: content,
-            };
-          },
-        );
-      },
-      [],
-    );
+        return {
+          ...current,
+          [name]: content,
+        };
+      });
+    },
+    [],
+  );
 
-  const slotContextValue =
-    useMemo(
-      () => ({
-        setSlot,
-      }),
-      [
-        setSlot,
-      ],
-    );
+  const slotContextValue = useMemo(
+    () => ({
+      setSlot,
+    }),
+    [setSlot],
+  );
 
   const scale = Math.min(
     appOverlayLayout.scale.max,
     Math.max(
       appOverlayLayout.scale.min,
-      width /
-        appOverlayLayout.referenceWidth,
+      width / appOverlayLayout.referenceWidth,
     ),
   );
 
   const horizontalMargin =
-    appOverlayLayout.horizontalMargin *
-    scale;
+    appOverlayLayout.horizontalMargin * scale;
 
   const headerHeight =
-    appOverlayLayout.header.height *
-    scale;
+    appOverlayLayout.header.height * scale;
 
   const controlsHeight =
-    appOverlayLayout.bottomControls.height *
-    scale;
+    appOverlayLayout.bottomControls.height * scale;
 
   const controlsBottom =
     insets.bottom +
-    appOverlayLayout.bottomControls.bottomGap *
-      scale;
+    appOverlayLayout.bottomControls.bottomGap * scale;
+
+  const reservedBottomHeight =
+    reserveBottomSpace
+      ? controlsBottom + controlsHeight
+      : 0;
 
   const metadataHeight =
-    appOverlayLayout.metadata.height *
-    scale;
+    appOverlayLayout.metadata.height * scale;
 
-  const metadataBottom =
-    controlsBottom +
-    controlsHeight +
-    appOverlayLayout.metadata.gap *
-      scale;
+const metadataBottom =
+  reservedBottomHeight +
+  appOverlayLayout.metadata.gap * scale;
 
   const commentsHeight =
-    appOverlayLayout.comments.height *
-    scale;
+    appOverlayLayout.comments.height * scale;
 
   const commentsBottom =
     metadataBottom +
     metadataHeight +
-    appOverlayLayout.comments.gap *
-      scale;
+    appOverlayLayout.comments.gap * scale;
 
   const sideWidth =
-    appOverlayLayout.sideActions.width *
-    scale;
+    appOverlayLayout.sideActions.width * scale;
 
-  const sideBottom =
-    controlsBottom +
-    controlsHeight +
-    appOverlayLayout.sideActions.bottomGap *
-      scale;
+const sideBottom =
+  reservedBottomHeight +
+  appOverlayLayout.sideActions.bottomGap * scale;
 
-  const sideHeight =
-    Math.min(
-      appOverlayLayout.sideActions.maxHeight *
-        scale,
-
-      height *
-        appOverlayLayout.sideActions.maxHeightRatio,
-    );
+  const sideHeight = Math.min(
+    appOverlayLayout.sideActions.maxHeight * scale,
+    height *
+      appOverlayLayout.sideActions.maxHeightRatio,
+  );
 
   const contentRight =
-    horizontalMargin +
-    sideWidth +
-    12 * scale;
+    horizontalMargin + sideWidth + 12 * scale;
 
   const resolvedHeader =
-    registeredSlots.header ??
-    header;
+    registeredSlots.header ?? header;
 
   const resolvedSideActions =
-    registeredSlots.sideActions ??
-    sideActions;
+    registeredSlots.sideActions ?? sideActions;
 
   const resolvedComments =
-    registeredSlots.comments ??
-    comments;
+    registeredSlots.comments ?? comments;
 
   const resolvedMetadata =
-    registeredSlots.metadata ??
-    metadata;
+    registeredSlots.metadata ?? metadata;
+
+  const replayControls =
+    replayMode
+      ? registeredSlots.bottomControls
+      : null;
 
   const resolvedBottomControls =
-    registeredSlots.bottomControls ??
-    bottomControls;
+    replayMode
+      ? bottomControls
+      : registeredSlots.bottomControls ??
+        bottomControls;
 
   return (
     <AppOverlaySlotContext.Provider
-      value={
-        slotContextValue
-      }
+      value={slotContextValue}
     >
       <View
         pointerEvents="box-none"
@@ -207,7 +190,12 @@ export function AppOverlayLayout({
       >
         <View
           pointerEvents="box-none"
-          style={styles.content}
+          style={[
+            styles.content,
+            {
+              bottom: reservedBottomHeight,
+            },
+          ]}
         >
           {children}
         </View>
@@ -217,24 +205,15 @@ export function AppOverlayLayout({
           pointerEvents="box-none"
           style={[
             styles.zone,
-
-            SHOW_LAYOUT_GUIDES &&
-              styles.guide,
-
+            SHOW_LAYOUT_GUIDES && styles.guide,
             {
               top:
                 insets.top +
                 appOverlayLayout.header.topGap *
                   scale,
-
-              left:
-                horizontalMargin,
-
-              right:
-                horizontalMargin,
-
-              height:
-                headerHeight,
+              left: horizontalMargin,
+              right: horizontalMargin,
+              height: headerHeight,
             },
           ]}
         >
@@ -247,22 +226,12 @@ export function AppOverlayLayout({
           style={[
             styles.zone,
             styles.sideZone,
-
-            SHOW_LAYOUT_GUIDES &&
-              styles.guide,
-
+            SHOW_LAYOUT_GUIDES && styles.guide,
             {
-              right:
-                horizontalMargin,
-
-              bottom:
-                sideBottom,
-
-              width:
-                sideWidth,
-
-              height:
-                sideHeight,
+              right: horizontalMargin,
+              bottom: sideBottom,
+              width: sideWidth,
+              height: sideHeight,
             },
           ]}
         >
@@ -274,22 +243,12 @@ export function AppOverlayLayout({
           pointerEvents="box-none"
           style={[
             styles.zone,
-
-            SHOW_LAYOUT_GUIDES &&
-              styles.guide,
-
+            SHOW_LAYOUT_GUIDES && styles.guide,
             {
-              left:
-                horizontalMargin,
-
-              right:
-                contentRight,
-
-              bottom:
-                commentsBottom,
-
-              height:
-                commentsHeight,
+              left: horizontalMargin,
+              right: contentRight,
+              bottom: commentsBottom,
+              height: commentsHeight,
             },
           ]}
         >
@@ -301,50 +260,49 @@ export function AppOverlayLayout({
           pointerEvents="box-none"
           style={[
             styles.zone,
-
-            SHOW_LAYOUT_GUIDES &&
-              styles.guide,
-
+            SHOW_LAYOUT_GUIDES && styles.guide,
             {
-              left:
-                horizontalMargin,
-
-              right:
-                contentRight,
-
-              bottom:
-                metadataBottom,
-
-              height:
-                metadataHeight,
+              left: horizontalMargin,
+              right: contentRight,
+              bottom: metadataBottom,
+              height: metadataHeight,
             },
           ]}
         >
           {resolvedMetadata}
         </View>
 
-        {/* BOTTOM CONTROLS */}
+        {/* CONTROLES PROPIOS DEL REPLAY */}
+        {replayMode && replayControls ? (
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.zone,
+              styles.bottomZone,
+              {
+                left: horizontalMargin,
+                right: horizontalMargin,
+                bottom: reservedBottomHeight,
+                height: controlsHeight,
+              },
+            ]}
+          >
+            {replayControls}
+          </View>
+        ) : null}
+
+        {/* BOTTOM NAV COMPARTIDO */}
         <View
           pointerEvents="box-none"
           style={[
             styles.zone,
             styles.bottomZone,
-
-            SHOW_LAYOUT_GUIDES &&
-              styles.guide,
-
+            SHOW_LAYOUT_GUIDES && styles.guide,
             {
-              left:
-                horizontalMargin,
-
-              right:
-                horizontalMargin,
-
-              bottom:
-                controlsBottom,
-
-              height:
-                controlsHeight,
+              left: horizontalMargin,
+              right: horizontalMargin,
+              bottom: controlsBottom,
+              height: controlsHeight,
             },
           ]}
         >
@@ -355,35 +313,36 @@ export function AppOverlayLayout({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    root: {
-      flex: 1,
-      position: "relative",
-    },
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    position: "relative",
+  },
 
-    content: {
-      ...StyleSheet.absoluteFill,
-    },
+  content: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
 
-    zone: {
-      position: "absolute",
-    },
+  zone: {
+    position: "absolute",
+  },
 
-    guide: {
-      borderWidth: 1,
+  guide: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.90)",
+  },
 
-      borderColor:
-        "rgba(255,255,255,0.90)",
-    },
+  sideZone: {
+    alignItems: "stretch",
+    justifyContent: "flex-end",
+  },
 
-    sideZone: {
-      alignItems: "stretch",
-      justifyContent: "flex-end",
-    },
-
-    bottomZone: {
-      alignItems: "stretch",
-      justifyContent: "center",
-    },
-  });
+  bottomZone: {
+    alignItems: "stretch",
+    justifyContent: "center",
+  },
+});

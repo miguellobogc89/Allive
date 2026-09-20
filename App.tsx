@@ -113,9 +113,7 @@ function AppContent() {
   } = useAppNavigation();
 
   const blurTargetRef =
-    useRef<View | null>(
-      null,
-    );
+    useRef<View | null>(null);
 
   const [
     unreadNotifications,
@@ -131,30 +129,20 @@ function AppContent() {
     videoViewerMode,
     setVideoViewerMode,
   ] = useState<
-    | "live"
-    | "replay"
-    | null
+    "live" | "replay" | null
   >(null);
 
   const emitStartLiveRef =
-    useRef<
-      (() => void) | null
-    >(null);
+    useRef<(() => void) | null>(null);
 
   const emitFinishLiveRef =
-    useRef<
-      (() => void) | null
-    >(null);
+    useRef<(() => void) | null>(null);
 
   const emitToggleMicrophoneRef =
-    useRef<
-      (() => void) | null
-    >(null);
+    useRef<(() => void) | null>(null);
 
   const emitSwitchCameraRef =
-    useRef<
-      (() => void) | null
-    >(null);
+    useRef<(() => void) | null>(null);
 
   const [
     emitIsLive,
@@ -177,9 +165,7 @@ function AppContent() {
   ] = useState(true);
 
   useEffect(() => {
-    if (
-      Platform.OS !== "web"
-    ) {
+    if (Platform.OS !== "web") {
       return;
     }
 
@@ -191,14 +177,8 @@ function AppContent() {
     useCallback(
       async () => {
         if (!token) {
-          setUnreadNotifications(
-            0,
-          );
-
-          setAlliveBadgeCount(
-            0,
-          );
-
+          setUnreadNotifications(0);
+          setAlliveBadgeCount(0);
           return;
         }
 
@@ -222,9 +202,7 @@ function AppContent() {
           );
         }
       },
-      [
-        token,
-      ],
+      [token],
     );
 
   const openNotificationTarget =
@@ -235,8 +213,7 @@ function AppContent() {
           | NotificationNavigationTarget,
       ) => {
         if (
-          "notificationId" in
-            target &&
+          "notificationId" in target &&
           target.notificationId &&
           token
         ) {
@@ -252,20 +229,12 @@ function AppContent() {
             );
         }
 
-        if (
-          target.type ===
-          "LIVE"
-        ) {
-          openLive(
-            target.id,
-          );
-
+        if (target.type === "LIVE") {
+          openLive(target.id);
           return;
         }
 
-        openUser(
-          target.id,
-        );
+        openUser(target.id);
       },
       [
         openLive,
@@ -283,25 +252,18 @@ function AppContent() {
     void registerForAllivePushNotifications(
       token,
     );
-  }, [
-    token,
-  ]);
+  }, [token]);
 
   useEffect(() => {
     void refreshUnreadNotifications();
-  }, [
-    refreshUnreadNotifications,
-  ]);
+  }, [refreshUnreadNotifications]);
 
   useEffect(() => {
     const subscription =
       AppState.addEventListener(
         "change",
         (nextState) => {
-          if (
-            nextState ===
-            "active"
-          ) {
+          if (nextState === "active") {
             void refreshUnreadNotifications();
           }
         },
@@ -316,43 +278,34 @@ function AppContent() {
   ]);
 
   useEffect(() => {
-    return addAlliveNotificationListeners(
-      {
-        onReceived: () => {
-          setNotificationRefreshKey(
-            (current) =>
-              current + 1,
-          );
+    return addAlliveNotificationListeners({
+      onReceived: () => {
+        setNotificationRefreshKey(
+          (current) => current + 1,
+        );
 
-          void refreshUnreadNotifications();
-        },
-
-        onResponse: (
-          target,
-        ) => {
-          void refreshUnreadNotifications();
-
-          openNotificationTarget(
-            target,
-          );
-        },
+        void refreshUnreadNotifications();
       },
-    );
+
+      onResponse: (target) => {
+        void refreshUnreadNotifications();
+
+        openNotificationTarget(
+          target,
+        );
+      },
+    });
   }, [
     openNotificationTarget,
     refreshUnreadNotifications,
   ]);
 
   if (isLoading) {
-    return (
-      <AlliveLoadingScreen />
-    );
+    return <AlliveLoadingScreen />;
   }
 
   if (!identity) {
-    return (
-      <AuthScreen />
-    );
+    return <AuthScreen />;
   }
 
   function handleEmitStatusChange(
@@ -376,48 +329,36 @@ function AppContent() {
   }
 
   function handleEmitStartReady(
-    startLive:
-      | (() => void)
-      | null,
+    startLive: (() => void) | null,
   ) {
     emitStartLiveRef.current =
       startLive;
   }
 
   function handleEmitFinishReady(
-    finishLive:
-      | (() => void)
-      | null,
+    finishLive: (() => void) | null,
   ) {
     emitFinishLiveRef.current =
       finishLive;
   }
 
   function handleEmitControlsReady(
-    controls:
-      | EmitScreenControls
-      | null,
+    controls: EmitScreenControls | null,
   ) {
     emitToggleMicrophoneRef.current =
-      controls
-        ?.toggleMicrophone ??
+      controls?.toggleMicrophone ??
       null;
 
     emitSwitchCameraRef.current =
-      controls
-        ?.switchCamera ??
+      controls?.switchCamera ??
       null;
   }
 
   function renderForegroundScreen() {
-    if (
-      notificationsVisible
-    ) {
+    if (notificationsVisible) {
       return (
         <NotificationsScreen
-          onBack={
-            goBack
-          }
+          onBack={goBack}
           onOpenTarget={
             openNotificationTarget
           }
@@ -431,24 +372,16 @@ function AppContent() {
       );
     }
 
-    if (
-      selectedUserId
-    ) {
+    if (selectedUserId) {
       return (
         <UserProfileScreen
-          userId={
-            selectedUserId
-          }
-          onBack={
-            goBack
-          }
+          userId={selectedUserId}
+          onBack={goBack}
         />
       );
     }
 
-    if (
-      activeTab === "emit"
-    ) {
+    if (activeTab === "emit") {
       return (
         <EmitScreen
           onStatusChange={
@@ -463,9 +396,7 @@ function AppContent() {
           onControlsReady={
             handleEmitControlsReady
           }
-          onClose={
-            goBack
-          }
+          onClose={goBack}
         />
       );
     }
@@ -480,147 +411,153 @@ function AppContent() {
     !foregroundScreen &&
     activeTab !== "emit";
 
+  const isEmitting =
+    activeTab === "emit" &&
+    !notificationsVisible &&
+    !selectedUserId;
+
+  const isLiveViewer =
+    showPersistentTabs &&
+    videoViewerMode === "live";
+
+  const isReplayViewer =
+    showPersistentTabs &&
+    videoViewerMode === "replay";
+
+  const reserveBottomSpace =
+    !isEmitting &&
+    !isLiveViewer;
+
   const bottomNavMode =
-    videoViewerMode ??
-    (
-      activeTab === "emit"
-        ? "emit"
-        : "main"
-    );
+    isEmitting
+      ? "emit"
+      : isLiveViewer
+        ? "live"
+        : "main";
 
   return (
     <SafeAreaView
-      style={
-        styles.container
-      }
-      edges={[
-        "top",
-      ]}
+      style={styles.container}
+      edges={["top"]}
     >
-<BlurTargetView
-  ref={
-    blurTargetRef
-  }
-  style={
-    styles.content
-  }
->
-  <AppOverlayLayout
-  bottomControls={
-    <BottomNav
-      mode={
-        bottomNavMode
-      }
-      blurTarget={
-        blurTargetRef
-      }
-      activeTab={
-        activeTab
-      }
-      onTabPress={
-        changeTab
-      }
-      emitCanStart={
-        emitCameraReady
-      }
-      emitIsLive={
-        emitIsLive
-      }
-      emitIsConnecting={
-        emitIsConnecting
-      }
-      emitMicrophoneEnabled={
-        emitMicrophoneEnabled
-      }
-      onEmitFinish={
-        activeTab === "emit"
-          ? () => {
-              emitFinishLiveRef
-                .current?.();
-            }
-          : undefined
-      }
-      onEmitStart={
-        activeTab === "emit"
-          ? () => {
-              emitStartLiveRef
-                .current?.();
-            }
-          : undefined
-      }
-      onEmitToggleMicrophone={
-        activeTab === "emit"
-          ? () => {
-              emitToggleMicrophoneRef
-                .current?.();
-            }
-          : undefined
-      }
-      onEmitSwitchCamera={
-        activeTab === "emit"
-          ? () => {
-              emitSwitchCameraRef
-                .current?.();
-            }
-          : undefined
-      }
-    />
-  }
->
-  
+      <BlurTargetView
+        ref={blurTargetRef}
+        style={styles.content}
+      >
+        <AppOverlayLayout
+          reserveBottomSpace={
+            reserveBottomSpace
+          }
+          replayMode={
+            isReplayViewer
+          }
+          bottomControls={
+            <BottomNav
+              mode={bottomNavMode}
+              blurTarget={
+                blurTargetRef
+              }
+              activeTab={
+                activeTab
+              }
+              onTabPress={
+                changeTab
+              }
+              emitCanStart={
+                emitCameraReady
+              }
+              emitIsLive={
+                emitIsLive
+              }
+              emitIsConnecting={
+                emitIsConnecting
+              }
+              emitMicrophoneEnabled={
+                emitMicrophoneEnabled
+              }
+              onEmitFinish={
+                isEmitting
+                  ? () => {
+                      emitFinishLiveRef
+                        .current?.();
+                    }
+                  : undefined
+              }
+              onEmitStart={
+                isEmitting
+                  ? () => {
+                      emitStartLiveRef
+                        .current?.();
+                    }
+                  : undefined
+              }
+              onEmitToggleMicrophone={
+                isEmitting
+                  ? () => {
+                      emitToggleMicrophoneRef
+                        .current?.();
+                    }
+                  : undefined
+              }
+              onEmitSwitchCamera={
+                isEmitting
+                  ? () => {
+                      emitSwitchCameraRef
+                        .current?.();
+                    }
+                  : undefined
+              }
+            />
+          }
+        >
+          <View
+            style={{
+              flex: 1,
+              display: showPersistentTabs
+                ? "flex"
+                : "none",
+            }}
+          >
+            <PersistentTabScreens
+              activeTab={
+                activeTab
+              }
+              requestedLiveId={
+                requestedLiveId
+              }
+              requestedReplayId={
+                requestedReplayId
+              }
+              onVideoViewerVisibleChange={
+                setVideoViewerMode
+              }
+              unreadNotifications={
+                unreadNotifications
+              }
+              onChangeTab={
+                changeTab
+              }
+              onOpenLive={
+                openLive
+              }
+              onOpenReplay={
+                openReplay
+              }
+              onCloseRequestedVideo={
+                goBack
+              }
+              onOpenUser={
+                openUser
+              }
+              onOpenNotifications={
+                openNotifications
+              }
+            />
+          </View>
 
-    <View
-      style={{
-        flex: 1,
-
-        display:
-          showPersistentTabs
-            ? "flex"
-            : "none",
-      }}
-    >
-      <PersistentTabScreens
-        activeTab={
-          activeTab
-        }
-        requestedLiveId={
-          requestedLiveId
-        }
-        requestedReplayId={
-          requestedReplayId
-        }
-        onVideoViewerVisibleChange={
-          setVideoViewerMode
-        }
-        unreadNotifications={
-          unreadNotifications
-        }
-        onChangeTab={
-          changeTab
-        }
-        onOpenLive={
-          openLive
-        }
-        onOpenReplay={
-          openReplay
-        }
-        onCloseRequestedVideo={
-          goBack
-        }
-        onOpenUser={
-          openUser
-        }
-        onOpenNotifications={
-          openNotifications
-        }
-      />
-    </View>
-
-    {foregroundScreen}
-  </AppOverlayLayout>
-</BlurTargetView>
-
-   
+          {foregroundScreen}
+        </AppOverlayLayout>
+      </BlurTargetView>
     </SafeAreaView>
   );
 }
@@ -643,34 +580,24 @@ function configureDefaultTypography() {
     };
 
   defaultText.defaultProps =
-    defaultText.defaultProps ??
-    {};
+    defaultText.defaultProps ?? {};
 
   defaultTextInput.defaultProps =
-    defaultTextInput.defaultProps ??
-    {};
+    defaultTextInput.defaultProps ?? {};
 
-  defaultText.defaultProps.style =
-    [
-      {
-        fontFamily:
-          appFontFamily,
-      },
+  defaultText.defaultProps.style = [
+    {
+      fontFamily: appFontFamily,
+    },
+    defaultText.defaultProps.style,
+  ];
 
-      defaultText
-        .defaultProps.style,
-    ];
-
-  defaultTextInput.defaultProps.style =
-    [
-      {
-        fontFamily:
-          appFontFamily,
-      },
-
-      defaultTextInput
-        .defaultProps.style,
-    ];
+  defaultTextInput.defaultProps.style = [
+    {
+      fontFamily: appFontFamily,
+    },
+    defaultTextInput.defaultProps.style,
+  ];
 }
 
 configureDefaultTypography();

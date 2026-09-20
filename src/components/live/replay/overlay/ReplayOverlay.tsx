@@ -336,88 +336,28 @@ export function ReplayOverlay({
       </AppOverlaySlot>
 
       {/* CAJÓN INFERIOR: SIN CAMBIOS */}
-      <AppOverlaySlot name="bottomControls">
-        <View
-          style={styles.bottomSlot}
-          pointerEvents="box-none"
-        >
-          <View
-            style={styles.bottomCreatorRow}
-            pointerEvents="box-none"
-          >
-            <Pressable
-              style={styles.bottomCreatorIdentity}
-              accessibilityRole="button"
-              accessibilityLabel="Abrir perfil del creador"
-              disabled={!onOpenCreator}
-              onPress={onOpenCreator}
-            >
-              <View style={styles.bottomAvatar}>
-                {creator?.avatarUrl ? (
-                  <Image
-                    source={{ uri: creator.avatarUrl }}
-                    style={styles.bottomAvatarImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={styles.bottomAvatarFallback}>
-                    {creatorInitial}
-                  </Text>
-                )}
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={styles.bottomCreatorName}
-              >
-                @{creatorName}
-              </Text>
-            </Pressable>
-
-            {onFollowPress ? (
-              <Pressable
-                style={[
-                  styles.bottomFollowButton,
-                  isFollowing && styles.bottomFollowingButton,
-                  followLoading && styles.disabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isFollowing
-                    ? "Dejar de seguir al creador"
-                    : "Seguir al creador"
-                }
-                disabled={followLoading}
-                onPress={onFollowPress}
-              >
-                <Text style={styles.bottomFollowText}>
-                  {followLoading
-                    ? "..."
-                    : isFollowing
-                      ? "Siguiendo"
-                      : "Seguir"}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-
-          <ReplayBottomControls
-            likes={likes}
-            liked={liked}
-            likeLoading={likeLoading}
-            onLikePress={onLikePress}
-            playbackPaused={playbackPaused}
-            playbackMuted={playbackMuted}
-            currentTime={currentTime}
-            duration={duration}
-            onPlaybackToggle={onPlaybackToggle}
-            onSeek={onSeek}
-            onSkipBackward={onSkipBackward}
-            onSkipForward={onSkipForward}
-            onToggleMute={onToggleMute}
-          />
-        </View>
-      </AppOverlaySlot>
+<AppOverlaySlot name="bottomControls">
+  <View
+    style={styles.bottomSlot}
+    pointerEvents="box-none"
+  >
+    <ReplayBottomControls
+      likes={likes}
+      liked={liked}
+      likeLoading={likeLoading}
+      onLikePress={onLikePress}
+      playbackPaused={playbackPaused}
+      playbackMuted={playbackMuted}
+      currentTime={currentTime}
+      duration={duration}
+      onPlaybackToggle={onPlaybackToggle}
+      onSeek={onSeek}
+      onSkipBackward={onSkipBackward}
+      onSkipForward={onSkipForward}
+      onToggleMute={onToggleMute}
+    />
+  </View>
+</AppOverlaySlot>
 
       {showNavigation ? (
         <LiveViewerNavigation
