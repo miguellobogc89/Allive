@@ -1,9 +1,8 @@
 
-// src/components/live/replay/overlay/ReplayOverlay.tsx
-
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -13,8 +12,8 @@ import {
 import { AppOverlaySlot } from "../../../layout";
 import { ReplayBottomControls } from "../controls/ReplayBottomControls";
 import { VideoViewerHeader } from "../../../video/viewer/VideoViewerHeader";
-import { LiveViewerIdentity } from "../../viewer/header/LiveViewerIdentity";
 import { LiveViewerNavigation } from "../../viewer/navigation/LiveViewerNavigation";
+import { ReplayCreatorMetadata } from "./ReplayCreatorMetadata";
 
 import type { Replay } from "../types";
 
@@ -102,6 +101,16 @@ export function ReplayOverlay({
   onSkipForward,
   onToggleMute,
 }: ReplayOverlayProps) {
+  const creator = replay.creator;
+
+  const creatorName =
+    creator?.username ||
+    creator?.displayName ||
+    "Allive";
+
+  const creatorInitial =
+    creatorName.trim().charAt(0).toUpperCase() || "A";
+
   return (
     <View
       style={styles.overlay}
@@ -192,30 +201,55 @@ export function ReplayOverlay({
         </View>
       ) : null}
 
-      <AppOverlaySlot name="header">
-        <View
-          style={styles.headerSlot}
-          pointerEvents="box-none"
-        >
-          <VideoViewerHeader
-            mode="replay"
-            viewers={replay.peakViewerCount ?? 0}
-            onClose={onClose}
-          />
-        </View>
-      </AppOverlaySlot>
 
+<AppOverlaySlot name="header">
+  <View
+    style={styles.headerSlot}
+    pointerEvents="box-none"
+  >
+    <View
+      style={styles.headerButtons}
+      pointerEvents="box-none"
+    >
+      <VideoViewerHeader
+        mode="replay"
+        viewers={replay.peakViewerCount ?? 0}
+        onClose={onClose}
+      />
+    </View>
+
+    {replay.eventName?.trim() ? (
+      <View
+        style={styles.headerEventContainer}
+        pointerEvents="none"
+      >
+        <Text
+          numberOfLines={2}
+          ellipsizeMode="tail"
+          style={styles.headerEventName}
+        >
+          {replay.eventName.trim()}
+        </Text>
+      </View>
+    ) : null}
+  </View>
+</AppOverlaySlot>
+
+      {/* METADATA: NUEVO COMPONENTE REUTILIZABLE */}
       <AppOverlaySlot name="metadata">
         <View
           style={styles.metadataSlot}
           pointerEvents="box-none"
         >
-          <LiveViewerIdentity
-            live={replay}
-            followLoading={followLoading}
+          <ReplayCreatorMetadata
+            username={creatorName}
+            avatarUrl={creator?.avatarUrl}
+            location={replay.placeName}
+            title={replay.title}
             isFollowing={isFollowing}
-            onFollowPress={onFollowPress}
+            followLoading={followLoading}
             onOpenCreator={onOpenCreator}
+            onFollowPress={onFollowPress}
           />
         </View>
       </AppOverlaySlot>
@@ -225,6 +259,7 @@ export function ReplayOverlay({
           style={styles.sideActions}
           pointerEvents="box-none"
         >
+          {/* ME GUSTA */}
           <Pressable
             style={[
               styles.sideAction,
@@ -249,6 +284,33 @@ export function ReplayOverlay({
             </Text>
           </Pressable>
 
+          {/* COMENTARIOS */}
+          <Pressable
+            style={styles.sideAction}
+            accessibilityRole="button"
+            accessibilityLabel="Comentarios"
+          >
+            <Ionicons
+              name="chatbubble-outline"
+              size={28}
+              color="#FFFFFF"
+            />
+          </Pressable>
+
+          {/* ENVIAR */}
+          <Pressable
+            style={styles.sideAction}
+            accessibilityRole="button"
+            accessibilityLabel="Enviar replay"
+          >
+            <Ionicons
+              name="send-outline"
+              size={28}
+              color="#FFFFFF"
+            />
+          </Pressable>
+
+          {/* SONIDO */}
           <Pressable
             style={styles.sideAction}
             accessibilityRole="button"
@@ -273,22 +335,88 @@ export function ReplayOverlay({
         </View>
       </AppOverlaySlot>
 
+      {/* CAJÓN INFERIOR: SIN CAMBIOS */}
       <AppOverlaySlot name="bottomControls">
-        <ReplayBottomControls
-          likes={likes}
-          liked={liked}
-          likeLoading={likeLoading}
-          onLikePress={onLikePress}
-          playbackPaused={playbackPaused}
-          playbackMuted={playbackMuted}
-          currentTime={currentTime}
-          duration={duration}
-          onPlaybackToggle={onPlaybackToggle}
-          onSeek={onSeek}
-          onSkipBackward={onSkipBackward}
-          onSkipForward={onSkipForward}
-          onToggleMute={onToggleMute}
-        />
+        <View
+          style={styles.bottomSlot}
+          pointerEvents="box-none"
+        >
+          <View
+            style={styles.bottomCreatorRow}
+            pointerEvents="box-none"
+          >
+            <Pressable
+              style={styles.bottomCreatorIdentity}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir perfil del creador"
+              disabled={!onOpenCreator}
+              onPress={onOpenCreator}
+            >
+              <View style={styles.bottomAvatar}>
+                {creator?.avatarUrl ? (
+                  <Image
+                    source={{ uri: creator.avatarUrl }}
+                    style={styles.bottomAvatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={styles.bottomAvatarFallback}>
+                    {creatorInitial}
+                  </Text>
+                )}
+              </View>
+
+              <Text
+                numberOfLines={1}
+                style={styles.bottomCreatorName}
+              >
+                @{creatorName}
+              </Text>
+            </Pressable>
+
+            {onFollowPress ? (
+              <Pressable
+                style={[
+                  styles.bottomFollowButton,
+                  isFollowing && styles.bottomFollowingButton,
+                  followLoading && styles.disabled,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isFollowing
+                    ? "Dejar de seguir al creador"
+                    : "Seguir al creador"
+                }
+                disabled={followLoading}
+                onPress={onFollowPress}
+              >
+                <Text style={styles.bottomFollowText}>
+                  {followLoading
+                    ? "..."
+                    : isFollowing
+                      ? "Siguiendo"
+                      : "Seguir"}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <ReplayBottomControls
+            likes={likes}
+            liked={liked}
+            likeLoading={likeLoading}
+            onLikePress={onLikePress}
+            playbackPaused={playbackPaused}
+            playbackMuted={playbackMuted}
+            currentTime={currentTime}
+            duration={duration}
+            onPlaybackToggle={onPlaybackToggle}
+            onSeek={onSeek}
+            onSkipBackward={onSkipBackward}
+            onSkipForward={onSkipForward}
+            onToggleMute={onToggleMute}
+          />
+        </View>
       </AppOverlaySlot>
 
       {showNavigation ? (
@@ -322,17 +450,52 @@ const styles = StyleSheet.create({
     height: 300,
   },
 
-  headerSlot: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
+
+headerSlot: {
+  width: "100%",
+  height: "100%",
+  position: "relative",
+},
+
+headerButtons: {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 1,
+},
+
+headerEventContainer: {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 2,
+  justifyContent: "flex-end",
+},
+
+headerEventName: {
+  width: "100%",
+  color: "#FFFFFF",
+  fontSize: 24,
+  lineHeight: 28,
+  fontWeight: "800",
+  letterSpacing: -0.5,
+  textAlign: "left",
+  textShadowColor: "rgba(0,0,0,0.85)",
+  textShadowOffset: {
+    width: 0,
+    height: 2,
   },
+  textShadowRadius: 5,
+},
 
   metadataSlot: {
     width: "100%",
     height: "100%",
     overflow: "hidden",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "flex-start",
   },
 
   sideActions: {
@@ -366,6 +529,88 @@ const styles = StyleSheet.create({
 
   disabled: {
     opacity: 0.5,
+  },
+
+  bottomSlot: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+  },
+
+  bottomCreatorRow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+
+  bottomCreatorIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    minWidth: 0,
+  },
+
+  bottomAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(35,35,40,0.85)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.8)",
+  },
+
+  bottomAvatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  bottomAvatarFallback: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+
+  bottomCreatorName: {
+    marginLeft: 9,
+    flexShrink: 1,
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    textShadowRadius: 3,
+  },
+
+  bottomFollowButton: {
+    height: 30,
+    paddingHorizontal: 12,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  bottomFollowingButton: {
+    backgroundColor: "rgba(255,255,255,0.14)",
+  },
+
+  bottomFollowText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   pausedControls: {
