@@ -27,10 +27,10 @@ export const appOverlayLayout = {
     gap: 8,
   },
 
-  metadata: {
-    height: 104,
-    gap: 10,
-  },
+metadata: {
+  height: 64,
+  gap: 10,
+},
 
   bottomControls: {
     height: 64,

@@ -126,20 +126,23 @@ export function AppOverlayLayout({
       ? controlsBottom + controlsHeight
       : 0;
 
-  const metadataHeight =
-    appOverlayLayout.metadata.height * scale;
+const metadataMinHeight =
+  appOverlayLayout.metadata.height * scale;
+
+const metadataMaxHeight =
+  metadataMinHeight * 1.5;
 
 const metadataBottom =
   reservedBottomHeight +
-  appOverlayLayout.metadata.gap * scale;
+  (appOverlayLayout.metadata.gap + 12) * scale;
 
   const commentsHeight =
     appOverlayLayout.comments.height * scale;
 
-  const commentsBottom =
-    metadataBottom +
-    metadataHeight +
-    appOverlayLayout.comments.gap * scale;
+const commentsBottom =
+  metadataBottom +
+  metadataMaxHeight +
+  appOverlayLayout.comments.gap * scale;
 
   const sideWidth =
     appOverlayLayout.sideActions.width * scale;
@@ -174,11 +177,11 @@ const sideBottom =
       ? registeredSlots.bottomControls
       : null;
 
-  const resolvedBottomControls =
-    replayMode
-      ? bottomControls
-      : registeredSlots.bottomControls ??
-        bottomControls;
+const resolvedBottomControls =
+  replayMode
+    ? null
+    : registeredSlots.bottomControls ??
+      bottomControls;
 
   return (
     <AppOverlaySlotContext.Provider
@@ -265,7 +268,8 @@ const sideBottom =
               left: horizontalMargin,
               right: contentRight,
               bottom: metadataBottom,
-              height: metadataHeight,
+              minHeight: metadataMinHeight,
+              maxHeight: metadataMaxHeight,
             },
           ]}
         >

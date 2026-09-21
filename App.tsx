@@ -424,16 +424,17 @@ function AppContent() {
     showPersistentTabs &&
     videoViewerMode === "replay";
 
-  const reserveBottomSpace =
-    !isEmitting &&
-    !isLiveViewer;
+const reserveBottomSpace =
+  !isEmitting &&
+  !isLiveViewer &&
+  !isReplayViewer;
 
-  const bottomNavMode =
-    isEmitting
-      ? "emit"
-      : isLiveViewer
-        ? "live"
-        : "main";
+const bottomNavMode =
+  isEmitting
+    ? "emit"
+    : isLiveViewer || isReplayViewer
+      ? "live"
+      : "main";
 
   return (
     <SafeAreaView
